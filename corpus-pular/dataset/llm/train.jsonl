@@ -1,0 +1,548 @@
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "أنا يعني هذا لا يهموني منها لا أنا إدون كوني كوي أقول نلاد صلى الله عليه وآله وصحبه وسلم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "وانا هينو ديروه اهد انتو ري شنددن فوهو تتكرناته ايه قلدن", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "ويأتي لك أي ميان ابن تايمية نروا إن قلت له لأول كونه مفعل أعويدة كون ده ما كو أدده ابن تايمية هندتم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "أفهم ونشرنا جونرو إجي كدفتة رتجانية رو", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Ce texte est écrit en latin. Donne la version Adlam.", "input": "Ayon nuhida ekongu dibulbedu debeng ekarama koopeng.", "output": "𞤀𞤴𞤮𞤲 𞤲𞤵𞤸𞤭𞤣𞤢 𞤫𞤳𞤮𞤲𞤺𞤵 𞤣𞤭𞤦𞤵𞤤𞤦𞤫𞤣𞤵 𞤣𞤫𞤦𞤫𞤲𞤺 𞤫𞤳𞤢𞤪𞤢𞤥𞤢 𞤳𞤮𞤮𞤨𞤫𞤲𞤺.", "source": "translit_dataset", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "بل يهيها تبيسي وللتامة لفظ الحافظ كهم بفندا كوكانكو", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Translitère ce texte pular en alphabet Adlam.", "input": "Halferi woku baragi sapho.", "output": "𞤖𞤢𞤤𞤬𞤫𞤪𞤭 𞤱𞤮𞤳𞤵 𞤦𞤢𞤪𞤢𞤺𞤭 𞤧𞤢𞤨𞤸𞤮.", "source": "translit_dataset", "qualite": "silver"}
+{"instruction": "Écris « bammbale » en alphabet Adlam.", "input": "", "output": "𞤄𞤢𞤃𞤦𞤢𞤤𞤫", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Comment dit-on « Poulet » en pular ?", "input": "", "output": "gertogal", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "نحن على بصورة من أمرنا", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "رؤية طبيعية كونتج نوري أوروية أميد أويئة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "يجب أن يكون هناك حالة كوكا ونحالة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "يومي أنا لا صلى الله عليه وسلم ، حاشا مقامه صلى الله عليه وسلم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne le mot pular pour « Enfant » avec son écriture Adlam.", "input": "", "output": "biddo — en Adlam : 𞤄𞤭𞤣𞤣𞤮", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "اللهم لا سهل إلا ما جعلته سهلا وأنت يا حي يا قيوم تجعل الحزن إذا شئت سهلا.", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "ما كنات لي بول من قنو", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Voici le début d'un texte en pular. Complète-le :", "input": "𞤢 𞤯𞤭 . 𞤭𞥅 𞤪𞤢 𞤮 𞤳 𞤢𞤥 𞤢 𞤲 𞤋 . 𞤼𞤢𞤶𞥆 𞤋 𞤮𞤳 𞤮𞤳 𞤢𞤸 𞤣𞤲𞤋 .𞤭𞥅𞤣𞤋 𞤮𞤥 𞤭𞥅𞤲 𞤭 𞤌 . 𞤣𞤵𞤤𞤭 𞤮𞤲 𞤭𞥅𞤣𞤋 15 𞤋 𞤣𞤲𞤢𞤲𞤭𞥅 𞤊 𞤋 𞤋 𞤋 𞤋 𞤋 𞤋 𞤋 𞤋 𞤋 𞤋 𞤅 𞤄 𞤃 𞤂 𞤁 𞤭𞥅 𞤧 𞤭𞥅 𞤦 𞤭𞥅 𞤥 𞤭𞥅 𞤤 𞤭𞥅 𞤣 𞤍 𞤊 𞤈 𞤇 𞤆 𞤭𞥅 𞤭𞥅 𞤬 𞤭𞥅 𞤪 𞤭𞥅 𞤩 𞤭𞥅 𞤨 𞤒 𞤑 𞤐 𞤏 𞤎 𞤭𞥅 𞤴 𞤭𞥅 𞤳 𞤭𞥅 𞤲 𞤭𞥅 𞤱 𞤭𞥅 𞤰 𞤘 𞤗 𞤖 𞤕 𞤔 𞤭𞥅 𞤺 𞤭𞥅 𞤹 𞤭𞥅 𞤸", "output": "𞤭𞥅 𞤷 𞤭𞥅 𞤶 𞤂𞤋 𞤂𞤋 𞤛 𞤚 𞤙 𞤮 𞤤𞤭 𞤢 𞤤𞤭 𞤭𞥅 𞤽 𞤭𞥅 𞤼 𞤭𞥅 𞤻 𞤈𞤋 𞤅𞤀 𞤃𞤋 𞤂𞤋 𞤁𞤋 𞤭𞥅 𞤪𞤭 𞤭𞥅 𞤧𞤢 𞤭𞥅 𞤥 𞤭 𞤢 𞤤𞤭 𞤢 𞤣𞤭 16 𞤔𞥆𞤀 𞤈𞤀 𞤐𞤋 𞤏𞤋 𞤍𞤀 𞤭𞥅 𞤶𞥆 𞤢 𞤭𞥅 𞤪𞤢 𞤭𞥅 𞤲 𞤭 𞤭𞥅 𞤱𞤭 𞤭𞥅 𞤯𞤢 .", "source": "rag_livres", "qualite": "bronze"}
+{"instruction": "Comment s'écrit yitere en Adlam ?", "input": "", "output": "𞤒𞤭𞤼𞤫𞤪𞤫", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris en Adlam :", "input": "Siyoti habbiri o jangadu awli stifta.", "output": "𞤅𞤭𞤴𞤮𞤼𞤭 𞤸𞤢𞤦𞤦𞤭𞤪𞤭 𞤮 𞤶𞤢𞤲𞤺𞤢𞤣𞤵 𞤢𞤱𞤤𞤭 𞤧𞤼𞤭𞤬𞤼𞤢.", "source": "translit_dataset", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "وننك ديك وننن", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne le mot pular pour « Chèvre » avec son écriture Adlam.", "input": "", "output": "mbabba — en Adlam : 𞤃𞤦𞤢𞤦𞤦𞤢", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "نا بيت يمبن فاوة، نا بيت يمبن ونفاوة، بونا واجب عقلي، ونا مستحيل عقلي، بل انك جائز عقلي، أف الله شك، يعني ليس لا شك في وجود الله، انك واجب عقلي، الله كبيت توهي موود، انك القرآن هالي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Quel est le sens du mot pular biddo ?", "input": "", "output": "Enfant", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "فأنت أخبرك، سأموت بمختير، أعرتا وفي ابن القاسم كنت أخبرك", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "لا إشكال أنا ما كنت أريد أن تكلم في كل هذا", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "قهون ونتعريفوا الصحابي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "مدوه جبه دواوي ونده", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "أبي وكان جل لقصدي من سفر إلى دمشق لقائه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Quel est le mot pular pour Soleil ?", "input": "", "output": "naange", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "وإنما هو في عالم الملكوت", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Voici le début d'un texte en pular. Complète-le :", "input": "𞤴𞤢𞤯𞤭𞥅𞤬 𞤲𞤫𞤣𞤲 𞤪𞤸𞤢𞤒 . 𞤢 𞤦𞤢𞤤𞤢𞤁 𞤪𞤸𞤢𞤧 𞤢𞤳 𞤴𞤢𞤱𞤢𞤣 𞤲𞤢𞤤𞤢𞤁 13 𞤋 𞤣𞤲𞤢𞤲𞤭𞥅 𞤊 𞤋 𞤋 𞤋 𞤋 𞤋 𞤋 𞤋 𞤋 𞤋 𞤋 𞤅 𞤄 𞤃 𞤂 𞤁 𞤭𞥅 𞤧 𞤭𞥅𞤦 𞤭𞥅 𞤥 𞤭𞥅 𞤤 𞤭𞥅𞤣 𞤍 𞤊 𞤈 𞤇 𞤆 𞤭𞥅 𞤭𞥅 𞤬 𞤭𞥅𞤪 𞤭𞥅𞤩 𞤭𞥅𞤨 𞤒 𞤑 𞤐 𞤏 𞤎 𞤭𞥅𞤴 𞤭𞥅𞤳 𞤭𞥅 𞤲 𞤭𞥅 𞤱 𞤭𞥅 𞤰 𞤘 𞤗 𞤖 𞤕 𞤔 𞤭𞥅𞤺 𞤭𞥅𞤹 𞤭𞥅𞤸 𞤭𞥅 𞤷 𞤭𞥅𞤶 𞤋 𞤋 𞤛 𞤚 𞤙 𞤤 𞤭 𞤲 𞤭 𞤭𞥅 𞤽 𞤭𞥅𞤼 𞤭𞥅𞤻 𞤈𞤋 𞤅𞤋 𞤃𞤋", "output": "𞤂𞤋 𞤁𞤋 𞤢 𞤪𞤭 𞤮 𞤧𞤭 𞤮 𞤥 𞤭 𞤢 𞤤𞤭 𞤭𞥅𞤣𞤋 14 𞤐𞤋 𞤈𞤋 𞤐𞤋 𞤏𞤋 𞤍𞤋 𞤭𞥅 𞤲 𞤭 𞤮 𞤪𞤭 𞤢 𞤲 𞤭 𞤢 𞤱𞤭 𞤢 𞤯𞤭 . 𞤭𞥅 𞤪𞤢 𞤮 𞤳 𞤢𞤥 𞤢 𞤲 𞤋 . 𞤼𞤢𞤶𞥆 𞤋 𞤮𞤳 𞤮𞤳 𞤢𞤸 𞤣𞤲𞤋 .𞤭𞥅𞤣𞤋 𞤮𞤥 𞤭𞥅𞤲 𞤭 𞤌 . 𞤣𞤵𞤤𞤭 𞤮𞤲 𞤭𞥅𞤣𞤋", "source": "rag_livres", "qualite": "bronze"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "يقظة نطلق ببعو بماي أن يتبط بالسند", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "سلا وندل ونقوش أخمت تجان إجاء", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne le mot pular pour « Vache » avec son écriture Adlam.", "input": "", "output": "nagge — en Adlam : 𞤲𞤢𞤺𞤺𞤫", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "استغاث برسول الله صلى الله عليه و آله و صحبه وسلم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "لا تِجْانِ يَنْكُبِتُ الْفَانِدُونَ", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "نلال صلى الله عليه وسلم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "كونا في قدد وكن سألته ونا شيخ أحمت تجان", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Traduis en français :", "input": "deftere", "output": "Livre", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "القرآن ينسبني إموحال العقلي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "يجب أن يكون هناك مقامس صحبة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Complète cette fiche de vocabulaire :\nFrançais : Arbre\nPular : ?\nAdlam : ?", "input": "", "output": "Pular : ledde\nAdlam : 𞤂𞤫𞤣𞤣𞤫", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Traduis en français :", "input": "ndungu", "output": "Pluie", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "ويأتي أحمد ابن تايمية لمدة طويلة لم أراه جتازة بهذا الدرب", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "اوكها لك ونطن اجد اوه اوه وي اي شخص جاني وي اناها لشخص جاني وانا شخص جاني وانا اجند  او", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "تفصي لا توجه نطون", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "وجاء في الحديث ومن ما الله سبحانه وتعالى", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "الحمد لله رب العالمين وصل الله وسلم على سيدنا محمد وعلى آله وصحبه ومن تبعه في إحسان الاعتقاد والقول والعمل إلى يوم الدين.", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne le mot pular pour « Lune » avec son écriture Adlam.", "input": "", "output": "lewru — en Adlam : 𞤂𞤫𞤱𞤪𞤵", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "بوديه تشبيه في غير محله", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "لنجب كشف وليو الله نهنشن يجبن", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Comment dit-on « Enfant » en pular ?", "input": "", "output": "biddo", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris en Adlam :", "input": "La kul alif lam min harf, wa lakil alif min harfun, wa lamun harfun, wa min mun harfun.", "output": "𞤂𞤢 𞤳𞤵𞤤 𞤢𞤤𞤭𞤬 𞤤𞤢𞤥 𞤥𞤭𞤲 𞤸𞤢𞤪𞤬, 𞤱𞤢 𞤤𞤢𞤳𞤭𞤤 𞤢𞤤𞤭𞤬 𞤥𞤭𞤲 𞤸𞤢𞤪𞤬𞤵𞤲, 𞤱𞤢 𞤤𞤢𞤥𞤵𞤲 𞤸𞤢𞤪𞤬𞤵𞤲, 𞤱𞤢 𞤥𞤭𞤲 𞤥𞤵𞤲 𞤸𞤢𞤪𞤬𞤵𞤲.", "source": "translit_dataset", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "يعني وهل يخفر قمره", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "rawaandu", "source": "contribution_communautaire", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "ولهم مراسلات", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "كو قولوا لكم هابي وينارون جوني لورا", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "وجوك للنهاء وي ولي الذهب الإبريز بصورة هب", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "هل يلوت لديك أجا جائش أحمد رضي الله عنه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "هذا لما لم يركز أو لم يتلقى هذه الكتب أو الأمر واضح جدا من واضح جدا صبوه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "شر نوجم إيجان روما", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne le mot pular pour « Cheval » avec son écriture Adlam.", "input": "", "output": "puccu — en Adlam : 𞤨𞤵𞤷𞤷𞤵", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "كونا أسكر ونتبتني شيخ أحمد تيجان", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "سِيُّ أُفَالَ نُوَكَ وَتَجَتَانَيْ", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "تَجُورَنْدِكُوَ كَنْكُوَ اللَّهُمْ سُبْحَانَهُ وَتَعَالَا أُهُلِّي كَنْكُوَ تَجِدِيْ", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "نقول لنانجل كونجل", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "فقال مميلادي أميهي وكأنك لا تعرفه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Continue ce texte en pular :", "input": "𞤼𞤴𞤵𞤍 𞤭𞥅𞤳𞤱𞤢𞤸 𞤤𞤭𞥅 𞤥 𞤭𞥅 𞤪𞤭𞥅𞤼𞤱𞤮𞤈 𞤭𞥅𞤳 𞤮𞤶 𞤤𞤢𞤱𞤫 𞤨 𞤤𞤮𞤱𞤢 𞤂 𞤭𞥅𞤨𞥆𞤮 𞤺 𞤭𞥅𞤤𞤫𞤧 𞤭𞥅𞤧𞤥𞤭𞥅𞤐 𞤮 𞤤 𞤢𞤔 . 𞤂 𞤼𞤢𞤧𞤴𞤀 28 𞤮 𞤤 𞤵𞤆 𞤮𞤦𞤮 𞤄 𞤯𞥆 𞤭𞤩 𞤫 𞤢𞤥𞥆 𞤵𞤴 ⹁ 𞤢 𞤼𞤢𞤶𞥆 𞤢𞤥 𞤮𞤥 𞤮𞤤 𞤵𞤨 𞤮𞤦𞤮 𞤦", "output": "𞤭𞥅𞤥 𞤮𞤑 ⹁𞤢 𞤼𞤢𞤦 𞤵 𞤮𞤥 𞤩𞤢 𞤪𞤭𞥅𞤲𞤢 𞤼 𞤪𞤵𞤩 ⹁ 𞤢 𞤼𞤢𞤨𞥆𞤥𞤢𞤼 𞤮𞤥 𞤭𞥅𞤣𞤲𞤫𞤺𞤲 𞤮𞤯𞤭𞥅 𞤦𞤥𞤢𞤼 .", "source": "rag_livres", "qualite": "bronze"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "هكو لليدي الليدي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Traduis en pular :", "input": "Crocodile", "output": "bammbale", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "يجب أن يكون هناك أعلام العالية", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris « mbabba » en alphabet Adlam.", "input": "", "output": "𞤃𞤦𞤢𞤦𞤦𞤢", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "كوانوا اي نده ده تقبره نوتيه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Traduis en pular :", "input": "Chèvre", "output": "mbabba", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "نقل مؤجر انه انقوا ويون دمه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "يانلي مين مين اجابي ابن تايمية نجو جي اون مرتبا وهبي اون", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "هادر نقل دروه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "وهو أردتي أبي أيكو في أم من تم أدمو له", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "كو نلاه ريال تتاك قبومه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "Ayon nuhida ekongu dibulbedu debeng ekarama koopeng.", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "إذا كنت تأتي إلى أي مطالعة، يؤكّل أني محقق", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "وجه الطبيعية ممهالئة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "قبل بأريب هالكالو هالأنا قدمت بك القرآن فتبنت تنوودي ما يوأيه بأو أمايه ونانه بأو أمايه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Comment dit-on « Homme » en pular ?", "input": "", "output": "gorko", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "ولي ذهب الإبريزي بيهب وبيوا فيهب", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "إن كو نقل حلال الدم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Continue ce texte en pular :", "input": "𞤲𞤭𞥅𞤳𞤲𞤮𞤁 𞥒𞥑 32 𞤐𞤉𞤁𞤐 𞤉𞤈𞤉𞤚𞤊𞤉𞤁 𞤋𞤁𞤐𞤌𞥅𞤈𞤌𞥅𞤘𞤐 5 ....................................... :𞤲𞤫𞤯 𞤫𞤤𞤵𞤳𞤤𞤀 5 ............................................................................................ :𞤲𞤫𞤯 𞤫𞤧𞤢𞤃 5", "output": ".......................................................................... :𞤲𞤫𞤯 𞤫𞤯𞤢 𞤺𞤮𞤴 𞤫𞤤𞥆𞤵𞤳𞤤𞥆 6 ....................................... 𞤢 𞤫𞤣𞤲𞤢𞤲𞤭 𞤊 8 ................................", "source": "rag_livres", "qualite": "bronze"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "قولوا سجلوا ان اجونيكو بيهالي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "تدنج المنان وشير نوجوه ام اجانيه ام اشيخ احمد تجانيه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "قلون ادها ستيوني تريد ان بك سكتون اوه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "قوي يقظى مينك", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "يكشفون نفوء ابن تايمية ونكوروتي أمانامات يكشفون نفوء ونفوء ونفيدة وفنانة ما دونك ميره", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "يا أمدو ستاينكوا جوانجا ما ناقود", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Comment s'écrit ledde en Adlam ?", "input": "", "output": "𞤂𞤫𞤣𞤣𞤫", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "كدوه ونتهالكن كونا في تقبرك أشفن دن دن", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "ميوي أي بدوه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Translitère ce texte pular en alphabet Adlam.", "input": "Yani sabunatabiti e hadis nula adola salara salama, nula adola hadisi habbiri bededgita he said.", "output": "𞤒𞤢𞤲𞤭 𞤧𞤢𞤦𞤵𞤲𞤢𞤼𞤢𞤦𞤭𞤼𞤭 𞤫 𞤸𞤢𞤣𞤭𞤧 𞤲𞤵𞤤𞤢 𞤢𞤣𞤮𞤤𞤢 𞤧𞤢𞤤𞤢𞤪𞤢 𞤧𞤢𞤤𞤢𞤥𞤢, 𞤲𞤵𞤤𞤢 𞤢𞤣𞤮𞤤𞤢 𞤸𞤢𞤣𞤭𞤧𞤭 𞤸𞤢𞤦𞤦𞤭𞤪𞤭 𞤦𞤫𞤣𞤫𞤣𞤺𞤭𞤼𞤢 𞤸𞤫 𞤧𞤢𞤭𞤣.", "source": "translit_dataset", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "قولوا فو مهالاني في مقلوم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "لقبطانه سيدنا عمر ايو كاونيجا", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "صوفي يكون دي أموض مثلا منامات", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Voici le début d'un texte en pular. Complète-le :", "input": ".......................... 𞤭 𞤋 𞤫𞤣𞤲𞤢𞤲𞤭 𞤊 18 ..................................... 𞤮 𞤌 𞤫𞤣𞤲𞤢𞤲𞤭 𞤊 20 ..................................... 𞤮 𞤌 𞤫𞤣𞤲𞤢𞤲𞤭 𞤊 22 .................................... 𞤵 𞤓 𞤫𞤣𞤲𞤢𞤲𞤭 𞤊 24 .................................... 𞤵 𞤓", "output": "𞤫𞤣𞤲𞤢𞤲𞤭 𞤊 26 ........................ 𞤲𞤫𞤥 𞤭𞤣𞤱𞤭 𞤫 𞤲𞤫𞤼𞤪𞤀 28 ...................................... 𞤭𞤥 𞤭 𞤼𞤭𞤶𞤭 𞤃 29 ..........................................", "source": "rag_livres", "qualite": "bronze"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "كدفت عقيدة ، كصوفي يوتكم الاستئناث بمراء الصالحين و بالمنامات", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Complète cette fiche de vocabulaire :\nFrançais : Oreille\nPular : ?\nAdlam : ?", "input": "", "output": "Pular : hetorde\nAdlam : 𞤖𞤫𞤼𞤮𞤪𞤣𞤫", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Traduis en français :", "input": "gertogal", "output": "Poulet", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "يبينقول مقبئ صحابا بمقبئ كلون يوتر قبا ومقبئ", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "اوبيك أمدو ثم يودي امولقه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "Si bededgiti sahaba en nung hadinuhumpa an nukur kul nula adawadata long.", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "جننن وننك وننقده", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "يجب أن يكون هناك مقامس صحبة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "سيطينوا ابنه ديني مياه وددا نوموا جنبوا العلم الكلام في روطكوا الاني ببنك ونددا نتاقوا مفتهد دي لدن فوق أشعرية", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "لقرآن ما برى ونجلك وها مفامنة  ون", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "الشيخ محمد بن عبدله بتاريبه أمور أمور", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "تعطري أهل الله سبحانه وتعالى", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "ميوين اقوى سير أميهي ميويبه من هذا الشيخ كهنبوني أو شرنوجه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Translitère en Adlam :", "input": "kosam", "output": "𞤳𞤮𞤧𞤢𞤥", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "Siyoti habbiri o jangadu awli stifta.", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "و أماك بساكي تيماكو ددوه كو وندمه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "لكن أنا قلت هذه حالة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "أوروه وننو", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "شكادي ونيوه يأي نوه ونو صابة بيهيرا يدولون نوه صابة ونارو يتطبيعي يأي نوه يديرا ينوه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Continue ce texte en pular :", "input": "𞤫 𞤲𞤫𞤼𞤪𞤀 𞤫𞤣𞤤𞤢𞤄 𞤢𞤲𞤢𞤧𞤢𞤸𞤤𞤀 𞤥𞤭𞥅 𞤸𞤢𞤪𞥆 𞤵𞤣𞤦𞤀 𞤭 𞤲𞤢𞤼𞤭𞤪𞤮𞤃 𞥐 𞥑𞥐𞥒/𞥒𞥐/𞥕𞥒 27 𞤭𞥅 𞤥 𞤭𞥅 𞤼𞤭𞥅𞤶𞥆𞤭𞥅 𞤃 𞤭𞥅𞤤𞤵 𞤸 𞤭𞥅𞤯𞤲𞤮𞤺 𞤲𞤢𞤸 𞤭𞥅 𞤶𞥆𞤭𞥅 𞤃 𞤭𞥅𞤼𞤲𞤭𞥅𞤧 𞤭𞥅 𞤭𞥅𞤰𞤲𞤭𞥅𞤖 𞤭𞥅𞤼𞤫 𞤱 𞤢 𞤸 𞤭𞥅𞤳𞤢 𞤲𞤢 𞤍 𞤭𞥅𞤳𞤲𞤮𞤪 𞤮𞤲 𞤭𞥅 𞤥 𞤋 𞤭𞥅𞤲𞤢 𞤮𞤲 𞤭𞥅 𞤥 𞤋 𞤭𞥅 𞤤𞤭𞥅𞤱 𞤮𞤳 𞤢𞤱 𞤭𞥅𞤢𞤱 𞤢 𞤸 𞤭𞥅 𞤻𞤪𞤭𞥅𞤃 𞤭𞥅𞤥𞤢 𞤮𞤲 𞤤𞤮𞤺𞤢𞤼𞤭𞥅𞤶𞥆𞤭𞥅 𞤥 𞤴𞤢𞤖 𞤭𞥅𞤲 𞤢 𞤮𞤳 𞤢𞤱 𞤲𞤵𞤼 𞤭𞥅𞤢𞤱 𞤮𞤐 𞤲𞤢𞤲 𞤮𞤴 𞤮 𞤱 𞤲𞤵𞤼𞤭𞥅𞤢𞤏 𞤭𞥅 𞤦𞤥𞤵𞤤 𞤼𞤢 𞤪𞤭𞥅𞤅 𞤭𞥅 𞤼𞤢 𞤲 𞤭𞥅𞤧𞤱𞤢𞤣𞤪𞤭𞥅𞤊", "output": "𞤢𞤲𞤢𞤶𞥆𞤤𞤀 𞤭𞥅 𞤯𞤢𞤣 𞤼𞤭𞥅 𞤴 𞤼 𞤫𞤂 𞤭𞥅 𞤩𞤫 𞤱 𞤲𞤵 𞤢𞤪𞤢𞤸 𞤢𞤦𞤥𞤉 𞤭𞥅 𞤤𞤭𞥅𞤳 𞤢𞤱 𞤭𞥅𞤥 𞤭 𞤭𞥅𞤧 𞤢𞤼 𞤭𞥅𞤅 𞤭𞥅𞤣𞤱𞤢𞤬 𞤪𞤫𞤼𞤬𞤫𞤣 𞤭𞥅𞤼 𞤫𞤎 𞤭𞥅 𞤳 𞤢𞤱 𞤤𞤢𞤻𞤵𞤥 𞤲𞤵𞤳𞤲𞤮𞤁 𞤭𞥅 𞤲𞤭𞥅𞤣𞤲𞤮𞤪 𞤤𞤢 𞤬 𞤭𞥅𞤼𞤴𞤵𞤍 𞤭𞥅𞤳𞤱𞤢𞤸 𞤤𞤭𞥅 𞤥 𞤭𞥅 𞤪𞤭𞥅𞤼𞤱𞤮𞤈 𞤭𞥅𞤳 𞤮𞤶 𞤤𞤢𞤱𞤫 𞤨 𞤤𞤮𞤱𞤢 𞤂 𞤭𞥅𞤨𞥆𞤮 𞤺 𞤭𞥅𞤤𞤫𞤧 𞤭𞥅𞤧𞤥𞤭𞥅𞤐 𞤮 𞤤 𞤢𞤔 .", "source": "rag_livres", "qualite": "bronze"}
+{"instruction": "En français, galle veut dire :", "input": "", "output": "Maison", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "مجانجنا الشيخ الحسين كهيوتي كونك فقرودة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "انا هرى أن دا أو شرنوجه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Traduis en français :", "input": "mbabba", "output": "Chèvre", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "تجان ينقو بن سبيل سيد الوجود", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "En pular, Terre se dit :", "input": "", "output": "leydi", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne le mot pular pour « Livre » avec son écriture Adlam.", "input": "", "output": "deftere — en Adlam : 𞤁𞤫𞤬𞤼𞤫𞤪𞤫", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "ام فق يتوني يوتن صلب الموضوع", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "ابن حجر العسقلان سيومجها تبيومج يكوية توحيد ومج يكوية كفره", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "ده تقبلو سجو أنك أندو ده", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "ونقو أريك أن ده دفتر ضرور الخريدة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "يجب أن نفوت كذلك ونحن نتسليده ونحن نجده ونحن نأمي أمي أجيبه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "هل إن تري بأرتد إتقبله", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Convertis ce texte en écriture Adlam :", "input": "Unu ati bejulude, sibegaini julude, wadundundun, haura mihawrali bindi kadu windi hinusteli,", "output": "𞤓𞤲𞤵 𞤢𞤼𞤭 𞤦𞤫𞤶𞤵𞤤𞤵𞤣𞤫, 𞤧𞤭𞤦𞤫𞤺𞤢𞤭𞤲𞤭 𞤶𞤵𞤤𞤵𞤣𞤫, 𞤱𞤢𞤣𞤵𞤲𞤣𞤵𞤲𞤣𞤵𞤲, 𞤸𞤢𞤵𞤪𞤢 𞤥𞤭𞤸𞤢𞤱𞤪𞤢𞤤𞤭 𞤦𞤭𞤲𞤣𞤭 𞤳𞤢𞤣𞤵 𞤱𞤭𞤲𞤣𞤭 𞤸𞤭𞤲𞤵𞤧𞤼𞤫𞤤𞤭,", "source": "translit_dataset", "qualite": "silver"}
+{"instruction": "Comment s'écrit ndungu en Adlam ?", "input": "", "output": "𞤐𞤣𞤵𞤲𞤺𞤵", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "حين كان في عالم الملك", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "كيقو قلنا لا اصلى الله عليه وآله وصحبه وسلم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "جو ننسي بأرطي بيوئي نادون دونك ونلو الرنجل", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "ويازغل يهد ابن تيمية لننوصل لك وانا", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "مبقي مقدمة جئيه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne l'écriture Adlam du mot pular puccu.", "input": "", "output": "𞤨𞤵𞤷𞤷𞤵", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "ونقل لك أن يكون هناك ابن تايمية كراماج ابن تايمية ديوني ونهالده ناشيخ عحمد تجاني وناشيخ عبد الرحيم رحمة الله عليهم جميعا ونافيب ابنهالده وكفي أحمد ابن تايمية", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "mbewa", "source": "contribution_communautaire", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "يجب أن يأخذ الانتبنته بشكل عقلًا ونقلًا", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Comment s'écrit jungo en Adlam ?", "input": "", "output": "𞤔𞤵𞤲𞤺𞤮", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Continue ce texte en pular :", "input": "𞤈𞤓 𞤉𞤈𞤓 𞤈𞤓 𞤱𞤵 𞤢 𞤼𞤵 𞤢 𞤪𞤵 𞤪𞤵 𞤭𞥅 𞤪𞤵 24 𞤔𞥆𞤓 𞤃𞤓 𞤒𞤓 𞤏𞤓 𞤐𞤈𞤓 𞤮 𞤶𞥆𞤵 𞤢 𞤥𞤵 𞤢𞤴𞤵 𞤢 𞤱𞤵 𞤢 𞤲𞤪𞤵 . 𞤭𞥅 𞤴𞤵 𞤪𞤢𞤥𞤓 . 𞤳𞤭𞥅𞤶𞥆𞤵 𞤪𞤢𞤥𞤓 .𞤤𞤢𞤺𞤲 𞤤𞤢𞤱𞤢𞤤𞤫𞤱 𞤭𞥅 𞤲𞤴𞤵 𞤪𞤢𞤥𞤓 .𞤲𞤫𞤣𞤲 𞤪𞤫𞤣 𞤵𞤱 𞤭𞥅 𞤣 𞤵 𞤭𞥅𞤪𞤮𞤅 𞤢 𞤥𞤢 𞤪𞤭𞥅𞤲𞤵 𞤤𞤢𞤺𞤲 𞤤𞤢𞤺𞤵𞤣𞤲𞤓 . 𞤣𞤵𞤲𞤵 𞤮𞤲 𞤢𞤪𞤭𞥅𞤅 𞤫 𞤢𞤼𞤲𞤭𞥅𞤄 25 𞤲", "output": "𞤫𞤥 𞤭𞥅 𞤣𞤱𞤭 𞤫 𞤲 𞤫𞤼𞤪𞤀 𞤲𞤫𞤥 𞤭𞥅𞤣𞤱𞤭 𞤫 𞤲𞤫𞤼𞤪𞤀 𞤲𞤫𞤥 𞤢𞤳𞤱𞤢𞤦𞤲 𞤲𞤫𞤲𞤫 𞤈 𞤲𞤫𞤥 𞤢𞤤𞤢 𞤸 𞤫 𞤲𞤫𞤺𞤲𞤢𞤔 𞤲𞤫𞤥 𞤦𞤥𞤫𞤷 𞤲𞤫𞤼𞤩𞤫𞤖 𞤲𞤫𞤥 𞤩𞤴𞤢 𞤲𞤫𞤤𞤮 𞤊 . 𞤲𞤫𞤥 𞤮𞤣𞤲𞤫𞤪 𞤲𞤫𞤼𞤥𞤢𞤇", "source": "rag_livres", "qualite": "bronze"}
+{"instruction": "Donne l'écriture Adlam du mot pular mbaari.", "input": "", "output": "𞤃𞤦𞤢𞤢𞤪𞤭", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "En pular, Mouton se dit :", "input": "", "output": "mbalndu", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "ونقولك التقويل فرع التصحيح", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "En français, koyngal veut dire :", "input": "", "output": "Jambe", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "يد اندي جن دفتر اندي ويما كو لبن يونسا", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "ناتو السلوتن دي استغاث برسول الله صلى الله عليه و آله و صحبه وسلم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "سبو ستكون سك على تقوى انك بأون مختار عالم مريد قادر", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "هذا في كلام الابريز", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "وكيلو ايه توقونا ادو يديك و ناينين دي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "كل هذا منتفن عن هذا الرجل", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "فإذا بشيخ تمي إيشر نوجو قد أقبل نحوي هم فوت مؤردك ميون لأم مصري عن كوهنين فسلم وهشفي وجهي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "أعلاك وتبنتين جلوان دي من ووودي اتابع باو بماي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "درن دي جمعوا سنة للأصلى الله عليه وسلم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "و سمعته يقول لكل شيء علامة و علامة اضراك العبد مشاهدة النبي صلى الله عليه وسلم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "يارتو دي ليلو مجال سوج ردود", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "سبوك وأشعرياً كجوك", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "ميأتك وساكي تيوتو ده", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "ستون بأرعوه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "سبيجي جميل ونندمي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "انديك جوني بيدي بيوت دانيك موضوع ارقى جوني موضوع اوانيك اوني موحالاً ده", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne le mot pular pour « Maison » avec son écriture Adlam.", "input": "", "output": "galle — en Adlam : 𞤘𞤢𞤤𞤤𞤫", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "يجب أن يكون هناك كشفة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Continue ce texte en pular :", "input": "1 2 𞤉𞤁𞤐 𞤉𞤈𞤉𞤐𞤀𞤈𞤀 𞤀𞥄 𞤄 𞤉𞤈𞤉𞤚𞤊𞤉𞤁 3 𞤈𞤀𞥄𞤄 𞤀𞤗𞤀𞥄 𞤖𞤅𞤋 𞤀𞤃𞤋𞤖𞤀𞥄 𞤈𞤄𞤋 𞤂𞤁- 𞤐𞤌𞤘𞤉𞤈𞤌 ⹁𞤁𞤐𞤀𞥄𞤂𞤚𞤈𞤌𞤆 𞥑𞥐𞥒 𞤮𞤧𞤪𞤮𞤃 𞥕𞥒 ⹁𞤫𞤣𞤲𞤢𞥄 𞤧𞤢𞥄 𞤐 4 :𞤲𞤫 𞤤𞤵𞤳𞤤𞤀 𞤥 𞤃 𞤂 𞤁 𞤀 𞤩 𞤇 𞤨 𞤆 𞤅 𞤦 𞤄 𞤋 𞤊 𞤫 𞤉 𞤪 𞤈 𞤏 𞤰 𞤎 𞤍 𞤮 𞤌 𞤵 𞤓 𞤒 𞤑 𞤐 𞤗 𞤸 𞤖 𞤷 𞤕 𞤔 𞤽 𞤛 𞤚 𞤙 𞤘 :𞤲𞤫 𞤧𞤢𞤃", "output": "𞤵 𞤓 𞤮 𞤌 𞤋 𞤫 𞤉 𞤀 :𞤲𞤫 𞤯𞤢 𞤺𞤮𞤴 𞤤𞤵𞤳𞤤𞤀 𞤘𞥋𞤐 𞤔𞥋𞤐 𞤄𞥋𞤐 𞤁𞥋𞤐 𞥋 𞥋 𞤦𞥋 𞥋 𞤘𞤐 𞤔𞤐 𞤄𞤐 𞤁𞤐 𞤲 𞤶𞤲 𞤦𞤲 𞤣𞤲 5 𞤀 𞤣𞤲𞤢𞤲𞤭𞥅 𞤊 𞤀 𞤀 𞤀 𞤀 𞤀 𞤀 𞤀 𞤀 𞤀 𞤀", "source": "rag_livres", "qualite": "bronze"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "واندما أمي أي الله سبحانه وتعالى كما ترون البدرة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "بيتقره بهلا مثلا بماكة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "أنتم تعرفون أن هذا ليس صحيحا ونانا ونكون", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "كوأدي سكر أنه نلوتون دي لتولوتون دي راهينو كم إجانيون كوني أو ترماكو", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "ينقل هذا عن الإمام عبد العزيز", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne le mot pular pour « Crocodile » avec son écriture Adlam.", "input": "", "output": "bammbale — en Adlam : 𞤄𞤢𞤃𞤦𞤢𞤤𞤫", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "هذا الشيء الموجود", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "سراج الدين", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "ان لقبطانه يساري ايو كأونتهم ويهك سيدنا عمرونتهم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "سيطيقوا ليما بيونقوا فاها لكم وداني اوندوا من ان ديوناوا الله جك الله كو تتووني كونتا", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "هتنجى بعد دائماً كلون أدودكم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "يعني كون دو ايولي اون", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "هذا الشيء الوري بيجيجه مداخله نتونيره", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "مسألة يقوموا المهلوبة وأمائي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "تدنج المنان وونر", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "أن جبي أن فوق النسلة أحكي لما نسلة أنقلو", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris « fowru » en alphabet Adlam.", "input": "", "output": "𞤬𞤮𞤱𞤪𞤵", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "ساك وانا ميأتك وادي يوتو ده", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "أي، سييها أيوتي إن أنني أمه نسلة عقلاً ونقلاً", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "وأنا أريد أن تكون هناك إيادة إمونه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "وحدثا الشيخ الصالح المقر", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "قلوا إنو تايمية تبنتيني بعد كلامه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "متن إني أول نتالور الحكومة من هيفي أم أريه؟", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "ابنه ديني كانوا يجنبوا اعلم الكلام يوناتر امنه افالرها ها هنكونوا اوه يتاككوا مبتدية ويتاككوا متكلم هاي متكلم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "أقول هيرودكم يهنكم دمشق وياجل يده تن ابن تيمية وأما يوجل دمشق ويهة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne le mot pular pour « Étoile » avec son écriture Adlam.", "input": "", "output": "hoodere — en Adlam : 𞤖𞤮𞤮𞤣𞤫𞤪𞤫", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Quel est le sens du mot pular bammbale ?", "input": "", "output": "Crocodile", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "كو هبتبه الأوروى نقل أرغل فابه مو", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "وبأول إلى اختلاف شارحيها في فهمها", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "وللرماح بصورة مح وللبغية بصورة الغين", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "Pular fulani langue africaine.", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "كونا دي تبريد جل بنا نقول", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "مواصيل وانين يندن قسالي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "نواصل اجن دون ارن اي كنجل مقبه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "في مقالنة فامرة، سمهوتي مثلاً كمختصر الإمام خليف، كمقدم مقهي مهلكهن نقرهن أندرته عز وجي أو نوادني، كان دردفتره", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Quel est le sens du mot pular gorko ?", "input": "", "output": "Homme", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "muuse", "source": "contribution_communautaire", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "ويجب أن يكون هناك عالية البزار", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Convertis ce texte en écriture Adlam :", "input": "bima na kuachu guldundun guldun, wudu muti wadugungu yirfa mamu kaha tido, wala wata ala aalam.", "output": "𞤦𞤭𞤥𞤢 𞤲𞤢 𞤳𞤵𞤢𞤷𞤸𞤵 𞤺𞤵𞤤𞤣𞤵𞤲𞤣𞤵𞤲 𞤺𞤵𞤤𞤣𞤵𞤲, 𞤱𞤵𞤣𞤵 𞤥𞤵𞤼𞤭 𞤱𞤢𞤣𞤵𞤺𞤵𞤲𞤺𞤵 𞤴𞤭𞤪𞤬𞤢 𞤥𞤢𞤥𞤵 𞤳𞤢𞤸𞤢 𞤼𞤭𞤣𞤮, 𞤱𞤢𞤤𞤢 𞤱𞤢𞤼𞤢 𞤢𞤤𞤢 𞤢𞤢𞤤𞤢𞤥.", "source": "translit_dataset", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "ودتاني هاري ممجموعة الفتاة واندار اون ابن تيمية كو هاهونتو وجمبي علمو الكلام", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "كنكو تجه متبنتين وناء وجه الطبيعية", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "En français, debbo veut dire :", "input": "", "output": "Femme", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "انجليك إذن لونها لتجانيان كوابي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Complète cette fiche de vocabulaire :\nFrançais : Œil\nPular : ?\nAdlam : ?", "input": "", "output": "Pular : yitere\nAdlam : 𞤒𞤭𞤼𞤫𞤪𞤫", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "كون بعد ذلك كو جلوه يئتكم ينلي كون كون بغرد صوفية دائما ينلي دون كوا صوفية تنهير ريو", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "وتشبيه نفس الرؤية بالرؤية", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Complète cette fiche de vocabulaire :\nFrançais : Vieux\nPular : ?\nAdlam : ?", "input": "", "output": "Pular : mawdo\nAdlam : 𞤃𞤢𞤱𞤣𞤮", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris « jaango » en alphabet Adlam.", "input": "", "output": "𞤔𞤢𞤢𞤲𞤺𞤮", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Translitère en Adlam :", "input": "hetorde", "output": "𞤖𞤫𞤼𞤮𞤪𞤣𞤫", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne le mot pular pour « Soleil » avec son écriture Adlam.", "input": "", "output": "naange — en Adlam : 𞤐𞤢𞤢𞤲𞤺𞤫", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris en Adlam :", "input": "Fulani langa suratul kahaf, beya ful jodo hejito, o gondondom befala andugol eskedumdong kodja adung esunakunun yawori dundo.", "output": "𞤊𞤵𞤤𞤢𞤲𞤭 𞤤𞤢𞤲𞤺𞤢 𞤧𞤵𞤪𞤢𞤼𞤵𞤤 𞤳𞤢𞤸𞤢𞤬, 𞤦𞤫𞤴𞤢 𞤬𞤵𞤤 𞤶𞤮𞤣𞤮 𞤸𞤫𞤶𞤭𞤼𞤮, 𞤮 𞤺𞤮𞤲𞤣𞤮𞤲𞤣𞤮𞤥 𞤦𞤫𞤬𞤢𞤤𞤢 𞤢𞤲𞤣𞤵𞤺𞤮𞤤 𞤫𞤧𞤳𞤫𞤣𞤵𞤥𞤣𞤮𞤲𞤺 𞤳𞤮𞤣𞤶𞤢 𞤢𞤣𞤵𞤲𞤺 𞤫𞤧𞤵𞤲𞤢𞤳𞤵𞤲𞤵𞤲 𞤴𞤢𞤱𞤮𞤪𞤭 𞤣𞤵𞤲𞤣𞤮.", "source": "translit_dataset", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "او يدي ابن تيمية مصيفة ده روقه النو يدي لأحمد ابن تيمية", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "أن يراه وهو في عالم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "إن تري الله يقول الله هوردين إن يمقبفوا إصوابه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "هذه من باب المكاشفة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "إلى ما بعد كيارة كؤجندل، كيارة كأفام، كيارة كأدو، كهور برئة دفتر الله اسم الله أمين محمد صلى الله عليه وآله وصحبه وسلم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "وتبنتيني منكم يون ويدي اون قلوا تبنتيني", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "سيدنا عمر ابن الخطابه الانفوتي رضي الله عنه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "وهذه رؤية وهو في عالم الملكود", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "أي تواكهدي كيف أقول لكم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "ويقوية شرط صحبهم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Comment s'écrit biddo en Adlam ?", "input": "", "output": "𞤄𞤭𞤣𞤣𞤮", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "أسلمني لن أهنتني يا صمقه يا صمقه ووضع في يدي صراه ويتبنفهم ونسسهم ووألك جولئ فيها دراهم صالحة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "سندتة مناظرة أنه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "Bismillahirrahmanirrahim. Alhamdulillahi rabbila ulamina wa sallallahu ala Sayyidina Muhammadin Wali wa Sallam.  k Wa sallallahu ala sayedina Muhammadin wa ali wa sallam Wa sallallahu ala sayedina Muhammadin wa ali wa sallam Wa sallallahu ala sayedina Muhammadin wa ali wa sallam Wa sallallahu ala sayedina Muhammadin wa ali wa sallam", "source": "transcription_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "يقولوا جوني أموي إيه بيدي شخصي جاني إيه تاينون ناقون شر نوجو أموي إيه فيه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "عمار بنعالي تاليباج من التايمية وبي وكنت ميلاتكة في خلال الأيام أننا نلقي التي صحبته فيها", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "بايبلتي أو نتانق لسنة كمون", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris en Adlam :", "input": "يجاد جلناكم و جلناتهم حتى يشرع فا يورد. ابن تايمية كلم كيسان و جابه طول انكم يورد ميجادكم و ادرهم و جابه و فنسي تجابه انجل من ادة وجوهن اجيات جسر today.", "output": "يجاد جلناكم و جلناتهم حتى يشرع فا يورد. ابن تايمية كلم كيسان و جابه طول انكم يورد ميجادكم و ادرهم و جابه و فنسي تجابه انجل من ادة وجوهن اجيات جسر 𞤼𞤮𞤣𞤢𞤴.", "source": "translit_dataset", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "في الذين يتكلمون قلوبوني أدني يوترن دينا نلون دينا عرقوننا تروني دا رأسي السلاح", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Traduis en français :", "input": "hetorde", "output": "Oreille", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "يؤلها بجسي نيد أون هورين دين أين أمأ بفوئ صوابا", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Quel est le mot pular pour Vieux ?", "input": "", "output": "mawdo", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "Bihen nung.", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Continue ce texte en pular :", "input": "𞤢𞤏 𞤲𞤫𞤪𞤭𞥅𞤣 𞤫𞤼 𞤮𞤲 𞤲𞤫𞤶𞥆𞤱𞤫𞤊 𞤲𞤫 𞤭𞥅𞤲𞤴𞤮𞤸 𞤮𞤳 𞤲𞤫𞤷𞥆 𞤀 𞤲𞤫𞤪𞤭𞥅𞤯𞤤𞤢 𞤮𞤲 𞤲𞤫𞤩 𞤉 . 𞤲𞤫𞤥 𞤢𞤼𞤵 𞤊 𞤲𞤫𞤤 𞤮𞤘 26 𞤲𞤫𞤥 𞤭𞥅𞤣𞤱𞤭 𞤫 𞤲𞤫𞤼𞤪𞤀 𞤲𞤫𞤥 𞤶𞥆𞤢 𞤸 𞤫 𞤲𞤫𞤼𞤱𞤢𞤖 𞤲𞤫 𞤭𞥅𞤪𞤴𞤢 𞤮𞤳 𞤲𞤫𞤱𞤭𞥅 𞤈 𞤲𞤫𞤥 𞤭𞥅𞤣𞤲𞤭𞥅𞤦 𞤫 𞤲𞤫𞤣𞤲𞤭𞥅𞤏 𞤲𞤫𞤥 𞤢𞤤𞤢 𞤸 𞤫 𞤲𞤫𞤺𞤲𞤢𞤔 . 𞤲𞤫𞤥 𞤪", "output": "𞤮 𞤸 𞤲𞤫𞤼𞤬𞤢𞤐 ! 𞤲𞤫𞤥 𞤭𞥅𞤣𞤱𞤭 𞤫 𞤲𞤫𞤼𞤪𞤀 𞤫𞤣𞤤𞤢𞤄 𞤢𞤲𞤢𞤧𞤢𞤸𞤤𞤀 𞤥𞤭𞥅 𞤸𞤢𞤪𞥆 𞤵𞤣𞤦𞤀 𞤭 𞤲𞤢𞤼𞤭𞤪𞤮𞤃 𞥐 𞥑𞥐𞥒/𞥒𞥐/𞥕𞥒 27 𞤭𞥅 𞤥 𞤭𞥅 𞤼𞤭𞥅𞤶𞥆𞤭𞥅 𞤃", "source": "rag_livres", "qualite": "bronze"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "كيف فالنثبت أولاً؟", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "على مذهب أهل السنة والجماعة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "وليس من كلام الشيخ التجاني", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "أسكل من مهالة كان مثلاً مسألة كشف يلي أن ولياجهنهنشنه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "Quranatun jangata, heba halferi wotere baragi sapho.", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "دا دا فترن دا ونطن قدس دا ونطن ما دا اقود ونطن فادي أموطن أن دا هنجو جي استلاح", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "أسكر من مدهولي إبلو تايمي يهبيه أم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "ويسي ميوي كندر دفتري أنه ميوي وفيه هب", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "الله أمو يدون دوء الإمام ابن حجر", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "لتنتظماً قلولي معنى لفسدتانه لوادتانه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "أخبرك أن تأتي إلى كتاب المدوّنة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "شر نوجو أمو", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "ستايوني فاماك او همبوني هالو ده", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "فان داكي وان ده كلا سفر لتان المداخلة والجماعات المستجدة الان", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne le mot pular pour « Bouche » avec son écriture Adlam.", "input": "", "output": "hunuko — en Adlam : 𞤖𞤵𞤲𞤵𞤳𞤮", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "سمواتني إلى نمي موالنهم إن ذارجي لك فقوة ده", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "الوطن إيراني", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "سيد وَلَذِ آدم هو رسول الله", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "كدفت عقيدة لتويته ان تجد انتوجي نردت امهنوين دان درطن", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "ننسي ارطن الاندن كهن اوني معنى يوترن ده", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "هاري سيطيقون دو كفالسفة كون دو شافعي هدي كون دو اوني كو سلفه هدي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "Pular fulani langue africaine.", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "يجب أن يكون هناك ابن تيمية ويجب أن يكون هناك ابن تيمية", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "الشريفة جسداً وروحاً", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "En français, yitere veut dire :", "input": "", "output": "Œil", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris « koyngal » en alphabet Adlam.", "input": "", "output": "𞤑𞤮𞤴𞤲𞤺𞤢𞤤", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "إم يولنو إم اتشرنو أن ابن تايمية تبي إذا بحث سيبن تايمية يوتي وشرحي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "إيه ترمابين ددوه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "وعندما ستايني موئي فيها", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "En français, hoodere veut dire :", "input": "", "output": "Étoile", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "شرمو دو ابن تيمية نو", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "رؤيت ربنا سبحانه وتعالى وتعالى الله سبحانه وتعالى عن مشابهة الخلائق", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "شيخ مشايخ ثادة الصوفية في زمن ابن حجر", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "وشيخ أحمد تجاني ماكي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "وهذه رؤية وهو في عالم الملكوت", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "وإن قُلنا المرئي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "يجب أن يدفت لدواء جن جريبة المطالعة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Que signifie le mot pular « naange » en français ?", "input": "", "output": "Soleil", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "ميالا حال دي في مجي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Que signifie le mot pular « liingu » en français ?", "input": "", "output": "Poisson", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "يعني فلنضبط المسائل والنضبط الأمور", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "كنو قولا توجوه ام اجانيه ده", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "Fulani langa suratul kahaf, beya ful jodo hejito, o gondondom befala andugol eskedumdong kodja adung esunakunun yawori dundo.", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "لنكون هاله يعني أهل السنة والجماعة فيه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "ʻĪmānā pāso nō go lūdē ʻĪsā yūmān ʻĪsā yūmān", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "فَيُّوْ جُلِمْ بَبِنْكُ جَائِزٌ عَقْلِي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Complète cette fiche de vocabulaire :\nFrançais : Feu\nPular : ?\nAdlam : ?", "input": "", "output": "Pular : jaango\nAdlam : 𞤔𞤢𞤢𞤲𞤺𞤮", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris « wirnde » en alphabet Adlam.", "input": "", "output": "𞤱𞤭𞤪𞤲𞤣𞤫", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Translitère en Adlam :", "input": "nagge", "output": "𞤲𞤢𞤺𞤺𞤫", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Comment dit-on « Feu » en pular ?", "input": "", "output": "jaango", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "نا مداخله ريو ريو", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "رؤية النبي صلى الله عليه وسلم في اليقظة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Translitère en Adlam :", "input": "galle", "output": "𞤘𞤢𞤤𞤤𞤫", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "En pular, Vent se dit :", "input": "", "output": "henndu", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "Yani sabunatabiti e hadis nula adola salara salama, nula adola hadisi habbiri bededgita he said.", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Voici le début d'un texte en pular. Complète-le :", "input": "𞤥𞤌 .𞤤𞤢𞤺𞤲 𞤤𞤢𞤺𞤪𞤮𞤲𞤭𞥅𞤸 𞤢𞤼𞤲𞤌 . 𞤭𞥅 𞤲 𞤢𞤤 𞤲𞤭𞥅𞤣𞤲 𞤭𞥅𞤶𞥆 𞤌 . 𞤪𞤸𞤫𞤶 𞤢𞤳 𞤭𞥅𞤶𞥆 𞤮 𞤭𞥅 𞤣𞤮 𞤧 𞤼𞤢𞤶𞥆 𞤋 . 𞤼𞤢𞤶𞥆 𞤢𞤑 𞤭𞥅𞤳𞤲𞤢𞤣 𞤮𞤲 𞤲𞤮𞤺𞤲 𞤮𞤤𞤢 𞤦𞤥𞤌 19 𞤮 𞤌 𞤣𞤲𞤢𞤲𞤭𞥅 𞤊 𞤌 𞤌 𞤌 𞤌 𞤌 𞤌 𞤌 𞤌 𞤌 𞤌 𞤮 𞤮 𞤮 𞤮 𞤮 𞤮 𞤮 𞤮 𞤮 𞤮 𞤅 𞤄 𞤃 𞤂 𞤁 𞤮 𞤧 𞤮 𞤦 𞤮 𞤥 𞤮 𞤤 𞤮 𞤣 𞤍 𞤊 𞤈 𞤇 𞤆 𞤮 𞤮 𞤬 𞤮 𞤪 𞤮 𞤩 𞤮 𞤨 𞤒 𞤑 𞤐 𞤏 𞤎 𞤮 𞤴 𞤮 𞤳 𞤮 𞤲 𞤮 𞤱 𞤮", "output": "𞤰 𞤘 𞤄 𞤖 𞤕 𞤔 𞤮 𞤺 𞤮 𞤦 𞤮 𞤸 𞤮 𞤷 𞤮 𞤶 𞤘𞥆𞤌 𞤂𞤌 𞤛 𞤚 𞤙 𞤢 𞤺𞤮 𞤮 𞤤𞤮 𞤮 𞤽 𞤮 𞤼 𞤮𞤻 𞤎𞤌 𞤒𞤌 𞤒𞤌 𞤈𞤌 𞤘𞥆𞤌 𞤢 𞤰𞤮 𞤢 𞤴𞤮 𞤭𞥅 𞤴𞤮 𞤢 𞤪𞤮 𞤢 𞤺𞤮 20 𞤌 𞤈𞤌 𞤊𞤌 𞤒𞤌 𞤘𞥆𞤌 𞤮 𞤮 𞤭𞥅 𞤪𞤮 𞤢 𞤬𞤮 𞤭𞥅 𞤴𞤮 𞤭𞥅 𞤺𞤮 .", "source": "rag_livres", "qualite": "bronze"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "إذن أمس على كوني وينيكول جي نور إنكبان جينيك  و", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "أريد أن أقول له بإذن الله تبارك وتعالى", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris « mbalndu » en alphabet Adlam.", "input": "", "output": "𞤃𞤦𞤢𞤤𞤲𞤣𞤵", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "قهون ونكمو ده", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "يؤلوا يو تريج بإذن الله تبارك وتعالى", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "كشفو كو ابن تايمية ندتاناكم ما كو ندتيكم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Translitère ce texte pular en alphabet Adlam.", "input": "Si bededgiti sahaba en nung hadinuhumpa an nukur kul nula adawadata long.", "output": "𞤅𞤭 𞤦𞤫𞤣𞤫𞤣𞤺𞤭𞤼𞤭 𞤧𞤢𞤸𞤢𞤦𞤢 𞤫𞤲 𞤲𞤵𞤲𞤺 𞤸𞤢𞤣𞤭𞤲𞤵𞤸𞤵𞤥𞤨𞤢 𞤢𞤲 𞤲𞤵𞤳𞤵𞤪 𞤳𞤵𞤤 𞤲𞤵𞤤𞤢 𞤢𞤣𞤢𞤱𞤢𞤣𞤢𞤼𞤢 𞤤𞤮𞤲𞤺.", "source": "translit_dataset", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "كنو يانلي مين مين اجابي مثال؟", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Comment s'écrit deftere en Adlam ?", "input": "", "output": "𞤁𞤫𞤬𞤼𞤫𞤪𞤫", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "جورو يونيلاد هو التاكه كما تبقى", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "تهتون هالو ده في سنة هتون هالو ده", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "يجب أن يكون هناك أعلام العالية", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "جنون ونأسكر أن تبدأني شيخ أحمد تجان كم ببيئي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "أن ذلك ليس بالازمين", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Complète cette fiche de vocabulaire :\nFrançais : Poisson\nPular : ?\nAdlam : ?", "input": "", "output": "Pular : liingu\nAdlam : 𞤤𞤭𞤭𞤲𞤺𞤵", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "كهنلو يرسوا كما يترونه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "صلى الله عليه وسلم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Continue ce texte en pular :", "input": ".................................. 𞤢 𞤫𞤣𞤲𞤢𞤲𞤭 𞤊 8 ................................ 𞤢 𞤀𞥄 𞤫𞤣𞤲𞤢𞤲𞤭 𞤊 10 .................................. 𞤫 𞤉 𞤫𞤣𞤲𞤢𞤲𞤭 𞤊 12 ..................................... 𞤫 𞤉 𞤫𞤣𞤲𞤢𞤲𞤭 𞤊 14", "output": "..................................... 𞤭 𞤋 𞤫𞤣𞤲𞤢𞤲𞤭 𞤊 16 ..................................... 𞤭 𞤋 𞤫𞤣𞤲𞤢𞤲𞤭 𞤊 18 .....................................", "source": "rag_livres", "qualite": "bronze"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "Halferi woku baragi sapho.", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "نلاة صلى الله عليه وسلم شخص يهديو حديث مكلا حتى لا يتشوش الإنسان حتى من الوهابية", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Traduis en pular :", "input": "Jambe", "output": "koyngal", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "شرنو جؤون و نائي شخ أحمد جانو إنه اقود كاها لفس", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Translitère en Adlam :", "input": "hoodere", "output": "𞤖𞤮𞤮𞤣𞤫𞤪𞤫", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "القرآن ينسبني إمواجب البجود", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "وانه إسراب ماكو", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "كنوا في أوروه جورو", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Quel est le mot pular pour Femme ?", "input": "", "output": "debbo", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "تمهي ده توجيه وكيلو ايه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "En français, hunuko veut dire :", "input": "", "output": "Bouche", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "لما كك سنمأبي أنا سيد ولدي آدم ولا فخر", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "ما كو نندى اموه ده، مي اندى تنايو هون ده شيخ، دو يومي واتو ده يوتر اموه دن فون، نانا ده مجابه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "الذاتُ فشرت الصحبة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "كهن ادهها ستايوني ويئه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "كأنه ونونرنه يؤغل لورنده حتن جنطائي بجنطائي بجنطائي بجنطائي وهكذا", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "هيل مدينة هيمونا ها واند", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "هم هالتوا بالترجيح لبن يونس كونندي اموره", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "ونطن أن جبه سبوه يوتناني أم ونن إيهم ببهولي أم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "يلي ولياجهنهنشنه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "كهن ارطن يوني معنى يوترن ده", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Que signifie le mot pular « nagge » en français ?", "input": "", "output": "Vache", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "وبين قو سين أنا لا اقصد ان كل تصرفات المداخل الان وما اشبهه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne l'écriture Adlam du mot pular henndu.", "input": "", "output": "𞤖𞤫𞤲𞤲𞤣𞤵", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "إن قُلنا بأن المرئي المثال", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "En pular, Serpent se dit :", "input": "", "output": "mbaari", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "جوني ميأري تصفح مو جنجو أمو مادون أنه نقلو جنجو أمو كنو ميأرتنا أن كنتر دفتريتي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Comment dit-on « Livre » en pular ?", "input": "", "output": "deftere", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "رو ونا كنات لي بول أم مين", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "هرايو دي نوائيه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "و نندن تنتاك", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "واضح جداً كوكم يهل لنوكم كوكم هي يهل داكم كندرية وترى الأخ يأتي بالكلام استكثارا", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "من يتكونك وتبنتيني أمي هولي أون", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris en Adlam :", "input": "Quranatun jangata, heba halferi wotere baragi sapho.", "output": "𞤗𞤵𞤪𞤢𞤲𞤢𞤼𞤵𞤲 𞤶𞤢𞤲𞤺𞤢𞤼𞤢, 𞤸𞤫𞤦𞤢 𞤸𞤢𞤤𞤬𞤫𞤪𞤭 𞤱𞤮𞤼𞤫𞤪𞤫 𞤦𞤢𞤪𞤢𞤺𞤭 𞤧𞤢𞤨𞤸𞤮.", "source": "translit_dataset", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "سبؤدي تفريعيني", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "كو بني آدم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Que signifie le mot pular « henndu » en français ?", "input": "", "output": "Vent", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Ce texte est écrit en latin. Donne la version Adlam.", "input": "Imamu oba oba awo o jangadu awli stifta.", "output": "𞤋𞤥𞤢𞤥𞤵 𞤮𞤦𞤢 𞤮𞤦𞤢 𞤢𞤱𞤮 𞤮 𞤶𞤢𞤲𞤺𞤢𞤣𞤵 𞤢𞤱𞤤𞤭 𞤧𞤼𞤭𞤬𞤼𞤢.", "source": "translit_dataset", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "ميطوري ميطورتي بيطاوه ثانيه ام", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "يلّفان دعو وتشبيه المرئي بالمرئي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Traduis en français :", "input": "jaango", "output": "Feu", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "سلي حديث نلاة رماكي جقر إمقبن جوجو برهاجي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "La ra mbada maki aleyhi salatu wa salam, manqara harfem min kitabillahi falahubihi hasana.", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "صحيح كميها لكم نسين لكي ونارو يتطبيعي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne la traduction pular de : Œil", "input": "", "output": "yitere", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "بل أتاء في القرآن أن الله سبحانه وتعالى", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "Jango kafi nyende jumon, maweta jumon, maenyalal jumongal, nuwadi baraji hewdi, alasubhana huwata waranti annaura, unjumadong hajimareku wunani, wala spanta paalam.", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Translitère en Adlam :", "input": "lewru", "output": "𞤂𞤫𞤱𞤪𞤵", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "كبره يوديكم من الدفت أدي بان سيبوي البحث بفانديك والشرح", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne le mot pular pour « Éléphant » avec son écriture Adlam.", "input": "", "output": "wirnde — en Adlam : 𞤱𞤭𞤪𞤲𞤣𞤫", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "كرم بني آدم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "Imamu oba oba awo o jangadu awli stifta.", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "فرته مفالا امور دي دليل نقلو نسي تيوني نفالا امور دي دليل", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Comment s'écrit debbo en Adlam ?", "input": "", "output": "𞤁𞤫𞤦𞤦𞤮", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris en Adlam :", "input": "Bismillahirrahmanirrahim. Alhamdulillahi rabbila ulamina wa sallallahu ala Sayyidina Muhammadin Wali wa Sallam.", "output": "𞤄𞤭𞤧𞤥𞤭𞤤𞤤𞤢𞤸𞤭𞤪𞤪𞤢𞤸𞤥𞤢𞤲𞤭𞤪𞤪𞤢𞤸𞤭𞤥. 𞤀𞤤𞤸𞤢𞤥𞤣𞤵𞤤𞤭𞤤𞤤𞤢𞤸𞤭 𞤪𞤢𞤦𞤦𞤭𞤤𞤢 𞤵𞤤𞤢𞤥𞤭𞤲𞤢 𞤱𞤢 𞤧𞤢𞤤𞤤𞤢𞤤𞤤𞤢𞤸𞤵 𞤢𞤤𞤢 𞤅𞤢𞤴𞤴𞤭𞤣𞤭𞤲𞤢 𞤃𞤵𞤸𞤢𞤥𞤥𞤢𞤣𞤭𞤲 𞤏𞤢𞤤𞤭 𞤱𞤢 𞤅𞤢𞤤𞤤𞤢𞤥.", "source": "translit_dataset", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "انه كان تصرف الشيخ محمد ابن عبد الوهاب او انه كان يقول بكل ما يقولون", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "ويتار صالح المقر", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "إتلاعنا زي بي فيه يقظى", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "يانداسي انسالتو؟ هيفي اون اريه اون اي بنيريتون سوفية؟", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "أروي في زمن الفتنة بجوجة دينة مقبطة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "والحمد لله رب العالمين", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "بتاوتها بولي مفتهدين عبر كل هاته القرون هراك واندكو هنتو هرتم يردون ابنه ديني", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Comment dit-on « Vache » en pular ?", "input": "", "output": "nagge", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "او اندي دفتر ويت اندي دورة الخريدة اندي جوجي انك فتر ودي ميره", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "كو أرتر جل إنك تقبل أهرانه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "كون كون بونيان ووجه دفت وهابيادين يبو سجو بيدو كرمو كوبة بطبيت اولون تيكيرون ده لنرتمبين بيكيكيده", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Ce texte est écrit en latin. Donne la version Adlam.", "input": "Al hasana tu bihashiri amsa liha.", "output": "𞤀𞤤 𞤸𞤢𞤧𞤢𞤲𞤢 𞤼𞤵 𞤦𞤭𞤸𞤢𞤧𞤸𞤭𞤪𞤭 𞤢𞤥𞤧𞤢 𞤤𞤭𞤸𞤢.", "source": "translit_dataset", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "La kul alif lam min harf, wa lakil alif min harfun, wa lamun harfun, wa min mun harfun.", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "يجب أن يكون هناك حالة كوكا", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "كنونز تايون يكوني تقبره ده وني عارده", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "و تأورو صلب الموضوعه فيقول", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "بيوئي كمعجزة نا كمعجزة ونلو الرنجل ككرامة ككرامة كالي بيوئي ونا كرامة أنت جو نلو الرنجل هم أجب كرامة كونك ونتبتر بالسناد", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "وغندك دي ونطالور الحكومة دي ماريك", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "Al hasana tu bihashiri amsa liha.", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "حق إله مدوه جبه دواوي ونده", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "همون دي ربلي صوفياً كاقل", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "او هون شنامة بيجي سولي اي كندر قرق انابه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "Wa sallallahu ala sayedina Muhammadin wa ali wa sallam", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "En français, lewru veut dire :", "input": "", "output": "Lune", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "أعالوا البيت هولا بين سلفو بيننبا بكجوك دي صناع دناني", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "En pular, Lait se dit :", "input": "", "output": "kosam", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "مقطع محل النزاع", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "وإن شيخ أحمد تجاني", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "كم يونيكو هو كلا بيطو آدم وآدم دخل في ذلك", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "عرضوا بيانه و تأولوه تنذر صلب الموضوعه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "فأنت أخبرك، إذا كنت تأتي إلى أي مختصر الخليل، فأنا نموئة وفيها", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "لو كان فيهما آلهة إلا الله لفسدته الله سبحانه وتعالى دالي صنده كم إليد نججنه رفيته لأمجك وناء الله لوادتانه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "وكن او انتوها اندن كهن بوني هالو ده", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "إليه دو تقبله هري مئن دين تنير", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "سننكون أول في ركونجونجول، ركونجونجول، توتبت", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "وانتنيتك عقلاً أم أنت بي، ووثاري ورطم عقلاً سبوان أموأي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "أو لا رونك ييدة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "اونقوا الله دالي كالقرآن", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "ندار يدفت سيرو الحديث أوندن", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Complète cette fiche de vocabulaire :\nFrançais : Main\nPular : ?\nAdlam : ?", "input": "", "output": "Pular : jungo\nAdlam : 𞤔𞤵𞤲𞤺𞤮", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "بفان بيكون", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "ابن حجر العسقلاني", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "مسألى جديد يبتنقبله", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "ونقل لك، وكيلو اين هر اين ورامي خلط في المسألة، قروني، هون ده اراني رندن، ده مفالة تبانكين قلو", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Continue ce texte en pular :", "input": "...................... 𞤭𞤥 𞤭 𞤼𞤭𞤶𞤭 𞤃 29 .......................................... 𞤮𞤤 𞤵𞤆 𞤮𞤦𞤮𞥅 𞤄 30 ....................... 𞤐𞤉𞤍 𞤉𞤍𞤀 𞤂𞤀𞤙 𞤉𞤁𞤐𞤋 31 .. 𞤐𞤋𞤍 𞤋𞤔𞤌𞥅 𞤑𞤐𞤀𞤒𞤉𞤘𞤐𞤀 𞤐 𞤋𞤄𞥆 𞤉𞤂 32 ... 𞤐𞤋𞤍 𞤋𞤔𞤌𞥅", "output": "𞤑𞤐𞤀𞤒𞤉𞤂𞤉 𞤂 𞤋𞤄𞥆 𞤉𞤂 33 34 𞤭𞤪𞤢𞥄𞤄 .𞤋 𞤢𞤥𞥆𞤭𞤸𞤢𞥄 𞤪𞤦𞤋 𞤀𞤂𞤁 - 𞤲𞤮𞤺𞤫𞤪𞤌 ⹁𞤣𞤲𞤢𞥄𞤤𞤼𞤪𞤮𞤆 𞥙𞥑𞥐𞥒 𞤧𞤪𞤮𞤃 𞥕𞥒 ⹁𞤫𞤣𞤲𞤢𞥄 𞤧𞤢𞥄 𞤐 35 36", "source": "rag_livres", "qualite": "bronze"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "سمي أرون يمأدني أون دليل أون كدفت أهل الصنة والجماعة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "قو حالة مؤهبة وفي داخل هذه الحالة يشاهدون رسول الله صلى الله عليه وسلم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Quel est le mot pular pour Arbre ?", "input": "", "output": "ledde", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Quel est le mot pular pour Maison ?", "input": "", "output": "galle", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "روكو شيرن و جوجو", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "يجب أن يكون لديك أريكة تقبر رؤية النبي ونني", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "En pular, Oiseau se dit :", "input": "", "output": "fowru", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Complète cette fiche de vocabulaire :\nFrançais : Eau\nPular : ?\nAdlam : ?", "input": "", "output": "Pular : ndiyam\nAdlam : 𞤐𞤣𞤭𞤴𞤢𞤥", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "أريد أن أعجاب أقولك بأنه عندما كميوتكم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "ولكنه يجب أن يأخذ الشيخ أحمد تجانه بشكل مؤون وقاني", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "يجاد جلناكم و جلناتهم حتى يشرع فا يورد. ابن تايمية كلم كيسان و جابه طول انكم يورد ميجادكم و ادرهم و جابه و فنسي تجابه انجل من ادة وجوهن اجيات جسر today.", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne le mot pular pour « Homme » avec son écriture Adlam.", "input": "", "output": "gorko — en Adlam : 𞤘𞤮𞤪𞤳𞤮", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "سيمينني إن دي مؤلف", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Translitère en Adlam :", "input": "hunuko", "output": "𞤖𞤵𞤲𞤵𞤳𞤮", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "جون كان ينضغط الخريد أمه مو يوا فيه هد", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "هاي وهبي انكو بنتجي هلو دا يكوكو نلاة رماكي؟", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "أبي فحققتوا أن الله أظهره عليه وعلى حالي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "هاري ألاكوا يقدن المتعرف الصحابي ألاكوا يقدن المتعرف كذا وكذا", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "إذا نهند إنجور أمباته إنونا بعنوان توكيد المقال بأن الأخى لم يزل في خلط بين الأقوال", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "صحابة نلعبين هاريكو بأننا بابي نابي أننا بابي كأنه نجي عيكو سلي كسيرا نلعبو سيبسل منين جلد بهي تطلو صحابة اماككو همو امو هيكويرل وفي لنو لنو", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Que signifie le mot pular « sukunyel » en français ?", "input": "", "output": "Bébé", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Comment dit-on « Eau » en pular ?", "input": "", "output": "ndiyam", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "وندما كما رأىه الصحابة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "إذن نور تأيوه الألانه، لو أكون تووني كو دليل مكالكو هاليكون، ونأدونه قدنك قصة عبدالله ابن عمر ابن حرام، ميأدي كوهلت أولنه ميته، ميأدني أن قصة جي أردك أو قرآنه، ميبك يتدى، كوهلت أديها سيديرت أم تنسى", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "يتون مسألة متويته أهل الصنة والجماعة فوهن يهارئوا", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "كالذهاب عادي ، حضور عادي ، نغوب نغوب", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "امام الصيوتي رحمه الله متبارك وتعالى او هالين دون جلكو ادي امام الصيوتي او ادي تقبق باو اتاب انتيني لا رصلى الله عليه وسلم نهي اي اي كنباتهم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne la traduction pular de : Lion", "input": "", "output": "lionde", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "هب نرجل يوتر اندين وإلا محل يوتر ماد اندين ونا خبر مؤمن طيمية ونورت دقو", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Voici le début d'un texte en pular. Complète-le :", "input": "𞥋𞤐 𞤔𞥋𞤐 𞤄𞥋𞤐 𞤁𞥋𞤐 𞥋 𞥋 𞤦𞥋 𞥋 𞤘𞤐 𞤔𞤐 𞤄𞤐 𞤁𞤐 𞤲 𞤶𞤲 𞤦𞤲 𞤣𞤲 5 𞤀 𞤣𞤲𞤢𞤲𞤭𞥅 𞤊 𞤀 𞤀 𞤀 𞤀 𞤀 𞤀 𞤀 𞤀 𞤀 𞤀 𞤅 𞤄 𞤃 𞤂 𞤁 𞤢 𞤧 𞤢𞤦 𞤢 𞤥 𞤢 𞤤 𞤢𞤣 𞤍 𞤊 𞤈 𞤇 𞤆 𞤢 𞤢 𞤬 𞤢 𞤪 𞤢𞤩 𞤢𞤨 𞤒 𞤑 𞤐 𞤏 𞤎 𞤢𞤴 𞤢 𞤳 𞤢 𞤲 𞤢 𞤱 𞤢 𞤰 𞤘 𞤗 𞤖 𞤕 𞤔 𞤢𞤺 𞤢 𞤹 𞤢𞤸 𞤢 𞤷 𞤢𞤶 𞤀 𞤛 𞤚 𞤙 𞤘 𞤲 𞤢 𞤢 𞤽 𞤢 𞤼 𞤢𞤻 𞤢𞤺 𞤈𞤀 𞤅𞤀 𞤃𞤀 𞤂𞤀 𞤁𞤀 𞤢 𞤥𞤢 𞤢 𞤪𞤢 𞤢 𞤧𞤢 𞤢 𞤤𞤢 𞤢 𞤣𞤢 6 𞤕𞥆𞤀 𞤑𞤀 𞤐𞤀 𞤏𞤀 𞤍𞤀 𞤢 𞤷𞥆 𞤢 𞤢 𞤳𞤢 𞤢 𞤲𞤀 𞤢 𞤱𞤢 𞤢 𞤯𞤢 𞤀𞤆 𞤀𞤑 𞤀𞤍 𞤀𞤂 𞤀𞤁 𞤲", "output": "𞤢𞤨 𞤲 𞤢𞤳 𞤲 𞤢 𞤲 𞤢𞤤 𞤲 𞤢𞤣 𞤀𞤍𞤀 𞤀𞤈𞤀 𞤀𞤅𞤀 𞤀𞤃𞤀 𞤀𞤁𞤀 𞤲 𞤢𞤯𞤢 𞤲 𞤢 𞤪𞤢 𞤲 𞤢𞤧𞤢 𞤲 𞤢𞤥𞤢 𞤲 𞤢𞤣𞤢 𞤏𞤀 𞤐𞤀 𞤙𞤀 𞤀𞤙𞤀 𞤀𞤏𞤀 𞤢 𞤱𞤢 𞤢 𞤲𞤢 𞤢 𞤻𞤢 𞤲 𞤢𞤻𞤢 𞤲 𞤢𞤱𞤢 .𞤢𞤥𞤢 𞤢𞤲𞤀 .𞤢𞤧𞤢 𞤢𞤲𞤀 .𞤢𞤱𞤢 𞤢𞤲𞤀 .𞤢𞤻𞤢 𞤢𞤲𞤀 .𞤢𞤯𞤢 𞤢𞤲𞤀 .𞤢 𞤧𞤢 𞤢𞤪𞤢 𞤢𞤲𞤀 7 𞤀 𞤀 𞤣𞤲𞤢𞤲𞤭𞥅 𞤊 𞤀 𞤀 𞤀 𞤀 𞤀 𞤀 𞤀 𞤀 𞤀 𞤀", "source": "rag_livres", "qualite": "bronze"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "كو متوتي إي يموه دقي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "أنه سافر إلى دمشقة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "توا أجنجي مقدمة وانشرنوا ببن فراني", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Ce texte est écrit en latin. Donne la version Adlam.", "input": "Hara idon mihawrali sunna karun tebite bina nila rasulallahu aleyhi wa sallam.", "output": "𞤖𞤢𞤪𞤢 𞤭𞤣𞤮𞤲 𞤥𞤭𞤸𞤢𞤱𞤪𞤢𞤤𞤭 𞤧𞤵𞤲𞤲𞤢 𞤳𞤢𞤪𞤵𞤲 𞤼𞤫𞤦𞤭𞤼𞤫 𞤦𞤭𞤲𞤢 𞤲𞤭𞤤𞤢 𞤪𞤢𞤧𞤵𞤤𞤢𞤤𞤤𞤢𞤸𞤵 𞤢𞤤𞤫𞤴𞤸𞤭 𞤱𞤢 𞤧𞤢𞤤𞤤𞤢𞤥.", "source": "translit_dataset", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "يجب أن يكون هناك كشفة كوبي جي ميران تيجي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "ما عندكم وانشرنوا جؤمي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "أي، دون كنا مستحيل نعقلي، ووثى وندي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "بَيَوَنْجَلُ أُوِيْ وَنْدِمَكُوَ كَنْكُوَ فَوْنَةُ مُفَالَا", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "تبكو أفهم ونكو محالونو", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "دسوا الدفتر من تناتي أميرات أجنبو ده", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "هاري ابن تيمية", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "لاكِكَ أُعُرُو وَنَصَحَابَاجُو", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Voici le début d'un texte en pular. Complète-le :", "input": "𞤢 𞤭𞥅 𞤪𞤢 𞤭𞥅 𞤲 𞤭 𞤭𞥅 𞤱𞤭 𞤭𞥅 𞤯𞤢 . 𞤭𞥅 𞤤𞤭 𞤭𞥅𞤣𞤋 . 𞤪𞤢 𞤼𞤭𞥅𞤬 𞤢𞤳 𞤭𞥅 𞤣𞤋 . 𞤭𞥅 𞤤𞤭 𞤲𞤢 𞤲𞤢𞤴𞤭𞥅𞤣𞤐 . 𞤼𞤢𞤶𞥆 𞤋 𞤮𞤥 𞤭𞥅 𞤲𞤭 𞤮𞤖 .𞤭𞥅𞤦𞤥𞤭𞥅𞤦 𞤢𞤤𞤭 𞤢𞤥𞤢 𞤲 𞤭 𞤲𞤮 𞤮𞤦𞤮 𞤄 17 𞤮 𞤌 𞤣𞤲𞤢𞤲𞤭𞥅 𞤊 𞤌 𞤌 𞤌 𞤌 𞤌 𞤌 𞤌 𞤌 𞤌 𞤌 𞤮 𞤮 𞤮 𞤮 𞤮 𞤮 𞤮 𞤮 𞤮 𞤮 𞤅 𞤄 𞤃 𞤂 𞤁 𞤮 𞤧 𞤮𞤦 𞤮 𞤥 𞤮 𞤤 𞤮𞤣 𞤍 𞤊 𞤈 𞤇 𞤆 𞤮 𞤮 𞤬 𞤮𞤪 𞤮𞤩 𞤮𞤨 𞤒 𞤑 𞤐 𞤏 𞤎 𞤮𞤴 𞤮 𞤳 𞤮 𞤲", "output": "𞤮 𞤱 𞤮 𞤰 𞤘 𞤗 𞤖 𞤕 𞤔 𞤮𞤺 𞤮 𞤹 𞤮𞤸 𞤮 𞤷 𞤮𞤶 𞤃𞤌 𞤌 𞤛 𞤚 𞤙 𞤮 𞤥𞤮 𞤲 𞤮 𞤮 𞤽 𞤮 𞤼 𞤮𞤻 𞤎𞤌 𞤂𞤌 𞤘𞥆𞤌 𞤔𞥆𞤌 𞤑𞤌 𞤢 𞤰𞤮 𞤢 𞤤𞤮 𞤢 𞤺𞤮 𞤭𞥅𞤶𞥆 𞤮 𞤢 𞤳 𞤮 18 𞤈𞤌 𞤎𞤌 𞤎𞤌 𞤒𞤌 𞤆𞥆𞤌 𞤮 𞤪𞤮 𞤢 𞤰 𞤮 𞤮 𞤰𞤮 𞤢 𞤴𞤮 𞤢 𞤨𞥆𞤮 .", "source": "rag_livres", "qualite": "bronze"}
+{"instruction": "Quel est le sens du mot pular kosam ?", "input": "", "output": "Lait", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "هو فامن إصلاحة جينوب الأين فلادة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "ميين ستاووني بيوي ميهرسي كما يتاك", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "تمام هذه هي شوبها التي أتابها خوضيلة الشيخ الحصين", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "في حيات برزخية هذه لا تسمى رؤية طبيعية", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne le mot pular pour « Lion » avec son écriture Adlam.", "input": "", "output": "lionde — en Adlam : 𞤤𞤭𞤮𞤲𞤣𞤫", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "هندك يقولون ما حلو مزعوه جنجو و نارونه فأي جنجو يقولونه فأي جنجو و نارونه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "وندما هذه الرؤية ليس الطبيعية", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "يدون أن هذا ليس في كل وجوه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "كو أندين بالكو مهل لنوكم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Quel est le mot pular pour Étoile ?", "input": "", "output": "hoodere", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "يعني ونا أي بندرو", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "أرون أي بنيرون أون صوفي أون", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "لما قال النبي صلى الله عليه وسلم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Translitère en Adlam :", "input": "lionde", "output": "𞤤𞤭𞤮𞤲𞤣𞤫", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "شيخ أحمد تجاني ما كان", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "يجب أن يكون هناك ابن تيمية", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "وأحمد ابن الحريمي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "مصيب جلبي تدو ببا ونقول له يتو والله بالجسني دجولة بين انلاد ومائلين", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Traduis en français :", "input": "mawdo", "output": "Vieux", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "كنننننو و ياريها و اجككو كويلنو", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "أيها كهنم مفالا ونجابور ده", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "أو إمام السيوطي هالينو أمو كده كوأدي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "هدئونا هندي مجلس الرابع عشر سب وانيبو", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "يجب أن يكون هناك أعلام العالية في مناقب ابن تيمية", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "إما كد المألن أخونا الفاضل الشيخ الحسين بادكار", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "هذا لم ينقل عن الشيخ التجاني رضي الله عنه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "ساريا ننيه تو مقبئ", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "يتدين أمو يجنمو حالا نمو كوني قبرني ما كو كو يو ترتلن بوداني كونغل ويسفناك مفيهور مو", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "ونون داري سينبوا ديرو التامة داريقه وسمعته ونا قولوا لي بيدة لنري شيخ حماة تجان دي ونك وياسلا والتجاني ينقل", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "En pular, Bouche se dit :", "input": "", "output": "hunuko", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "واندمه وتعون يجده وتجوته يجده ده تقبره جلا كما كمولهم عرضوا وبيانه وما كنوا", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "و توا تحقيق علي مراندون قلوبوني حقيقة أنا هذه المشكلة التي أراها في من يتكلم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "ما هو اعز وأفضل من دخول الجنة في رؤية النبي صلى الله عليه وسلم", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "شر نوجأ وي مشيرا للجواهر بصورة جهة وللجامع بصورة جع", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "وانتو انت لأرطاوية شخصي جانوي ويئي طواني", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "إذن ، أم لو سصوفي أريها لأم لو بل في كتب العقائد", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Comment s'écrit ndiyam en Adlam ?", "input": "", "output": "𞤐𞤣𞤭𞤴𞤢𞤥", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "وإنه تدنج المنان وونر", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Traduis en pular :", "input": "Bébé", "output": "sukunyel", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "بل هو ابن حجر العسقلان سيؤوي بتامة إدو قاعدة لشيخ محمد ابن عبد الوهاب", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "Pular fulani langue africaine. Pular fulani langue africaine. Pular fulani langue africaine. Pular fulani langue africaine. Pular fulani langue africaine. Pular fulani langue africaine. Pular fulani langue africaine. Pular fulani langue africaine. Pular fulani langue africaine. Pular fulani langue africaine. Pular fulani langue africaine. Pular fulani langue africaine. Pular fulani langue africaine. Pular fulani langue africaine. ʻĪmānā pāso nō go lūdē ʻĪsā yūmān ʻĪsā yūmān   ʻĀʻ ʻĀʻ �", "source": "transcription_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "لي ما جالي سوجي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "بأرئة كنبتن في رؤية طبيعية مكالي أين بي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Quel est le sens du mot pular jungo ?", "input": "", "output": "Main", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "bima na kuachu guldundun guldun, wudu muti wadugungu yirfa mamu kaha tido, wala wata ala aalam.", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne le mot pular pour « Lait » avec son écriture Adlam.", "input": "", "output": "kosam — en Adlam : 𞤳𞤮𞤧𞤢𞤥", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Comment s'écrit naange en Adlam ?", "input": "", "output": "𞤐𞤢𞤢𞤲𞤺𞤫", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "اجدنا هذا شيء اون الثابت", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Comment s'écrit gertogal en Adlam ?", "input": "", "output": "𞤘𞤫𞤪𞤼𞤮𞤺𞤢𞤤", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Que signifie le mot pular « mbaari » en français ?", "input": "", "output": "Serpent", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "وفي رغل مسألاتي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "أن يراه الراعي وهو في عالم الملك", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "هتون دل نرد كنغ المقهلون", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "سوف يما وبالترجيح ارتأوي افي اصبغ كو نقل توهر ومرتبك اندر مذهب هاريه وترجيحه اصبغني ما جنكون اندي اماكو", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "يدرب دفتة امان إنه هالي طوانانه ويئتي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "يجب أن يكون هناك حالة كوكا", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "Hara idon mihawrali sunna karun tebite bina nila rasulallahu aleyhi wa sallam.", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Traduis en français :", "input": "puccu", "output": "Cheval", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "ورزقنا الإخلاص وفي النية والقولي بنعمل يتيجوما رحماني مجول إيكوه عدناني مدوأني كشيخ تجاني أكل ربدي لقرآن ميأرض لنك صحابا بي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "نسأل الله السلامة", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Continue ce texte en pular :", "input": "𞤌 𞤑𞤌 𞤢 𞤰𞤮 𞤢 𞤤𞤮 𞤢 𞤺𞤮 𞤭𞥅𞤶𞥆 𞤮 𞤢 𞤳 𞤮 18 𞤈𞤌 𞤎𞤌 𞤎𞤌 𞤒𞤌 𞤆𞥆𞤌 𞤮 𞤪𞤮 𞤢 𞤰 𞤮 𞤮 𞤰𞤮 𞤢 𞤴𞤮 𞤢 𞤨𞥆𞤮 . 𞤭𞥅 𞤪𞤮 𞤴 𞤮𞤳 𞤮𞤪𞤌 .𞤤𞤢𞤺𞤲 𞤤𞤢𞤬𞤢 𞤦 𞤢𞤦𞤥𞤌 .𞤤𞤢𞤺𞤲 𞤤𞤢𞤺𞤪𞤮𞤲𞤭𞥅𞤸 𞤢𞤼𞤲𞤌", "output": ". 𞤭𞥅 𞤲 𞤢𞤤 𞤲𞤭𞥅𞤣𞤲 𞤭𞥅𞤶𞥆 𞤌 . 𞤪𞤸𞤫𞤶 𞤢𞤳 𞤭𞥅𞤶𞥆 𞤮 𞤭𞥅 𞤣𞤮 𞤧 𞤼𞤢𞤶𞥆 𞤋 .", "source": "rag_livres", "qualite": "bronze"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "كوهوتي في منامات يكتبوا بيوينون بوكو تفناغون كوفناغون", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "القرآن ينسبني إم الممكن", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "ابن حجر العسخلاني", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "ومرتبك مذهب مالك هوا هاريه هاب اختيار ابن القاسم لا ان يد اندي لك مقدمة شرنو جؤوينه واشيروا بن اختياري لن لخني", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Voici le début d'un texte en pular. Complète-le :", "input": "𞤪𞤭 𞤭𞥅 𞤧𞤢 𞤭𞥅 𞤥 𞤭 𞤢 𞤤𞤭 𞤢 𞤣𞤭 16 𞤔𞥆𞤀 𞤈𞤀 𞤐𞤋 𞤏𞤋 𞤍𞤀 𞤭𞥅 𞤶𞥆 𞤢 𞤭𞥅 𞤪𞤢 𞤭𞥅 𞤲 𞤭 𞤭𞥅 𞤱𞤭 𞤭𞥅 𞤯𞤢 . 𞤭𞥅 𞤤𞤭 𞤭𞥅𞤣𞤋 . 𞤪𞤢 𞤼𞤭𞥅𞤬", "output": "𞤢𞤳 𞤭𞥅 𞤣𞤋 . 𞤭𞥅 𞤤𞤭 𞤲𞤢 𞤲𞤢𞤴𞤭𞥅𞤣𞤐 .", "source": "rag_livres", "qualite": "bronze"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "يوتت دليل ايجندل سينادو هالي انجل كنجل فرته مفالا جوكو ديجندل", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "كون هناك إيادة إمونه", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Traduis en pular :", "input": "Oreille", "output": "hetorde", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "لن يكون الدهاء مسألة جي", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "أنجليك في عالم الملك", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "في شروح كتب السنن", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "انجليكي كدفت حديث امهنو تن", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "قل أن أولي كبية رؤية غير طبيعية", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "و بأرابه يرس كما يترونه يرسونه لأنه كما يترونك تقبر صلاة الفاتح", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "Pular fulani langue africaine.", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "ده في لتكن بريا وترمع بنده هو عند التجانية", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Donne la traduction pular de : Éléphant", "input": "", "output": "wirnde", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Donne un exemple de phrase en pular.", "input": "", "output": "فدعوت له أمي مدو أنيمه وفريحت بذلك ميويل تريدون", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "انجليك. ايه. صمفالهم ارواي و اواند ما تاريبه ابن تايمية و يمؤندك و يرمي ماك و علمه بما في القلوب و ما الى ذلك.", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Quel est le sens du mot pular ledde ?", "input": "", "output": "Arbre", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Complète cette fiche de vocabulaire :\nFrançais : Femme\nPular : ?\nAdlam : ?", "input": "", "output": "Pular : debbo\nAdlam : 𞤁𞤫𞤦𞤦𞤮", "source": "mots_jeu", "qualite": "gold"}
+{"instruction": "Formule une phrase en pular.", "input": "", "output": "أونك دي أون بغري أون صوفي أون أور أون ودردني", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "جنو مي ارتى اجابة قل، يوجه ايو تريجي كيو تلون ده، كهلو ده يلون لنده للنده ده مجابه تاكو، ابداً", "source": "segment_telegram", "qualite": "silver"}
+{"instruction": "Écris une phrase en pular.", "input": "", "output": "من أفاعل الاندارة دون شيخة الحسين", "source": "segment_telegram", "qualite": "silver"}

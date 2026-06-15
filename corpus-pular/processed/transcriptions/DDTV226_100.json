@@ -1,0 +1,129 @@
+{
+  "fichier": "corpus-pular\\processed\\telegram\\audio\\DDTV226_100.mp3",
+  "nom": "DDTV226_100.mp3",
+  "texte": "Pular fulani langue africaine. Pular fulani langue africaine. Pular fulani langue africaine. Pular fulani langue africaine. Pular fulani langue africaine. Pular fulani langue africaine. Pular fulani langue africaine. Pular fulani langue africaine. Pular fulani langue africaine. Pular fulani langue africaine. Pular fulani langue africaine. Pular fulani langue africaine. Pular fulani langue africaine. Pular fulani langue africaine. ʻĪmānā pāso nō go lūdē ʻĪsā yūmān ʻĪsā yūmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān  ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻ ʻĀʻ �",
+  "langue_detect": "yo",
+  "segments": [
+    {
+      "debut": 0.0,
+      "fin": 2.0,
+      "texte": "Pular fulani langue africaine.",
+      "confiance": -0.1385,
+      "sans_voix": false
+    },
+    {
+      "debut": 2.0,
+      "fin": 4.0,
+      "texte": "Pular fulani langue africaine.",
+      "confiance": -0.1385,
+      "sans_voix": false
+    },
+    {
+      "debut": 4.0,
+      "fin": 6.0,
+      "texte": "Pular fulani langue africaine.",
+      "confiance": -0.1385,
+      "sans_voix": false
+    },
+    {
+      "debut": 6.0,
+      "fin": 8.0,
+      "texte": "Pular fulani langue africaine.",
+      "confiance": -0.1385,
+      "sans_voix": false
+    },
+    {
+      "debut": 8.0,
+      "fin": 10.0,
+      "texte": "Pular fulani langue africaine.",
+      "confiance": -0.1385,
+      "sans_voix": false
+    },
+    {
+      "debut": 10.0,
+      "fin": 12.0,
+      "texte": "Pular fulani langue africaine.",
+      "confiance": -0.1385,
+      "sans_voix": false
+    },
+    {
+      "debut": 12.0,
+      "fin": 14.0,
+      "texte": "Pular fulani langue africaine.",
+      "confiance": -0.1385,
+      "sans_voix": false
+    },
+    {
+      "debut": 14.0,
+      "fin": 16.0,
+      "texte": "Pular fulani langue africaine.",
+      "confiance": -0.1385,
+      "sans_voix": false
+    },
+    {
+      "debut": 16.0,
+      "fin": 18.0,
+      "texte": "Pular fulani langue africaine.",
+      "confiance": -0.1385,
+      "sans_voix": false
+    },
+    {
+      "debut": 18.0,
+      "fin": 20.0,
+      "texte": "Pular fulani langue africaine.",
+      "confiance": -0.1385,
+      "sans_voix": false
+    },
+    {
+      "debut": 20.0,
+      "fin": 22.0,
+      "texte": "Pular fulani langue africaine.",
+      "confiance": -0.1385,
+      "sans_voix": false
+    },
+    {
+      "debut": 22.0,
+      "fin": 24.0,
+      "texte": "Pular fulani langue africaine.",
+      "confiance": -0.1385,
+      "sans_voix": false
+    },
+    {
+      "debut": 24.0,
+      "fin": 26.0,
+      "texte": "Pular fulani langue africaine.",
+      "confiance": -0.1385,
+      "sans_voix": false
+    },
+    {
+      "debut": 26.0,
+      "fin": 28.0,
+      "texte": "Pular fulani langue africaine.",
+      "confiance": -0.1385,
+      "sans_voix": false
+    },
+    {
+      "debut": 28.0,
+      "fin": 58.0,
+      "texte": "ʻĪmānā pāso nō go lūdē ʻĪsā yūmān ʻĪsā yūmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān ʻĪmān",
+      "confiance": -0.2372,
+      "sans_voix": true
+    },
+    {
+      "debut": 58.0,
+      "fin": 75.45,
+      "texte": "ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻĀ ʻĀʻ ʻĀʻ �",
+      "confiance": -0.1687,
+      "sans_voix": true
+    }
+  ],
+  "meta": {
+    "modele": "small",
+    "duree_traitement_s": 181.79,
+    "taille_fichier_oct": 604174,
+    "date": "2026-05-06T20:31:29.814449",
+    "nb_segments": 16,
+    "nb_tokens": 117
+  },
+  "statut": "ok"
+}

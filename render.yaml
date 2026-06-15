@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: pular-ia
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    healthCheckPath: /api/stats
+    envVars:
+      - key: WEBAPP_PORT
+        value: "8080"
+      - key: WHISPER_MODEL_BOT
+        value: "tiny"
+    disk:
+      name: corpus-pular
+      mountPath: /app/corpus-pular
+      sizeGB: 5

@@ -1,0 +1,15 @@
+{
+  "total_contributions": 5,
+  "total_validations": 5,
+  "contributeurs": {
+    "anonyme": {
+      "nom": "anonyme",
+      "contributions": 4
+    },
+    "anonyme_jeu": {
+      "nom": "anonyme_jeu",
+      "contributions": 5
+    }
+  },
+  "total_corrections": 4
+}

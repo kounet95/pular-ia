@@ -1,0 +1,66 @@
+{
+  "fichier": "corpus-pular\\processed\\telegram\\audio\\DDTV226_130.mp3",
+  "nom": "DDTV226_130.mp3",
+  "texte": "Ayon nuhida ekongu dibulbedu debeng ekarama koopeng. Siyoti habbiri o jangadu awli stifta. Bihen nung. Imamu oba oba awo o jangadu awli stifta. Yani sabunatabiti e hadis nula adola salara salama, nula adola hadisi habbiri bededgita he said. Si bededgiti sahaba en nung hadinuhumpa an nukur kul nula adawadata long. ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ",
+  "langue_detect": "yo",
+  "segments": [
+    {
+      "debut": 0.0,
+      "fin": 4.88,
+      "texte": "Ayon nuhida ekongu dibulbedu debeng ekarama koopeng.",
+      "confiance": -0.7901,
+      "sans_voix": false
+    },
+    {
+      "debut": 4.88,
+      "fin": 8.56,
+      "texte": "Siyoti habbiri o jangadu awli stifta.",
+      "confiance": -0.7901,
+      "sans_voix": false
+    },
+    {
+      "debut": 8.56,
+      "fin": 9.88,
+      "texte": "Bihen nung.",
+      "confiance": -0.7901,
+      "sans_voix": false
+    },
+    {
+      "debut": 9.88,
+      "fin": 15.04,
+      "texte": "Imamu oba oba awo o jangadu awli stifta.",
+      "confiance": -0.7901,
+      "sans_voix": false
+    },
+    {
+      "debut": 15.04,
+      "fin": 22.28,
+      "texte": "Yani sabunatabiti e hadis nula adola salara salama, nula adola hadisi habbiri bededgita he said.",
+      "confiance": -0.7901,
+      "sans_voix": false
+    },
+    {
+      "debut": 22.28,
+      "fin": 28.12,
+      "texte": "Si bededgiti sahaba en nung hadinuhumpa an nukur kul nula adawadata long.",
+      "confiance": -0.7901,
+      "sans_voix": false
+    },
+    {
+      "debut": 28.12,
+      "fin": 54.61,
+      "texte": "ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ ǐ",
+      "confiance": -0.0623,
+      "sans_voix": true
+    }
+  ],
+  "meta": {
+    "modele": "small",
+    "duree_traitement_s": 304.53,
+    "taille_fichier_oct": 437518,
+    "date": "2026-05-06T06:26:29.938052",
+    "nb_segments": 7,
+    "nb_tokens": 124
+  },
+  "statut": "ok"
+}

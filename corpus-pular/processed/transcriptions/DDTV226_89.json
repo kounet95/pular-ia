@@ -1,0 +1,101 @@
+{
+  "fichier": "corpus-pular\\processed\\telegram\\audio\\DDTV226_89.mp3",
+  "nom": "DDTV226_89.mp3",
+  "texte": "Fulani langa suratul kahaf, beya ful jodo hejito, o gondondom befala andugol eskedumdong kodja adung esunakunun yawori dundo. Hara idon mihawrali sunna karun tebite bina nila rasulallahu aleyhi wa sallam. Unu ati bejulude, sibegaini julude, wadundundun, haura mihawrali bindi kadu windi hinusteli, itadun nila ramedi muhammadunu aleyhi salatu wa salam, bima na kuachu guldundun guldun, wudu muti wadugungu yirfa mamu kaha tido, wala wata ala aalam. kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa k Quranatun jangata, heba halferi wotere baragi sapho. La ra mbada maki aleyhi salatu wa salam, manqara harfem min kitabillahi falahubihi hasana. Al hasana tu bihashiri amsa liha. La kul alif lam min harf, wa lakil alif min harfun, wa lamun harfun, wa min mun harfun. Halferi woku baragi sapho. Jango kafi nyende jumon, maweta jumon, maenyalal jumongal, nuwadi baraji hewdi, alasubhana huwata waranti annaura, unjumadong hajimareku wunani, wala spanta paalam.",
+  "langue_detect": "sw",
+  "segments": [
+    {
+      "debut": 0.0,
+      "fin": 10.0,
+      "texte": "Fulani langa suratul kahaf, beya ful jodo hejito, o gondondom befala andugol eskedumdong kodja adung esunakunun yawori dundo.",
+      "confiance": -0.9594,
+      "sans_voix": true
+    },
+    {
+      "debut": 10.0,
+      "fin": 16.44,
+      "texte": "Hara idon mihawrali sunna karun tebite bina nila rasulallahu aleyhi wa sallam.",
+      "confiance": -0.7993,
+      "sans_voix": true
+    },
+    {
+      "debut": 16.44,
+      "fin": 24.08,
+      "texte": "Unu ati bejulude, sibegaini julude, wadundundun, haura mihawrali bindi kadu windi hinusteli,",
+      "confiance": -0.7993,
+      "sans_voix": true
+    },
+    {
+      "debut": 24.08,
+      "fin": 28.08,
+      "texte": "itadun nila ramedi muhammadunu aleyhi salatu wa salam,",
+      "confiance": -0.7993,
+      "sans_voix": true
+    },
+    {
+      "debut": 28.08,
+      "fin": 33.68,
+      "texte": "bima na kuachu guldundun guldun, wudu muti wadugungu yirfa mamu kaha tido, wala wata ala aalam.",
+      "confiance": -0.7993,
+      "sans_voix": true
+    },
+    {
+      "debut": 33.68,
+      "fin": 63.68,
+      "texte": "kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa k",
+      "confiance": -0.0802,
+      "sans_voix": true
+    },
+    {
+      "debut": 63.68,
+      "fin": 70.92,
+      "texte": "Quranatun jangata, heba halferi wotere baragi sapho.",
+      "confiance": -0.7135,
+      "sans_voix": true
+    },
+    {
+      "debut": 70.92,
+      "fin": 77.96,
+      "texte": "La ra mbada maki aleyhi salatu wa salam, manqara harfem min kitabillahi falahubihi hasana.",
+      "confiance": -0.7135,
+      "sans_voix": true
+    },
+    {
+      "debut": 77.96,
+      "fin": 80.64,
+      "texte": "Al hasana tu bihashiri amsa liha.",
+      "confiance": -0.7135,
+      "sans_voix": true
+    },
+    {
+      "debut": 80.64,
+      "fin": 87.68,
+      "texte": "La kul alif lam min harf, wa lakil alif min harfun, wa lamun harfun, wa min mun harfun.",
+      "confiance": -0.7135,
+      "sans_voix": true
+    },
+    {
+      "debut": 87.68,
+      "fin": 89.68,
+      "texte": "Halferi woku baragi sapho.",
+      "confiance": -0.7135,
+      "sans_voix": true
+    },
+    {
+      "debut": 89.68,
+      "fin": 104.36,
+      "texte": "Jango kafi nyende jumon, maweta jumon, maenyalal jumongal, nuwadi baraji hewdi, alasubhana huwata waranti annaura, unjumadong hajimareku wunani, wala spanta paalam.",
+      "confiance": -0.8073,
+      "sans_voix": true
+    }
+  ],
+  "meta": {
+    "modele": "small",
+    "duree_traitement_s": 234.22,
+    "taille_fichier_oct": 863758,
+    "date": "2026-05-06T06:21:25.384249",
+    "nb_segments": 12,
+    "nb_tokens": 248
+  },
+  "statut": "ok"
+}

@@ -1,0 +1,2403 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pular IA — Contribue au corpus</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌙</text></svg>">
+  <style>
+    :root {
+      --vert:   #1a6b3c;
+      --or:     #c8a84b;
+      --fond:   #0d1f15;
+      --carte:  #142b1c;
+      --texte:  #e8f5e9;
+      --gris:   #8fac97;
+      --rouge:  #e53935;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--fond);
+      color: var(--texte);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── Header ── */
+    header {
+      width: 100%;
+      background: linear-gradient(135deg, #0a3d20 0%, #1a6b3c 100%);
+      border-bottom: 2px solid var(--or);
+      padding: 18px 24px;
+      text-align: center;
+    }
+    header h1 { font-size: 1.6rem; color: var(--or); letter-spacing: 1px; }
+    header p  { font-size: 0.9rem; color: var(--gris); margin-top: 4px; }
+
+    /* ── Stats bar ── */
+    #stats-bar {
+      display: flex;
+      gap: 32px;
+      justify-content: center;
+      padding: 12px 24px;
+      background: #0f2318;
+      width: 100%;
+      border-bottom: 1px solid #1e3d28;
+      flex-wrap: wrap;
+    }
+    .stat { text-align: center; }
+    .stat .val { font-size: 1.4rem; font-weight: 700; color: var(--or); }
+    .stat .lbl { font-size: 0.75rem; color: var(--gris); text-transform: uppercase; letter-spacing: .5px; }
+
+    /* ── Conteneur principal ── */
+    main {
+      width: 100%;
+      max-width: 600px;
+      padding: 24px 16px 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ── Carte ── */
+    .carte {
+      background: var(--carte);
+      border: 1px solid #1e3d28;
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .carte h2 { font-size: 1rem; color: var(--or); margin-bottom: 12px; }
+
+    /* ── Pseudo ── */
+    #pseudo-input {
+      width: 100%;
+      padding: 10px 14px;
+      background: #0d1f15;
+      border: 1px solid #2d5c3a;
+      border-radius: 8px;
+      color: var(--texte);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border .2s;
+    }
+    #pseudo-input:focus { border-color: var(--or); }
+
+    /* ── Bouton enregistrement ── */
+    #btn-record {
+      width: 100%;
+      padding: 18px;
+      border-radius: var(--radius);
+      border: none;
+      cursor: pointer;
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: .5px;
+      transition: all .2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: var(--vert);
+      color: white;
+    }
+    #btn-record.enregistrement {
+      background: var(--rouge);
+      animation: pulse 1.2s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(229,57,53,.4); }
+      50%      { box-shadow: 0 0 0 12px rgba(229,57,53,0); }
+    }
+    #btn-record:disabled { opacity: .5; cursor: not-allowed; animation: none; }
+
+    /* ── Visualiseur audio ── */
+    #canvas {
+      width: 100%;
+      height: 60px;
+      border-radius: 8px;
+      background: #0d1f15;
+      display: none;
+    }
+
+    /* ── Zone transcription ── */
+    #zone-transcription { display: none; }
+    #texte-auto {
+      width: 100%;
+      background: #0d1f15;
+      border: 1px solid #2d5c3a;
+      border-radius: 8px;
+      color: var(--texte);
+      padding: 12px;
+      font-size: 1rem;
+      min-height: 80px;
+      resize: vertical;
+      line-height: 1.5;
+      outline: none;
+    }
+    #texte-auto:focus { border-color: var(--or); }
+
+    /* ── Boutons validation ── */
+    .btn-row {
+      display: flex;
+      gap: 10px;
+    }
+    .btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: opacity .15s, transform .1s;
+    }
+    .btn:hover  { opacity: .9; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn-valider   { background: var(--vert); color: white; }
+    .btn-corriger  { background: var(--or); color: #0d1f15; }
+    .btn-annuler   { background: #2d3e32; color: var(--gris); }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--vert);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-weight: 600;
+      transition: transform .3s ease;
+      z-index: 999;
+      white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    #toast.erreur { background: var(--rouge); }
+
+    /* ── Loader ── */
+    .loader {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 3px solid rgba(255,255,255,.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Instructions ── */
+    .steps { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .steps li {
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: .9rem; color: var(--gris); line-height: 1.4;
+    }
+    .steps li span { font-size: 1.1rem; flex-shrink: 0; }
+
+    /* ── Livres / RAG ── */
+    .drop-zone {
+      border: 2px dashed #2d5c3a; border-radius: var(--radius);
+      padding: 28px 16px; text-align: center; cursor: pointer;
+      transition: all .2s; color: var(--gris); font-size: .9rem;
+      background: #0a1a0f;
+    }
+    .drop-zone:hover, .drop-zone.over { border-color: var(--or); background: #0f2318; color: var(--or); }
+    .drop-zone .drop-icon { font-size: 2.2rem; display: block; margin-bottom: 6px; }
+    .livre-card {
+      display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+      background: #0a1a0f; border-radius: 10px; border: 1px solid #1e3d28;
+      margin-bottom: 8px;
+    }
+    .livre-card .livre-icon { font-size: 1.6rem; flex-shrink: 0; }
+    .livre-card .livre-info { flex: 1; min-width: 0; }
+    .livre-card .livre-titre { font-weight: 600; font-size: .92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .livre-card .livre-meta  { font-size: .72rem; color: var(--gris); margin-top: 2px; }
+    .livre-card .livre-badge { font-size: .65rem; padding: 2px 8px; border-radius: 20px; background: #1e3d28; color: var(--or); white-space: nowrap; }
+    .rag-result {
+      padding: 10px 12px; background: #0a1a0f; border-radius: 10px;
+      border-left: 3px solid var(--or); margin-bottom: 8px; font-size: .88rem;
+      line-height: 1.5; color: var(--texte);
+    }
+    .rag-result .rag-meta { font-size: .7rem; color: var(--gris); margin-top: 4px; }
+    .rag-result .rag-score { color: var(--or); font-weight: 700; }
+    .input-livre {
+      width: 100%; padding: 9px 12px; background: #0d1f15;
+      border: 1px solid #2d5c3a; border-radius: 8px;
+      color: var(--texte); font-size: .9rem; outline: none;
+      transition: border .2s; margin-bottom: 8px;
+    }
+    .input-livre:focus { border-color: var(--or); }
+    .progress-bar-wrap { background: #0a1a0f; border-radius: 6px; height: 6px; overflow: hidden; margin-top: 8px; display: none; }
+    .progress-bar { height: 100%; background: var(--or); border-radius: 6px; transition: width .3s; width: 0%; }
+
+    /* ── Jeu de mots ── */
+    .jeu-score-bar { display:flex; justify-content:space-around; padding:10px 0; border-bottom:1px solid #1e3d28; margin-bottom:14px; }
+    .jeu-sc { text-align:center; }
+    .jeu-sc .v { font-size:1.4rem; font-weight:800; color:var(--or); }
+    .jeu-sc .l { font-size:.6rem; color:var(--gris); text-transform:uppercase; letter-spacing:.5px; }
+    .jeu-emoji-wrap { font-size:5.5rem; text-align:center; padding:10px 0 4px; animation:emoji-pop .4s cubic-bezier(.34,1.56,.64,1); }
+    @keyframes emoji-pop { from{transform:scale(0);opacity:0} 70%{transform:scale(1.12)} to{transform:scale(1);opacity:1} }
+    .jeu-fr { text-align:center; font-size:1.05rem; color:var(--gris); margin-bottom:8px; }
+    .jeu-cache {
+      display:block; text-align:center; margin:0 auto 12px;
+      min-width:120px; background:#1e3d28; border-radius:12px;
+      padding:10px 20px; font-size:1.5rem; font-weight:800;
+      letter-spacing:6px; color:#2d5c3a; transition:all .3s;
+    }
+    .jeu-cache.revele { color:var(--or); letter-spacing:2px; font-size:1.3rem; }
+    .jeu-adlam-reveal { font-family:'Noto Sans Adlam',serif; direction:rtl; display:block; font-size:1.1rem; color:var(--or); opacity:.8; text-align:center; margin-top:4px; }
+    .jeu-result { border-radius:10px; padding:12px; text-align:center; font-weight:600; margin-top:10px; display:none; line-height:1.6; }
+    .jeu-result.ok { background:#0f3320; border:1.5px solid #2e7d4f; color:#81c784; }
+    .jeu-result.ko { background:#2d0f0f; border:1.5px solid #c62828; color:#ef9a9a; }
+    .niveau-badge { display:inline-block; padding:3px 10px; border-radius:20px; background:var(--or); color:#0d1f15; font-size:.72rem; font-weight:700; }
+    .jeu-btn-enreg { width:100%; padding:16px; border-radius:var(--radius); border:none; cursor:pointer; font-size:1rem; font-weight:700; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:8px; }
+    .jeu-btn-enreg.idle     { background:var(--vert); color:white; }
+    .jeu-btn-enreg.enreg    { background:var(--rouge); color:white; animation:pulse 1.2s infinite; }
+    .jeu-btn-enreg.analyse  { background:#1e3d28; color:var(--gris); }
+    .jeu-btn-enreg.suivant  { background:var(--or); color:#0d1f15; }
+    .jeu-btn-enreg:disabled { opacity:.5; cursor:not-allowed; animation:none; }
+    .confetti-piece { position:fixed; width:8px; height:8px; border-radius:2px; animation:confetti-fall 1s ease-in forwards; pointer-events:none; z-index:9999; }
+    @keyframes confetti-fall { 0%{transform:translateY(-20px) rotate(0);opacity:1} 100%{transform:translateY(100vh) rotate(720deg);opacity:0} }
+    /* ── Panel Créateur / Prof ── */
+    .prof-header {
+      display:flex; align-items:center; gap:10px; cursor:pointer;
+      padding:12px 0; user-select:none;
+    }
+    .prof-header h2 { margin:0; }
+    .prof-lock { font-size:1.2rem; transition:transform .3s; }
+    .prof-lock.ouvert { transform:rotate(180deg); }
+    .prof-tabs { display:flex; gap:6px; flex-wrap:wrap; margin:10px 0 14px; border-bottom:1px solid #1e3d28; padding-bottom:10px; }
+    .prof-tab {
+      padding:7px 12px; border-radius:8px 8px 0 0; border:1px solid #2d5c3a;
+      border-bottom:none; background:transparent; color:var(--gris);
+      font-size:.8rem; cursor:pointer; font-weight:600; transition:all .15s;
+    }
+    .prof-tab.actif { background:var(--carte); color:var(--or); border-color:var(--or); }
+    .prof-tab:hover:not(.actif) { color:var(--texte); }
+    .prof-panel { display:none; }
+    .prof-panel.actif { display:block; }
+    .mot-card {
+      display:flex; align-items:center; gap:10px; padding:8px 10px;
+      background:#0a1a0f; border-radius:8px; border:1px solid #1e3d28;
+      margin-bottom:6px;
+    }
+    .mot-card .mc-emoji { font-size:1.4rem; flex-shrink:0; }
+    .mot-card .mc-info  { flex:1; min-width:0; }
+    .mot-card .mc-pular { font-weight:700; font-size:.92rem; }
+    .mot-card .mc-fr    { font-size:.72rem; color:var(--gris); }
+    .mot-card .mc-adlam { font-family:'Noto Sans Adlam',serif; direction:rtl; font-size:.85rem; color:var(--or); opacity:.8; }
+    .mc-actions { display:flex; gap:6px; flex-shrink:0; }
+    .mc-actions button {
+      padding:4px 8px; border-radius:6px; border:none; cursor:pointer;
+      font-size:.78rem; font-weight:600;
+    }
+    .btn-edit { background:#1e3d28; color:var(--or); }
+    .btn-del  { background:#2d0f0f; color:#ef5350; }
+    .contrib-card {
+      background:#0a1a0f; border:1px solid #1e3d28; border-radius:10px;
+      padding:12px; margin-bottom:10px;
+    }
+    .contrib-card audio { width:100%; accent-color:var(--or); margin:6px 0; }
+    .contrib-diff { display:flex; gap:8px; margin:6px 0; flex-wrap:wrap; }
+    .diff-attendu  { background:#0f3320; color:#81c784; padding:4px 10px; border-radius:6px; font-size:.85rem; }
+    .diff-transcrit{ background:#2d1a0f; color:#ffb74d; padding:4px 10px; border-radius:6px; font-size:.85rem; }
+    .contrib-actions { display:flex; gap:6px; margin-top:8px; }
+    .contrib-actions button { flex:1; padding:8px; border-radius:8px; border:none; cursor:pointer; font-weight:600; font-size:.85rem; }
+    .btn-accept { background:#0f3320; color:#81c784; }
+    .btn-reject { background:#2d0f0f; color:#ef5350; }
+    .btn-edit-c { background:#1e3d28; color:var(--or); }
+    .stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:10px 0; }
+    .stat-card { background:#0a1a0f; border-radius:10px; padding:14px; text-align:center; border:1px solid #1e3d28; }
+    .stat-card .sv { font-size:1.6rem; font-weight:800; color:var(--or); }
+    .stat-card .sl { font-size:.65rem; color:var(--gris); text-transform:uppercase; margin-top:2px; }
+    .form-prof {
+      display:flex; flex-direction:column; gap:8px;
+    }
+    .form-prof input, .form-prof select, .form-prof textarea {
+      padding:9px 12px; background:#0d1f15; border:1px solid #2d5c3a;
+      border-radius:8px; color:var(--texte); font-size:.9rem; outline:none;
+      transition:border .2s;
+    }
+    .form-prof input:focus, .form-prof select:focus, .form-prof textarea:focus { border-color:var(--or); }
+    .form-row { display:flex; gap:8px; }
+    .form-row > * { flex:1; }
+    .badge-custom { font-size:.6rem; padding:2px 6px; border-radius:10px; background:#1e3d28; color:var(--or); margin-left:4px; }
+    .badge-pending{ font-size:.6rem; padding:2px 6px; border-radius:10px; background:#2d1a0f; color:#ffb74d; }
+
+    /* ── Mode tabs ── */
+    .mode-tabs { display:flex; gap:6px; flex-wrap:wrap; margin:10px 0; }
+    .mode-btn {
+      flex:1; min-width:70px; padding:8px 6px; border-radius:8px;
+      border:1px solid #2d5c3a; background:transparent;
+      color:var(--gris); font-size:.78rem; cursor:pointer; transition:all .15s; font-weight:600;
+    }
+    .mode-btn.actif  { background:var(--vert); color:white; border-color:var(--vert); }
+    .mode-btn:hover:not(.actif) { border-color:var(--or); color:var(--or); }
+    .qcm-option {
+      padding:12px 8px; border-radius:10px; border:1.5px solid #2d5c3a;
+      background:#0a1a0f; color:var(--texte); cursor:pointer;
+      font-size:.95rem; font-weight:600; transition:all .18s;
+      text-align:center; line-height:1.3;
+    }
+    .qcm-option:hover:not(:disabled) { border-color:var(--or); background:#0f2318; }
+    .qcm-option.correct  { background:#0f3320; border-color:#4caf50; color:#81c784; }
+    .qcm-option.incorrect{ background:#2d0f0f; border-color:#c62828; color:#ef9a9a; }
+    .qcm-option:disabled { cursor:default; }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: auto;
+      padding: 12px;
+      text-align: center;
+      font-size: .8rem;
+      color: #3a5e45;
+    }
+
+    /* ── Adlam ── */
+    @font-face {
+      font-family: 'NotoSansAdlam';
+      src: local('Noto Sans Adlam'), local('NotoSansAdlam');
+    }
+    .adlam {
+      font-family: 'Noto Sans Adlam', 'NotoSansAdlam', serif;
+      direction: rtl;
+      unicode-bidi: bidi-override;
+      font-size: 1.2em;
+      line-height: 1.8;
+    }
+    .script-toggle {
+      display: flex;
+      gap: 0;
+      border: 1px solid #2d5c3a;
+      border-radius: 8px;
+      overflow: hidden;
+      width: fit-content;
+    }
+    .script-toggle button {
+      padding: 5px 14px;
+      border: none;
+      background: transparent;
+      color: var(--gris);
+      cursor: pointer;
+      font-size: .82rem;
+      transition: all .15s;
+    }
+    .script-toggle button.actif {
+      background: var(--vert);
+      color: white;
+    }
+    .clavier-adlam {
+      display: none;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 10px;
+      padding: 10px;
+      background: #0a1a0f;
+      border-radius: 8px;
+      border: 1px solid #1e3d28;
+    }
+    .clavier-adlam.visible { display: flex; }
+    .touche {
+      padding: 6px 10px;
+      background: #142b1c;
+      border: 1px solid #2d5c3a;
+      border-radius: 6px;
+      color: var(--texte);
+      cursor: pointer;
+      font-size: 1rem;
+      font-family: 'Noto Sans Adlam', serif;
+      transition: background .1s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 42px;
+    }
+    .touche:hover { background: var(--vert); }
+    .touche .lat  { font-size: .6rem; color: var(--gris); font-family: sans-serif; }
+    .sep-clavier  { width: 100%; height: 1px; background: #1e3d28; margin: 2px 0; }
+
+    /* ── Phrases ── */
+    .filtre {
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid #2d5c3a;
+      background: transparent;
+      color: var(--gris);
+      cursor: pointer;
+      font-size: .8rem;
+      transition: all .15s;
+    }
+    .filtre.actif { background: var(--vert); color: white; border-color: var(--vert); }
+    .phrase-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 14px;
+      background: #0d1f15;
+      border: 1px solid #1e3d28;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+      gap: 10px;
+    }
+    .phrase-card:hover  { border-color: var(--or); background: #111f16; }
+    .phrase-card.active { border-color: var(--or); background: #162b1c; }
+    .phrase-card .txt   { flex: 1; }
+    .phrase-card .pular { font-size: .95rem; font-weight: 600; color: var(--texte); }
+    .phrase-card .fr    { font-size: .78rem; color: var(--gris); margin-top: 2px; font-style: italic; }
+    .phrase-card .cat   {
+      font-size: .7rem; padding: 2px 8px; border-radius: 10px;
+      background: #1e3d28; color: var(--gris); white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🌙 Pular IA — Corpus communautaire</h1>
+  <p>Aide-nous à construire le premier modèle d'IA pour la langue pular</p>
+</header>
+
+<div id="stats-bar">
+  <div class="stat"><div class="val" id="s-contrib">—</div><div class="lbl">Contributions</div></div>
+  <div class="stat"><div class="val" id="s-valid">—</div><div class="lbl">Validées</div></div>
+  <div class="stat"><div class="val" id="s-contrib2">—</div><div class="lbl">Contributeurs</div></div>
+</div>
+
+<main>
+
+  <!-- Pseudo -->
+  <div class="carte">
+    <h2>👤 Ton prénom (optionnel)</h2>
+    <input id="pseudo-input" type="text" placeholder="Ex: Amadou" maxlength="30"/>
+  </div>
+
+  <!-- Enregistrement -->
+  <div class="carte">
+    <h2>🎙️ Enregistre un message en pular</h2>
+    <canvas id="canvas"></canvas>
+    <button id="btn-record" onclick="toggleRecord()">
+      <span id="btn-icon">🎙️</span>
+      <span id="btn-label">Appuyer pour parler</span>
+    </button>
+    <p id="timer" style="text-align:center;color:var(--gris);font-size:.85rem;margin-top:8px;display:none;">
+      ⏱️ <span id="timer-val">0:00</span>
+    </p>
+  </div>
+
+  <!-- Transcription & validation -->
+  <div class="carte" id="zone-transcription">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <h2 style="margin:0;">📝 Transcription automatique</h2>
+      <div class="script-toggle">
+        <button id="btn-latin" class="actif" onclick="basculerScript('latin')">Latin</button>
+        <button id="btn-adlam" onclick="basculerScript('adlam')">𞤀𞤣𞤤𞤢𞤥</button>
+      </div>
+    </div>
+    <p style="font-size:.8rem;color:var(--gris);margin-bottom:8px;">
+      Vérifie et corrige si besoin, puis valide.
+    </p>
+    <textarea id="texte-auto" rows="4" placeholder="Transcription en cours..."></textarea>
+
+    <!-- Clavier Adlam virtuel -->
+    <div id="clavier-adlam" class="clavier-adlam"></div>
+
+    <div class="btn-row" style="margin-top:12px;">
+      <button class="btn btn-valider"  onclick="valider()">✅ Valider</button>
+      <button class="btn btn-annuler"  onclick="annuler()">❌ Annuler</button>
+    </div>
+  </div>
+
+  <!-- Idées à dire -->
+  <div class="carte">
+    <h2>💡 Tu ne sais pas quoi dire? Lis ces phrases!</h2>
+    <p style="font-size:.82rem;color:var(--gris);margin-bottom:14px;">
+      Clique sur une phrase → lis-la à voix haute en pular → enregistre-toi.
+    </p>
+
+    <!-- Filtres par catégorie -->
+    <div id="filtres" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;"></div>
+
+    <!-- Grille de phrases -->
+    <div id="grille-phrases" style="display:flex;flex-direction:column;gap:8px;"></div>
+
+    <!-- Bouton aléatoire -->
+    <button onclick="phraseAleatoire()" style="
+      margin-top:14px;width:100%;padding:10px;border-radius:10px;border:none;
+      background:#1e3d28;color:var(--gris);cursor:pointer;font-size:.9rem;
+    ">🎲 Phrase aléatoire</button>
+  </div>
+
+  <!-- Phrase sélectionnée -->
+  <div id="carte-phrase" class="carte" style="display:none;border-color:var(--or);">
+    <h2 style="color:var(--or);">🎙️ Dis cette phrase en pular</h2>
+    <div id="phrase-pular" style="font-size:1.15rem;font-weight:600;margin-bottom:4px;line-height:1.5;"></div>
+    <div id="phrase-adlam" class="adlam" style="font-size:1.05rem;color:var(--or);opacity:.85;margin-bottom:6px;direction:rtl;text-align:right;line-height:1.6;"></div>
+    <div id="phrase-fr"    style="font-size:.85rem;color:var(--gris);margin-bottom:14px;font-style:italic;"></div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="ecouterPhrase()" style="
+        flex:1;padding:10px;border-radius:10px;border:none;
+        background:#1e3d28;color:var(--gris);cursor:pointer;font-size:.9rem;
+      ">🔊 Écouter</button>
+      <button onclick="document.getElementById('btn-record').click()" style="
+        flex:2;padding:10px;border-radius:10px;border:none;
+        background:var(--vert);color:white;cursor:pointer;font-size:.9rem;font-weight:600;
+      ">🎙️ Enregistrer maintenant</button>
+    </div>
+  </div>
+
+  <!-- ══ SECTION CORRECTION ══ -->
+  <div class="carte" style="border-color:#c8a84b55;">
+    <h2 style="display:flex;justify-content:space-between;align-items:center;">
+      <span>✏️ Corriger les transcriptions</span>
+      <span id="corr-progress" style="font-size:.75rem;color:var(--gris);font-weight:400;"></span>
+    </h2>
+    <p style="font-size:.82rem;color:var(--gris);margin-bottom:14px;">
+      Écoute l'audio, corrige le texte si besoin, puis valide. Tes corrections enrichissent le dataset!
+    </p>
+
+    <!-- Carte transcription à corriger -->
+    <div id="corr-zone">
+      <div id="corr-loading" style="text-align:center;padding:20px;color:var(--gris);">
+        Chargement... <span class="loader" style="vertical-align:middle;"></span>
+      </div>
+
+      <div id="corr-content" style="display:none;">
+        <!-- Nom du fichier -->
+        <div id="corr-nom" style="font-size:.75rem;color:var(--gris);margin-bottom:10px;"></div>
+
+        <!-- Lecteur audio -->
+        <audio id="corr-audio" controls style="
+          width:100%;margin-bottom:12px;border-radius:8px;
+          accent-color:var(--or);background:#0d1f15;
+        "></audio>
+
+        <!-- Texte auto -->
+        <p style="font-size:.78rem;color:var(--gris);margin-bottom:4px;">Transcription automatique :</p>
+        <div id="corr-auto" style="
+          padding:10px;background:#0a1a0f;border-radius:8px;
+          font-size:.88rem;color:#6a9e78;margin-bottom:10px;
+          border:1px solid #1e3d28;line-height:1.5;
+        "></div>
+
+        <!-- Texte à corriger -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <p style="font-size:.78rem;color:var(--or);">Ta correction :</p>
+          <div class="script-toggle">
+            <button id="corr-btn-latin" class="actif" onclick="basculerScriptCorr('latin')">Latin</button>
+            <button id="corr-btn-adlam" onclick="basculerScriptCorr('adlam')">𞤀𞤣𞤤𞤢𞤥</button>
+          </div>
+        </div>
+        <textarea id="corr-texte" rows="4" style="
+          width:100%;background:#0d1f15;border:1px solid var(--or);
+          border-radius:8px;color:var(--texte);padding:12px;
+          font-size:1rem;resize:vertical;line-height:1.6;outline:none;
+        "></textarea>
+        <div id="clavier-adlam-corr" class="clavier-adlam"></div>
+
+        <!-- Boutons -->
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+          <button onclick="soumettreCorriger()" style="
+            flex:3;padding:12px;border-radius:10px;border:none;
+            background:var(--vert);color:white;cursor:pointer;
+            font-size:.95rem;font-weight:600;
+          ">✅ Valider la correction</button>
+          <button onclick="soumettreAction('sauter')" style="
+            flex:1;padding:12px;border-radius:10px;border:none;
+            background:#1e3d28;color:var(--gris);cursor:pointer;font-size:.9rem;
+          ">⏭️ Sauter</button>
+          <button onclick="soumettreAction('impossible')" style="
+            flex:1;padding:12px;border-radius:10px;border:none;
+            background:#2d1515;color:#e53935;cursor:pointer;font-size:.85rem;
+          ">🚫 Incompréhensible</button>
+        </div>
+      </div>
+
+      <div id="corr-fini" style="display:none;text-align:center;padding:20px;">
+        <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
+        <div style="color:var(--or);font-weight:600;margin-bottom:4px;">Toutes les transcriptions sont corrigées!</div>
+        <div style="font-size:.85rem;color:var(--gris);">Baŋ-baŋ pour ton aide! 🙏</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ LIVRES & RAG ══ -->
+  <div class="carte" style="border-color:#1e5c8888;">
+    <h2>📚 Ajouter des livres / poèmes / articles</h2>
+    <p style="font-size:.82rem;color:var(--gris);margin-bottom:14px;">
+      Dépose un fichier PDF, TXT, DOCX ou HTML en pular → le texte est extrait et indexé automatiquement dans le corpus IA.
+    </p>
+
+    <!-- Zone de dépôt -->
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('fichier-input').click()">
+      <span class="drop-icon">📄</span>
+      Glisse un fichier ici ou clique pour choisir<br>
+      <small style="font-size:.75rem;opacity:.7">PDF · TXT · DOCX · HTML · MD</small>
+    </div>
+    <input type="file" id="fichier-input" accept=".pdf,.txt,.docx,.doc,.html,.htm,.md" style="display:none" onchange="fichierSelectionne(this)">
+
+    <!-- Métadonnées -->
+    <div id="livre-form" style="display:none;margin-top:12px;">
+      <input class="input-livre" id="livre-titre"  type="text" placeholder="Titre du livre / poème *" maxlength="200"/>
+      <input class="input-livre" id="livre-auteur" type="text" placeholder="Auteur (optionnel)" maxlength="100"/>
+      <select class="input-livre" id="livre-langue" style="cursor:pointer;">
+        <option value="pular">Pular / Fulfulde</option>
+        <option value="pular-adlam">Pular (Adlam)</option>
+        <option value="francais">Français</option>
+        <option value="arabe">Arabe</option>
+        <option value="anglais">Anglais</option>
+        <option value="mixte">Mixte / Bilingue</option>
+      </select>
+      <div id="livre-nom-fichier" style="font-size:.8rem;color:var(--gris);margin-bottom:8px;"></div>
+      <div class="progress-bar-wrap" id="upload-progress-wrap">
+        <div class="progress-bar" id="upload-progress"></div>
+      </div>
+      <button onclick="uploadLivre()" style="
+        width:100%;padding:12px;border-radius:10px;border:none;
+        background:var(--vert);color:white;font-weight:700;cursor:pointer;font-size:.95rem;
+      " id="btn-upload">📤 Indexer dans le corpus</button>
+    </div>
+
+    <!-- Stats RAG -->
+    <div id="rag-stats" style="display:flex;gap:16px;margin:14px 0 10px;flex-wrap:wrap;display:none;">
+      <div style="text-align:center;">
+        <div style="font-size:1.3rem;font-weight:800;color:var(--or);" id="rag-nb-livres">0</div>
+        <div style="font-size:.65rem;color:var(--gris);text-transform:uppercase;">Livres</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:1.3rem;font-weight:800;color:var(--or);" id="rag-nb-chunks">0</div>
+        <div style="font-size:.65rem;color:var(--gris);text-transform:uppercase;">Passages indexés</div>
+      </div>
+      <button onclick="exporterDataset()" style="
+        margin-left:auto;padding:6px 14px;border-radius:8px;border:1px solid var(--or);
+        background:transparent;color:var(--or);font-size:.8rem;cursor:pointer;
+      ">⬇️ Exporter dataset</button>
+    </div>
+
+    <!-- Liste des livres -->
+    <div id="livres-liste"></div>
+
+    <!-- Recherche RAG -->
+    <div style="margin-top:14px;">
+      <p style="font-size:.78rem;color:var(--gris);margin-bottom:6px;">🔍 Chercher dans le corpus :</p>
+      <div style="display:flex;gap:8px;">
+        <input class="input-livre" id="rag-query" type="text" placeholder="Ex: Pulaagu, jam, famille..." style="margin:0;flex:1;" onkeydown="if(event.key==='Enter')ragRechercher()">
+        <button onclick="ragRechercher()" style="
+          padding:9px 14px;border-radius:8px;border:none;
+          background:var(--vert);color:white;cursor:pointer;font-size:.9rem;
+        ">🔍</button>
+      </div>
+      <div id="rag-resultats" style="margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <!-- ══ JEU DE MOTS ══ -->
+  <div class="carte" style="border-color:#c8a84b88;">
+    <h2 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <span>🎮 Apprends en jouant!</span>
+      <span id="jeu-niveau" class="niveau-badge">Débutant 🌱</span>
+    </h2>
+
+    <!-- Score -->
+    <div class="jeu-score-bar">
+      <div class="jeu-sc"><div class="v" id="jeu-score">0</div><div class="l">Points</div></div>
+      <div class="jeu-sc"><div class="v" id="jeu-streak">🔥 0</div><div class="l">Série</div></div>
+      <div class="jeu-sc"><div class="v" id="jeu-mots">0</div><div class="l">Mots appris</div></div>
+    </div>
+
+    <!-- Tabs de mode -->
+    <div class="mode-tabs">
+      <button class="mode-btn actif" id="mode-qcm"    onclick="jSetMode('qcm')">🔘 QCM</button>
+      <button class="mode-btn"       id="mode-ecrire" onclick="jSetMode('ecrire')">✏️ Écrire</button>
+      <button class="mode-btn"       id="mode-parler" onclick="jSetMode('parler')">🎙️ Parler</button>
+      <button class="mode-btn"       id="mode-lire"   onclick="jSetMode('lire')">📖 Lire (livres)</button>
+    </div>
+
+    <!-- Catégories (cachées en mode Lire) -->
+    <div id="jeu-cats" style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 4px;"></div>
+
+    <!-- ── Affichage mot (QCM / Écrire / Parler) ── -->
+    <div id="jeu-mot-display">
+      <div class="jeu-emoji-wrap" id="jeu-emoji">🎯</div>
+      <div class="jeu-fr" id="jeu-fr">Choisis un mode ↑</div>
+      <div class="jeu-cache" id="jeu-cache">• • •</div>
+      <div class="jeu-adlam-reveal" id="jeu-adlam-reveal" style="display:none;"></div>
+    </div>
+
+    <!-- ── Affichage phrase RAG (mode Lire) ── -->
+    <div id="jeu-rag-display" style="display:none;margin:10px 0;">
+      <div id="jeu-rag-phrase" style="
+        background:#0a1a0f;border-left:3px solid var(--or);border-radius:0 10px 10px 0;
+        padding:14px 16px;font-size:1.05rem;line-height:1.7;color:var(--texte);
+        min-height:60px;
+      "></div>
+      <div id="jeu-rag-source" style="font-size:.72rem;color:var(--gris);margin-top:5px;text-align:right;"></div>
+    </div>
+
+    <!-- ── Zone QCM ── -->
+    <div id="zone-qcm" style="display:none;margin-top:10px;">
+      <p style="font-size:.8rem;color:var(--gris);margin-bottom:8px;">Quel est ce mot en pular?</p>
+      <div id="qcm-options" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+    </div>
+
+    <!-- ── Zone Écrire ── -->
+    <div id="zone-ecrire" style="display:none;margin-top:10px;">
+      <p style="font-size:.8rem;color:var(--gris);margin-bottom:6px;">Écris le mot en pular :</p>
+      <div style="display:flex;gap:8px;">
+        <input id="jeu-input" type="text" class="input-livre"
+          placeholder="Tape le mot en pular..." style="margin:0;flex:1;font-size:1rem;text-align:center;"
+          onkeydown="if(event.key==='Enter')jValiderEcriture()">
+        <button onclick="jValiderEcriture()" style="
+          padding:10px 16px;border-radius:8px;border:none;background:var(--vert);
+          color:white;cursor:pointer;font-size:.95rem;font-weight:700;white-space:nowrap;
+        ">✅</button>
+      </div>
+    </div>
+
+    <!-- ── Zone Parler ── -->
+    <div id="zone-parler" style="display:none;margin-top:10px;">
+      <div style="display:flex;gap:8px;">
+        <button id="jeu-btn" class="jeu-btn-enreg idle" onclick="jeuToggle()">
+          🎙️ Dire le mot en pular
+        </button>
+        <button onclick="jeuPasser()" title="Passer" style="
+          padding:14px 16px;border-radius:var(--radius);border:1px solid #2d5c3a;
+          background:transparent;color:var(--gris);cursor:pointer;font-size:1rem;
+        ">⏭️</button>
+      </div>
+    </div>
+
+    <!-- ── Zone Lire (RAG) ── -->
+    <div id="zone-lire" style="display:none;margin-top:10px;">
+      <div style="display:flex;gap:8px;">
+        <button id="jeu-btn-lire" class="jeu-btn-enreg idle" onclick="jLireToggle()">
+          🎙️ Lire cette phrase à voix haute
+        </button>
+        <button onclick="jChargerPhraseRAG(true)" title="Nouvelle phrase" style="
+          padding:14px 16px;border-radius:var(--radius);border:1px solid #2d5c3a;
+          background:transparent;color:var(--gris);cursor:pointer;font-size:1rem;
+        ">🔄</button>
+      </div>
+    </div>
+
+    <!-- Résultat (commun à tous les modes) -->
+    <div id="jeu-result" class="jeu-result" style="margin-top:10px;"></div>
+
+    <!-- Partager -->
+    <div id="jeu-share" style="display:none;margin-top:10px;">
+      <button onclick="jeuPartager()" style="
+        width:100%;padding:10px;border-radius:10px;border:1px solid var(--or);
+        background:transparent;color:var(--or);font-size:.88rem;cursor:pointer;font-weight:600;
+      ">📤 Partager mon score sur TikTok / Instagram</button>
+    </div>
+  </div>
+
+  <!-- ══ ESPACE CRÉATEUR / PROFESSEUR ══ -->
+  <div class="carte" style="border-color:#c8a84b44;">
+
+    <!-- Header cliquable pour ouvrir/fermer -->
+    <div class="prof-header" onclick="profTogglePanel()">
+      <h2 style="flex:1;">🎓 Espace Créateur / Professeur</h2>
+      <span id="prof-nb-pending" class="badge-pending" style="display:none;">0 en attente</span>
+      <span class="prof-lock" id="prof-lock">▼</span>
+    </div>
+    <p style="font-size:.82rem;color:var(--gris);margin-top:-8px;margin-bottom:0;">
+      Ajoute des mots, corrige le contenu du jeu, valide les contributions de la communauté.
+    </p>
+
+    <!-- Contenu du panel (masqué par défaut) -->
+    <div id="prof-contenu" style="display:none;margin-top:14px;">
+
+      <!-- Tabs -->
+      <div class="prof-tabs">
+        <button class="prof-tab actif" id="ptab-ajouter" onclick="profSetTab('ajouter')">➕ Ajouter un mot</button>
+        <button class="prof-tab" id="ptab-corriger"  onclick="profSetTab('corriger')">✏️ Corriger</button>
+        <button class="prof-tab" id="ptab-valider"   onclick="profSetTab('valider')">🎧 Valider contribs <span id="prof-badge-pending"></span></button>
+        <button class="prof-tab" id="ptab-stats"     onclick="profSetTab('stats')">📊 Tableau de bord</button>
+      </div>
+
+      <!-- ── Panel : Ajouter un mot ── -->
+      <div id="ppanel-ajouter" class="prof-panel actif">
+        <p style="font-size:.82rem;color:var(--gris);margin-bottom:12px;">
+          Ajoute un mot ou une expression qui sera disponible dans tous les modes du jeu.
+        </p>
+        <div class="form-prof">
+          <div class="form-row">
+            <input id="pf-emoji"  type="text" placeholder="Emoji 🐘"       maxlength="4">
+            <input id="pf-fr"     type="text" placeholder="Français *"      maxlength="80">
+          </div>
+          <div class="form-row">
+            <input id="pf-pular"  type="text" placeholder="Pular *"         maxlength="100"
+              oninput="document.getElementById('pf-adlam').value=latinVersAdlam(this.value)">
+            <input id="pf-adlam"  type="text" placeholder="Adlam (auto)"    maxlength="200"
+              class="adlam" style="direction:rtl;font-size:1rem;">
+          </div>
+          <div class="form-row">
+            <select id="pf-cat">
+              <option value="">-- Catégorie --</option>
+              <option>Animaux</option><option>Objets</option><option>Corps</option>
+              <option>Nature</option><option>Famille</option><option>Proverbes</option>
+              <option>Chiffres</option><option>Couleurs</option><option>Grammaire</option>
+            </select>
+            <input id="pf-cat-custom" type="text" placeholder="Ou nouvelle catégorie" maxlength="30">
+          </div>
+          <textarea id="pf-note" placeholder="Note / explication (optionnel)" rows="2" style="resize:vertical;"></textarea>
+          <div class="form-row">
+            <input id="pf-pseudo" type="text" placeholder="Ton pseudo (prof/créateur)" maxlength="50">
+          </div>
+          <button onclick="profAjouterMot()" style="
+            padding:12px;border-radius:10px;border:none;background:var(--vert);
+            color:white;font-weight:700;cursor:pointer;font-size:.95rem;
+          ">➕ Ajouter au jeu</button>
+        </div>
+      </div>
+
+      <!-- ── Panel : Corriger ── -->
+      <div id="ppanel-corriger" class="prof-panel">
+        <p style="font-size:.82rem;color:var(--gris);margin-bottom:10px;">
+          Mots que tu as ajoutés. Pour corriger un mot de la liste de base, utilise le bouton ⚠️.
+        </p>
+        <div id="prof-liste-mots">
+          <div style="color:var(--gris);font-size:.85rem;">Chargement...</div>
+        </div>
+        <div id="prof-edit-form" style="display:none;background:#0a1a0f;border-radius:10px;padding:14px;margin-top:10px;border:1px solid var(--or);">
+          <p style="font-size:.82rem;color:var(--or);margin-bottom:10px;">✏️ Modifier le mot :</p>
+          <input type="hidden" id="pedit-id">
+          <div class="form-prof">
+            <div class="form-row">
+              <input id="pedit-emoji" type="text" placeholder="Emoji" maxlength="4">
+              <input id="pedit-fr"    type="text" placeholder="Français" maxlength="80">
+            </div>
+            <div class="form-row">
+              <input id="pedit-pular" type="text" placeholder="Pular"
+                oninput="document.getElementById('pedit-adlam').value=latinVersAdlam(this.value)">
+              <input id="pedit-adlam" type="text" placeholder="Adlam" class="adlam" style="direction:rtl;">
+            </div>
+            <div class="form-row">
+              <input id="pedit-cat"  type="text" placeholder="Catégorie">
+              <input id="pedit-note" type="text" placeholder="Note">
+            </div>
+            <div class="form-row">
+              <button onclick="profSauverEdit()" style="padding:10px;border-radius:8px;border:none;background:var(--vert);color:white;cursor:pointer;font-weight:700;">💾 Sauver</button>
+              <button onclick="document.getElementById('prof-edit-form').style.display='none'" style="padding:10px;border-radius:8px;border:1px solid #2d5c3a;background:transparent;color:var(--gris);cursor:pointer;">Annuler</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Panel : Valider contributions ── -->
+      <div id="ppanel-valider" class="prof-panel">
+        <p style="font-size:.82rem;color:var(--gris);margin-bottom:10px;">
+          Écoute chaque audio et valide/corrige/rejette. Les validées deviennent des données d'entraînement ✨
+        </p>
+        <div id="prof-contribs">
+          <div style="color:var(--gris);font-size:.85rem;">Chargement...</div>
+        </div>
+      </div>
+
+      <!-- ── Panel : Stats ── -->
+      <div id="ppanel-stats" class="prof-panel">
+        <div class="stat-grid">
+          <div class="stat-card"><div class="sv" id="ps-mots-total">—</div><div class="sl">Mots dans le jeu</div></div>
+          <div class="stat-card"><div class="sv" id="ps-mots-custom">—</div><div class="sl">Mots ajoutés par profs</div></div>
+          <div class="stat-card"><div class="sv" id="ps-contribs">—</div><div class="sl">Contributions audio</div></div>
+          <div class="stat-card"><div class="sv" id="ps-validees">—</div><div class="sl">Contributions validées</div></div>
+          <div class="stat-card"><div class="sv" id="ps-livres">—</div><div class="sl">Livres indexés (RAG)</div></div>
+          <div class="stat-card"><div class="sv" id="ps-chunks">—</div><div class="sl">Passages RAG</div></div>
+        </div>
+        <button onclick="profExporterTout()" style="
+          width:100%;padding:12px;border-radius:10px;border:1px solid var(--or);
+          background:transparent;color:var(--or);font-weight:700;cursor:pointer;margin-top:8px;
+        ">⬇️ Exporter tout le dataset (JSONL)</button>
+      </div>
+
+    </div><!-- /prof-contenu -->
+  </div><!-- /carte prof -->
+
+  <!-- Instructions -->
+  <div class="carte">
+    <h2>📌 Comment contribuer</h2>
+    <ul class="steps">
+      <li><span>1️⃣</span> Choisis une phrase ci-dessus ou parle librement</li>
+      <li><span>2️⃣</span> Appuie sur le bouton micro et parle en pular (5-60 secondes)</li>
+      <li><span>3️⃣</span> L'IA transcrit — corrige si besoin</li>
+      <li><span>4️⃣</span> Valide — ta contribution enrichit le corpus!</li>
+      <li><span>🙏</span> N'importe quel sujet: histoire, religion, culture, quotidien...</li>
+    </ul>
+  </div>
+
+</main>
+
+<div id="toast">✅ Baŋ-baŋ!</div>
+
+<footer>Pular IA — Projet corpus open-source pour la langue pular 🌍</footer>
+
+<script>
+const API = window.location.origin;
+// Header requis pour bypasser la page d'avertissement ngrok (version gratuite)
+const H = { 'ngrok-skip-browser-warning': 'true' };
+
+// ── Stats ──────────────────────────────────────────────────────────────────
+async function chargerStats() {
+  try {
+    const r = await fetch(`${API}/api/stats`, { headers: H });
+    const d = await r.json();
+    document.getElementById('s-contrib').textContent  = d.total_contributions;
+    document.getElementById('s-valid').textContent    = d.total_validations;
+    document.getElementById('s-contrib2').textContent = d.nb_contributeurs;
+  } catch(e) { /* silencieux */ }
+}
+chargerStats();
+setInterval(chargerStats, 30000);
+
+// ── Enregistrement ─────────────────────────────────────────────────────────
+let mediaRecorder, chunks = [], audioBlob = null;
+let recording = false, timerInterval = null, secondes = 0;
+
+async function toggleRecord() {
+  if (!recording) await demarrerEnregistrement();
+  else            await arreterEnregistrement();
+}
+
+async function demarrerEnregistrement() {
+  if (!navigator.mediaDevices) {
+    toast("❌ Micro non supporté sur ce navigateur", true);
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    dessinerVisu(stream);
+
+    mediaRecorder = new MediaRecorder(stream);
+    chunks = [];
+    mediaRecorder.ondataavailable = e => chunks.push(e.data);
+    mediaRecorder.start();
+    recording = true;
+
+    const btn = document.getElementById('btn-record');
+    btn.classList.add('enregistrement');
+    document.getElementById('btn-icon').textContent  = '⏹️';
+    document.getElementById('btn-label').textContent = 'Arrêter l\'enregistrement';
+    document.getElementById('canvas').style.display  = 'block';
+    document.getElementById('timer').style.display   = 'block';
+
+    secondes = 0;
+    timerInterval = setInterval(() => {
+      secondes++;
+      const m = Math.floor(secondes / 60);
+      const s = secondes % 60;
+      document.getElementById('timer-val').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+      if (secondes >= 120) arreterEnregistrement();
+    }, 1000);
+
+  } catch(e) {
+    toast("❌ Accès micro refusé", true);
+  }
+}
+
+async function arreterEnregistrement() {
+  if (!mediaRecorder) return;
+  recording = false;
+  clearInterval(timerInterval);
+
+  mediaRecorder.stop();
+  mediaRecorder.stream.getTracks().forEach(t => t.stop());
+
+  await new Promise(r => mediaRecorder.onstop = r);
+  audioBlob = new Blob(chunks, { type: 'audio/webm' });
+
+  const btn = document.getElementById('btn-record');
+  btn.classList.remove('enregistrement');
+  btn.disabled = true;
+  document.getElementById('btn-icon').textContent  = '';
+  document.getElementById('btn-label').innerHTML   = '<span class="loader"></span> Transcription en cours (30-60s)...';
+  document.getElementById('canvas').style.display  = 'none';
+  document.getElementById('timer').style.display   = 'none';
+
+  await transcrire();
+}
+
+// ── Transcription ──────────────────────────────────────────────────────────
+async function transcrire() {
+  const formData = new FormData();
+  formData.append('audio', audioBlob, 'enregistrement.webm');
+
+  try {
+    const r   = await fetch(`${API}/api/transcrire`, { method: 'POST', body: formData, headers: H });
+    const data = await r.json();
+
+    if (!r.ok || !data.ok) throw new Error(data.detail || 'Erreur serveur');
+
+    if (!data.text || data.text.trim() === '') {
+      toast("⚠️ Aucune parole détectée. Parle plus fort, plus près du micro.", true);
+    } else {
+      texteLatinCache = data.text;
+      texteAdlamCache = data.text_adlam || '';
+      scriptActif     = 'latin';
+      const ta = document.getElementById('texte-auto');
+      ta.value             = data.text;
+      ta.dataset.original  = data.text;
+      ta.dir               = 'ltr';
+      ta.classList.remove('adlam');
+      document.getElementById('btn-latin').classList.add('actif');
+      document.getElementById('btn-adlam').classList.remove('actif');
+      document.getElementById('zone-transcription').style.display = 'block';
+      document.getElementById('zone-transcription').scrollIntoView({ behavior: 'smooth' });
+      toast("✅ Transcription prête (" + (data.language || '?') + ")");
+    }
+
+  } catch(e) {
+    toast("❌ " + e.message, true);
+  } finally {
+    const btn = document.getElementById('btn-record');
+    btn.disabled = false;
+    document.getElementById('btn-icon').textContent  = '🎙️';
+    document.getElementById('btn-label').textContent = 'Nouvel enregistrement';
+  }
+}
+
+// ── Validation ─────────────────────────────────────────────────────────────
+async function valider() {
+  const texte  = document.getElementById('texte-auto').value.trim();
+  const pseudo = document.getElementById('pseudo-input').value.trim() || 'anonyme';
+  if (!texte) { toast("❌ Le texte est vide!", true); return; }
+
+  const formData = new FormData();
+  formData.append('audio',         audioBlob, 'enregistrement.webm');
+  formData.append('transcription', document.getElementById('texte-auto').dataset.original || texte);
+  formData.append('texte_final',   texte);
+  formData.append('pseudo',        pseudo);
+
+  try {
+    const r    = await fetch(`${API}/api/valider`, { method: 'POST', body: formData, headers: H });
+    const data = await r.json();
+    if (!data.ok) throw new Error(data.detail || 'Erreur serveur');
+
+    toast("✅ Baŋ-baŋ! Contribution sauvée!");
+    annuler();
+    chargerStats();
+
+  } catch(e) {
+    toast("❌ Erreur: " + e.message, true);
+  }
+}
+
+function annuler() {
+  audioBlob = null;
+  document.getElementById('zone-transcription').style.display = 'none';
+  document.getElementById('texte-auto').value = '';
+  const btn = document.getElementById('btn-record');
+  btn.disabled = false;
+  btn.classList.remove('enregistrement');
+  document.getElementById('btn-icon').textContent  = '🎙️';
+  document.getElementById('btn-label').textContent = 'Appuyer pour parler';
+  document.getElementById('timer').style.display   = 'none';
+}
+
+// ── Visualiseur ────────────────────────────────────────────────────────────
+function dessinerVisu(stream) {
+  const ctx    = document.getElementById('canvas');
+  const c      = ctx.getContext('2d');
+  const ac     = new AudioContext();
+  const src    = ac.createMediaStreamSource(stream);
+  const ana    = ac.createAnalyser();
+  ana.fftSize  = 256;
+  src.connect(ana);
+  const buf    = new Uint8Array(ana.frequencyBinCount);
+
+  function draw() {
+    if (!recording) return;
+    requestAnimationFrame(draw);
+    ana.getByteFrequencyData(buf);
+    c.clearRect(0, 0, ctx.width, ctx.height);
+    const barW = ctx.width / buf.length * 2;
+    buf.forEach((v, i) => {
+      const h = (v / 255) * ctx.height;
+      c.fillStyle = `rgba(200,168,75,${v/255})`;
+      c.fillRect(i * barW, ctx.height - h, barW - 1, h);
+    });
+  }
+  draw();
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, erreur = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.toggle('erreur', erreur);
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ── Phrases d'exemple ──────────────────────────────────────────────────────
+const PHRASES = [
+  // Salutations
+  { pular: "Jam waali? Jam tan, baŋ-baŋ.",           fr: "Comment vas-tu? Je vais bien, merci.",           cat: "Salutations" },
+  { pular: "Hol tò innde maa?",                       fr: "Comment t'appelles-tu?",                         cat: "Salutations" },
+  { pular: "Innde am ko Amadou. Mi jooɗii e Kanade.", fr: "Je m'appelle Amadou. J'habite au Canada.",       cat: "Salutations" },
+  { pular: "A jaaraama walaa! Alla hokku jam.",        fr: "Merci beaucoup! Qu'Allah te donne la paix.",    cat: "Salutations" },
+  { pular: "Nde ndarii? Nde warii?",                  fr: "D'où viens-tu? Où vas-tu?",                     cat: "Salutations" },
+
+  // Religion & Islam
+  { pular: "Bismillahi Rahmaani Rahiimi.",             fr: "Au nom d'Allah, le Clément, le Miséricordieux.",cat: "Islam" },
+  { pular: "Alhamdulillaahi Rabbil aalamiin.",         fr: "Louange à Allah, Seigneur des mondes.",         cat: "Islam" },
+  { pular: "Allahu Akbar, Allah mo Moƴƴo, Allah mo Jom baawɗe fof.", fr: "Allah est Grand, Allah est Bon, Allah est Tout-Puissant.", cat: "Islam" },
+  { pular: "Mi andaa ko Allah yiɗi. Mi yiɗi janngude Al-Qur'aana.", fr: "Je sais ce qu'Allah aime. J'aime lire le Coran.", cat: "Islam" },
+  { pular: "Ramadan woni lewru barke e naafoore.",     fr: "Le Ramadan est un mois de bénédiction et de bienfaits.", cat: "Islam" },
+
+  // Famille
+  { pular: "Minen kuɓɓi. Mi jogii debbo e ɓiɓɓe tati.", fr: "Je suis marié. J'ai une femme et trois enfants.", cat: "Famille" },
+  { pular: "Baaba am woni ngesa. Yinaande am woni galle.", fr: "Mon père est au champ. Ma mère est à la maison.", cat: "Famille" },
+  { pular: "Mi yiɗi ɓiɓɓe am haa ɓuri fof.",          fr: "J'aime mes enfants plus que tout.",              cat: "Famille" },
+  { pular: "Worɓe e rewɓe fof poti yiɗde famili maɓɓe.", fr: "Les hommes et les femmes doivent aimer leur famille.", cat: "Famille" },
+
+  // Vie quotidienne
+  { pular: "Hannde subaka, mi ñaami nyiiri e kosam.",  fr: "Ce matin, j'ai mangé du riz avec du lait.",    cat: "Quotidien" },
+  { pular: "Ndiyam moƴƴi. Ñaamdu moƴƴi faa jeyɗo.",   fr: "L'eau est bonne. La nourriture est bonne pour celui qui en a.", cat: "Quotidien" },
+  { pular: "Mi yahay suudu janngo sakkitin.",           fr: "J'irai à l'école demain matin.",               cat: "Quotidien" },
+  { pular: "Leydi pular woni leydi moƴƴere.",          fr: "Le pays peul est un beau pays.",               cat: "Quotidien" },
+  { pular: "Ko waɗi-ɗaa hannde? Mi golliima tawa.",    fr: "Qu'as-tu fait aujourd'hui? J'ai travaillé fort.", cat: "Quotidien" },
+
+  // Nature & Animaux
+  { pular: "Nagge am jogii ɓiɓɓe ɗiɗi yontere hee.", fr: "Ma vache a eu deux veaux cette semaine.",       cat: "Nature" },
+  { pular: "Ladde mawndi. Ladde moƴƴi faa aynaaɓe.",  fr: "La forêt est grande. La forêt est bonne pour les éleveurs.", cat: "Nature" },
+  { pular: "Ndungu wari. Ndiyam ɓurtii e maayo.",      fr: "La saison des pluies est arrivée. L'eau a débordé du fleuve.", cat: "Nature" },
+  { pular: "Winde mawndi woni dow ladde.",              fr: "Le grand village est au-dessus de la forêt.",  cat: "Nature" },
+
+  // Culture Peule
+  { pular: "Pulaagu woni ndimaagu e moƴƴere e muuɗum.", fr: "Le Pulaagu c'est la noblesse, la bonté et la pudeur.", cat: "Culture" },
+  { pular: "Semteende woni tiitoonde Pullo kañum.",    fr: "La pudeur est le fondement de l'identité peule.", cat: "Culture" },
+  { pular: "Ko feewde haa ɓuri yiɗde woni gollirde.",  fr: "Ce qui est bien et ce qu'on aime, c'est ce qu'il faut faire.", cat: "Culture" },
+  { pular: "Gerɗol peelo woni moƴƴere e teddungal.",   fr: "La musique peule est beauté et dignité.",      cat: "Culture" },
+];
+
+let phraseActive   = null;
+let catActive      = "Tout";
+
+function initPhrases() {
+  const cats = ["Tout", ...new Set(PHRASES.map(p => p.cat))];
+  const filtres = document.getElementById('filtres');
+  cats.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filtre' + (cat === 'Tout' ? ' actif' : '');
+    btn.textContent = cat;
+    btn.onclick = () => { catActive = cat; filtrerPhrases(cat); };
+    filtres.appendChild(btn);
+  });
+  filtrerPhrases("Tout");
+}
+
+function filtrerPhrases(cat) {
+  // Mettre à jour boutons filtres
+  document.querySelectorAll('.filtre').forEach(b => {
+    b.classList.toggle('actif', b.textContent === cat);
+  });
+  const liste = cat === 'Tout' ? PHRASES : PHRASES.filter(p => p.cat === cat);
+  const grille = document.getElementById('grille-phrases');
+  grille.innerHTML = '';
+  liste.forEach((p, i) => {
+    const card = document.createElement('div');
+    card.className = 'phrase-card' + (phraseActive === p ? ' active' : '');
+    card.innerHTML = `
+      <div class="txt">
+        <div class="pular">${p.pular}</div>
+        <div class="adlam" style="font-size:.78rem;color:var(--or);opacity:.7;direction:rtl;text-align:right;margin-top:2px;">${latinVersAdlam(p.pular)}</div>
+        <div class="fr">${p.fr}</div>
+      </div>
+      <span class="cat">${p.cat}</span>
+    `;
+    card.onclick = () => selectionnerPhrase(p);
+    grille.appendChild(card);
+  });
+}
+
+function selectionnerPhrase(p) {
+  phraseActive = p;
+  document.getElementById('phrase-pular').textContent = p.pular;
+  document.getElementById('phrase-adlam').textContent = latinVersAdlam(p.pular);
+  document.getElementById('phrase-fr').textContent    = p.fr;
+  document.getElementById('carte-phrase').style.display = 'block';
+  document.getElementById('carte-phrase').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  filtrerPhrases(catActive);
+}
+
+function phraseAleatoire() {
+  const p = PHRASES[Math.floor(Math.random() * PHRASES.length)];
+  selectionnerPhrase(p);
+}
+
+function ecouterPhrase() {
+  if (!phraseActive) return;
+  if (!window.speechSynthesis) { toast("Synthèse vocale non supportée", true); return; }
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(phraseActive.pular);
+  utt.lang = 'fr-FR'; // Approximation — pas de voix Pular disponible
+  utt.rate = 0.85;
+  window.speechSynthesis.speak(utt);
+}
+
+// ── Conversion Latin → Adlam (miroir de scripts/adlam.py) ─────────────────
+(function() {
+  const DIG = {
+    "mb":"𞤃𞤦","nd":"𞤲𞤣","nj":"𞤲𞤶","ng":"𞤲𞤺","nt":"𞤲𞤼","nc":"𞤲𞤷","nk":"𞤲𞤳",
+    "MB":"𞤃𞤄","ND":"𞤐𞤁","NJ":"𞤐𞤔","NG":"𞤐𞤘",
+  };
+  const MIN = {
+    "a":"𞤢","e":"𞤫","i":"𞤭","o":"𞤮","u":"𞤵",
+    "b":"𞤦","c":"𞤷","d":"𞤣","f":"𞤬","g":"𞤺","h":"𞤸","j":"𞤶","k":"𞤳",
+    "l":"𞤤","m":"𞤥","n":"𞤲","p":"𞤨","q":"𞤹","r":"𞤪","s":"𞤧","t":"𞤼",
+    "v":"𞤾","w":"𞤱","x":"𞤿","y":"𞤴","z":"𞥁",
+    "ɓ":"𞤩","ɗ":"𞤯","ƴ":"𞤰","ɲ":"𞤻","ŋ":"𞤽",
+  };
+  const MAJ = {
+    "A":"𞤀","B":"𞤄","C":"𞤕","D":"𞤁","E":"𞤉","F":"𞤊","G":"𞤘","H":"𞤖",
+    "I":"𞤋","J":"𞤔","K":"𞤑","L":"𞤂","M":"𞤃","N":"𞤐","O":"𞤌","P":"𞤆",
+    "Q":"𞤗","R":"𞤈","S":"𞤅","T":"𞤚","U":"𞤓","V":"𞤜","W":"𞤏","X":"𞤝",
+    "Y":"𞤒","Z":"𞤟","Ɓ":"𞤇","Ɗ":"𞤍","Ƴ":"𞤎","Ɲ":"𞤙","Ŋ":"𞤛",
+  };
+  window.latinVersAdlam = function(texte) {
+    if (!texte) return '';
+    let res = '', i = 0;
+    while (i < texte.length) {
+      const bi = texte.slice(i, i+2);
+      if (DIG[bi]) { res += DIG[bi]; i += 2; continue; }
+      const c = texte[i];
+      res += MAJ[c] || MIN[c] || c;
+      i++;
+    }
+    return res;
+  };
+})();
+
+initPhrases();
+
+// ── Adlam ─────────────────────────────────────────────────────────────────
+let scriptActif = 'latin';
+let texteLatinCache = '';
+let texteAdlamCache = '';
+
+async function basculerScript(script) {
+  const ta = document.getElementById('texte-auto');
+  scriptActif = script;
+
+  document.getElementById('btn-latin').classList.toggle('actif', script === 'latin');
+  document.getElementById('btn-adlam').classList.toggle('actif', script === 'adlam');
+  document.getElementById('clavier-adlam').classList.toggle('visible', script === 'adlam');
+
+  if (script === 'adlam') {
+    // Convertir le texte latin actuel en Adlam
+    const texteLatin = ta.value.trim();
+    if (texteLatin && !texteAdlamCache) {
+      const fd = new FormData();
+      fd.append('texte', texteLatin);
+      fd.append('vers', 'adlam');
+      try {
+        const r = await fetch(`${API}/api/convertir`, { method: 'POST', body: fd, headers: H });
+        const d = await r.json();
+        texteAdlamCache = d.resultat;
+      } catch(e) { texteAdlamCache = ''; }
+    }
+    ta.value     = texteAdlamCache || '';
+    ta.dir       = 'rtl';
+    ta.classList.add('adlam');
+  } else {
+    // Reconvertir Adlam en Latin si modifié
+    const texteAdlam = ta.value.trim();
+    if (texteAdlam && texteAdlam !== texteAdlamCache) {
+      const fd = new FormData();
+      fd.append('texte', texteAdlam);
+      fd.append('vers', 'latin');
+      try {
+        const r = await fetch(`${API}/api/convertir`, { method: 'POST', body: fd, headers: H });
+        const d = await r.json();
+        texteLatinCache = d.resultat;
+      } catch(e) {}
+    }
+    ta.value     = texteLatinCache || '';
+    ta.dir       = 'ltr';
+    ta.classList.remove('adlam');
+  }
+}
+
+async function chargerClavierAdlam() {
+  try {
+    const r = await fetch(`${API}/api/clavier-adlam`, { headers: H });
+    const clavier = await r.json();
+
+    function construire(divId, onInsert) {
+      const div = document.getElementById(divId);
+      if (!div) return;
+      div.innerHTML = '';
+      const groupes = [
+        { titre: 'Voyelles',   touches: clavier.voyelles },
+        { titre: 'Spéciales',  touches: clavier.speciales },
+        { titre: 'Consonnes',  touches: clavier.consonnes },
+        { titre: 'Digraphes',  touches: clavier.digraphes },
+      ];
+      groupes.forEach(g => {
+        const sep = document.createElement('div');
+        sep.className = 'sep-clavier';
+        sep.innerHTML = `<span style="font-size:.65rem;color:var(--gris);padding:0 6px;">${g.titre}</span>`;
+        sep.style.cssText = 'width:100%;display:flex;align-items:center;gap:4px;margin:4px 0;';
+        div.appendChild(sep);
+        g.touches.forEach(t => {
+          const btn = document.createElement('button');
+          btn.className = 'touche';
+          btn.innerHTML = `${t.adlam}<span class="lat">${t.latin}</span>`;
+          btn.title = t.info || t.latin;
+          btn.onclick = () => onInsert(t.adlam);
+          div.appendChild(btn);
+        });
+      });
+    }
+
+    construire('clavier-adlam',      ch => insererAdlam(ch, 'texte-auto'));
+    construire('clavier-adlam-corr', ch => insererAdlam(ch, 'corr-texte'));
+  } catch(e) { /* silencieux */ }
+}
+
+function insererAdlam(char, taId = 'texte-auto') {
+  const ta = document.getElementById(taId);
+  if (!ta) return;
+  const pos = ta.selectionStart;
+  ta.value = ta.value.slice(0, pos) + char + ta.value.slice(ta.selectionEnd);
+  ta.selectionStart = ta.selectionEnd = pos + char.length;
+  ta.focus();
+  if (taId === 'texte-auto') texteAdlamCache = ta.value;
+}
+
+chargerClavierAdlam();
+
+// ── Toggle Adlam dans la section correction ────────────────────────────────
+let corrScriptActif = 'latin';
+let corrLatinCache  = '';
+let corrAdlamCache  = '';
+
+async function basculerScriptCorr(script) {
+  const ta = document.getElementById('corr-texte');
+  corrScriptActif = script;
+  document.getElementById('corr-btn-latin').classList.toggle('actif', script === 'latin');
+  document.getElementById('corr-btn-adlam').classList.toggle('actif', script === 'adlam');
+  document.getElementById('clavier-adlam-corr').classList.toggle('visible', script === 'adlam');
+
+  if (script === 'adlam') {
+    const latin = ta.value.trim();
+    if (latin && !corrAdlamCache) {
+      const fd = new FormData();
+      fd.append('texte', latin); fd.append('vers', 'adlam');
+      try {
+        const d = await (await fetch(`${API}/api/convertir`, { method:'POST', body:fd, headers:H })).json();
+        corrAdlamCache = d.resultat;
+      } catch(e) { corrAdlamCache = latinVersAdlam(latin); }
+    }
+    ta.value = corrAdlamCache || latinVersAdlam(latin || '');
+    ta.dir   = 'rtl';
+    ta.classList.add('adlam');
+  } else {
+    const adlam = ta.value.trim();
+    if (adlam && adlam !== corrAdlamCache) {
+      const fd = new FormData();
+      fd.append('texte', adlam); fd.append('vers', 'latin');
+      try {
+        const d = await (await fetch(`${API}/api/convertir`, { method:'POST', body:fd, headers:H })).json();
+        corrLatinCache = d.resultat;
+      } catch(e) {}
+    }
+    ta.value = corrLatinCache || '';
+    ta.dir   = 'ltr';
+    ta.classList.remove('adlam');
+  }
+}
+
+// ── Correction des transcriptions ─────────────────────────────────────────
+let corrCurrent = null;
+
+async function chargerCorrection() {
+  document.getElementById('corr-loading').style.display  = 'block';
+  document.getElementById('corr-content').style.display  = 'none';
+  document.getElementById('corr-fini').style.display     = 'none';
+
+  try {
+    const r    = await fetch(`${API}/api/a-corriger`, { headers: H });
+    const data = await r.json();
+
+    if (data.fini) {
+      document.getElementById('corr-loading').style.display = 'none';
+      document.getElementById('corr-fini').style.display    = 'block';
+      document.getElementById('corr-progress').textContent  = 'Tout corrigé ✅';
+      return;
+    }
+
+    corrCurrent = data;
+
+    // Progression
+    const pct = data.total > 0 ? Math.round(data.fait / data.total * 100) : 0;
+    document.getElementById('corr-progress').textContent =
+      `${data.fait}/${data.total} (${pct}%)`;
+
+    // Nom fichier
+    document.getElementById('corr-nom').textContent = `📄 ${data.nom}`;
+
+    // Audio
+    const audio = document.getElementById('corr-audio');
+    audio.src   = `${API}/audio/${encodeURIComponent(data.audio_nom)}`;
+    audio.load();
+
+    // Texte auto + réinitialiser le toggle Adlam
+    corrLatinCache = data.texte_auto || '';
+    corrAdlamCache = '';
+    corrScriptActif = 'latin';
+    const corrTa = document.getElementById('corr-texte');
+    corrTa.dir   = 'ltr';
+    corrTa.classList.remove('adlam');
+    document.getElementById('corr-btn-latin').classList.add('actif');
+    document.getElementById('corr-btn-adlam').classList.remove('actif');
+    document.getElementById('clavier-adlam-corr').classList.remove('visible');
+    document.getElementById('corr-auto').textContent   = data.texte_auto || '(vide)';
+    document.getElementById('corr-texte').value        = data.texte_auto || '';
+
+    document.getElementById('corr-loading').style.display = 'none';
+    document.getElementById('corr-content').style.display = 'block';
+
+  } catch(e) {
+    document.getElementById('corr-loading').innerHTML =
+      `<span style="color:var(--rouge)">❌ Erreur: ${e.message}</span>`;
+  }
+}
+
+async function soumettreCorriger() {
+  if (!corrCurrent) return;
+  const texte = document.getElementById('corr-texte').value.trim();
+  if (!texte) { toast("❌ Le texte est vide!", true); return; }
+
+  const pseudo = document.getElementById('pseudo-input').value.trim() || 'anonyme';
+  const fd = new FormData();
+  fd.append('id',            corrCurrent.id);
+  fd.append('texte_auto',    corrCurrent.texte_auto);
+  fd.append('texte_corrige', texte);
+  fd.append('pseudo',        pseudo);
+  fd.append('action',        'corriger');
+
+  try {
+    const r = await fetch(`${API}/api/corriger`, { method: 'POST', body: fd, headers: H });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail || 'Erreur');
+    toast('✅ Correction sauvée! Baŋ-baŋ!');
+    chargerStats();
+    chargerCorrection();
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+
+async function soumettreAction(action) {
+  if (!corrCurrent) return;
+  const fd = new FormData();
+  fd.append('id',            corrCurrent.id);
+  fd.append('texte_auto',    corrCurrent.texte_auto || '');
+  fd.append('texte_corrige', ' ');
+  fd.append('action',        action);
+
+  await fetch(`${API}/api/corriger`, { method: 'POST', body: fd, headers: H });
+  toast(action === 'sauter' ? '⏭️ Passé au suivant' : '🚫 Marqué incompréhensible');
+  chargerCorrection();
+}
+
+chargerCorrection();
+
+// ═══════════════════════════════════════════════════════════════
+// LIVRES & RAG
+// ═══════════════════════════════════════════════════════════════
+const LANGUE_ICONS = { pular:'🌍', 'pular-adlam':'𞤀', francais:'🇫🇷', arabe:'🕌', anglais:'🇬🇧', mixte:'🔀' };
+const EXT_ICONS    = { pdf:'📕', txt:'📄', docx:'📘', doc:'📘', html:'🌐', md:'📝', htm:'🌐' };
+
+let fichierEnAttente = null;
+
+// Drag & drop
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('over');
+  const f = e.dataTransfer.files[0];
+  if (f) traiterFichierSelectionne(f);
+});
+
+function fichierSelectionne(input) {
+  if (input.files[0]) traiterFichierSelectionne(input.files[0]);
+}
+
+function traiterFichierSelectionne(f) {
+  fichierEnAttente = f;
+  const ext = f.name.split('.').pop().toLowerCase();
+  document.getElementById('livre-nom-fichier').textContent = `📎 ${f.name} (${(f.size/1024).toFixed(0)} KB)`;
+  document.getElementById('livre-titre').value = f.name.replace(/\.[^.]+$/, '').replace(/[_-]/g, ' ');
+  document.getElementById('livre-form').style.display = 'block';
+}
+
+async function uploadLivre() {
+  const titre = document.getElementById('livre-titre').value.trim();
+  if (!titre)          { toast('❌ Donne un titre au livre', true); return; }
+  if (!fichierEnAttente){ toast('❌ Choisis un fichier', true); return; }
+
+  const btn = document.getElementById('btn-upload');
+  btn.textContent = '⏳ Indexation en cours...';
+  btn.disabled = true;
+  document.getElementById('upload-progress-wrap').style.display = 'block';
+
+  // Simuler progression pendant l'upload
+  let prog = 0;
+  const progBar  = document.getElementById('upload-progress');
+  const progTimer = setInterval(() => {
+    prog = Math.min(prog + Math.random() * 8, 85);
+    progBar.style.width = prog + '%';
+  }, 300);
+
+  try {
+    const fd = new FormData();
+    fd.append('fichier', fichierEnAttente, fichierEnAttente.name);
+    fd.append('titre',   titre);
+    fd.append('auteur',  document.getElementById('livre-auteur').value.trim() || 'Anonyme');
+    fd.append('langue',  document.getElementById('livre-langue').value);
+
+    const r = await fetch(`${API}/api/upload-livre`, { method:'POST', body:fd, headers:H });
+    const d = await r.json();
+    clearInterval(progTimer);
+
+    if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
+
+    progBar.style.width = '100%';
+    toast(`✅ "${titre}" — ${d.nb_chunks} passages indexés!`);
+
+    // Reset form
+    setTimeout(() => {
+      document.getElementById('livre-form').style.display = 'none';
+      document.getElementById('upload-progress-wrap').style.display = 'none';
+      progBar.style.width = '0%';
+      fichierEnAttente = null;
+      document.getElementById('fichier-input').value = '';
+    }, 1500);
+
+    chargerLivres();
+    chargerRagStats();
+
+  } catch(e) {
+    clearInterval(progTimer);
+    toast('❌ ' + e.message, true);
+  } finally {
+    btn.textContent = '📤 Indexer dans le corpus';
+    btn.disabled = false;
+  }
+}
+
+async function chargerLivres() {
+  try {
+    const r = await fetch(`${API}/api/livres`, { headers: H });
+    const livres = await r.json();
+    const div = document.getElementById('livres-liste');
+
+    if (!livres.length) { div.innerHTML = ''; return; }
+
+    div.innerHTML = livres.slice().reverse().map(l => {
+      const ext  = (l.fichier || '').split('.').pop().toLowerCase();
+      const icon = EXT_ICONS[ext] || '📄';
+      const lang = LANGUE_ICONS[l.langue] || '🌍';
+      return `
+        <div class="livre-card">
+          <div class="livre-icon">${icon}</div>
+          <div class="livre-info">
+            <div class="livre-titre">${l.titre}</div>
+            <div class="livre-meta">${lang} ${l.langue} · ${l.auteur} · ${l.nb_chunks} passages</div>
+          </div>
+          <div class="livre-badge">${(l.nb_chars/1000).toFixed(0)}k car.</div>
+        </div>`;
+    }).join('');
+
+    document.getElementById('rag-stats').style.display = 'flex';
+  } catch(e) { /* silencieux */ }
+}
+
+async function chargerRagStats() {
+  try {
+    const r = await fetch(`${API}/api/rag-stats`, { headers: H });
+    const d = await r.json();
+    document.getElementById('rag-nb-livres').textContent = d.total_livres;
+    document.getElementById('rag-nb-chunks').textContent = d.total_chunks.toLocaleString();
+    if (d.total_livres > 0) document.getElementById('rag-stats').style.display = 'flex';
+  } catch(e) { /* silencieux */ }
+}
+
+async function ragRechercher() {
+  const q = document.getElementById('rag-query').value.trim();
+  if (!q) return;
+  const div = document.getElementById('rag-resultats');
+  div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;">🔍 Recherche...</div>';
+
+  try {
+    const r = await fetch(`${API}/api/rechercher?q=${encodeURIComponent(q)}&n=4`, { headers: H });
+    const d = await r.json();
+
+    if (!d.resultats?.length) {
+      div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;">Aucun résultat — ajoute des livres d\'abord.</div>';
+      return;
+    }
+    div.innerHTML = d.resultats.map(res => `
+      <div class="rag-result">
+        <div>${res.texte.slice(0, 250)}${res.texte.length > 250 ? '…' : ''}</div>
+        <div class="rag-meta">
+          📚 ${res.titre} · ${res.auteur}
+          <span class="rag-score" style="float:right">⭐ ${(res.score*100).toFixed(0)}%</span>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    div.innerHTML = `<div style="color:var(--rouge);font-size:.85rem;">❌ ${e.message}</div>`;
+  }
+}
+
+async function exporterDataset() {
+  try {
+    const r = await fetch(`${API}/api/exporter-dataset`, { method:'POST', headers:H });
+    const d = await r.json();
+    if (d.ok) toast('✅ Dataset exporté → corpus-pular/dataset/livres/');
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+
+// Charger au démarrage
+chargerLivres();
+chargerRagStats();
+
+// ═══════════════════════════════════════════════════════════════
+// JEU DE MOTS — QCM · Écrire · Parler · Lire (RAG)
+// ═══════════════════════════════════════════════════════════════
+const MOTS_JEU = [
+  // 🐾 Animaux
+  { emoji:"🐄", fr:"Vache",       pular:"nagge",       cat:"Animaux" },
+  { emoji:"🐑", fr:"Mouton",      pular:"mbabba",      cat:"Animaux" },
+  { emoji:"🐐", fr:"Chèvre",      pular:"mbewa",       cat:"Animaux" },
+  { emoji:"🐎", fr:"Cheval",      pular:"puccu",       cat:"Animaux" },
+  { emoji:"🐓", fr:"Poule",       pular:"gertooɗe",    cat:"Animaux" },
+  { emoji:"🐕", fr:"Chien",       pular:"rawaandu",    cat:"Animaux" },
+  { emoji:"🐈", fr:"Chat",        pular:"muuse",       cat:"Animaux" },
+  { emoji:"🦁", fr:"Lion",        pular:"liingu",      cat:"Animaux" },
+  { emoji:"🐊", fr:"Caïman",      pular:"baylo",       cat:"Animaux" },
+  { emoji:"🦅", fr:"Aigle",       pular:"galeejo",     cat:"Animaux" },
+  { emoji:"🐍", fr:"Serpent",     pular:"mbeewa",      cat:"Animaux" },
+  { emoji:"🦋", fr:"Papillon",    pular:"lekki",       cat:"Animaux" },
+  // 🏠 Objets
+  { emoji:"🏠", fr:"Maison",      pular:"galle",       cat:"Objets"  },
+  { emoji:"💧", fr:"Eau",         pular:"ndiyam",      cat:"Objets"  },
+  { emoji:"🔥", fr:"Feu",         pular:"jaango",      cat:"Objets"  },
+  { emoji:"☀️", fr:"Soleil",      pular:"naange",      cat:"Objets"  },
+  { emoji:"🌙", fr:"Lune",        pular:"lewru",       cat:"Objets"  },
+  { emoji:"🌳", fr:"Arbre",       pular:"ledde",       cat:"Objets"  },
+  { emoji:"🥛", fr:"Lait",        pular:"kosam",       cat:"Objets"  },
+  { emoji:"🍚", fr:"Riz",         pular:"nyiiri",      cat:"Objets"  },
+  { emoji:"📚", fr:"Livre",       pular:"defte",       cat:"Objets"  },
+  { emoji:"🥁", fr:"Tambour",     pular:"tammbari",    cat:"Objets"  },
+  { emoji:"🔪", fr:"Couteau",     pular:"lahal",       cat:"Objets"  },
+  { emoji:"🪣", fr:"Calebasse",   pular:"hoore",       cat:"Objets"  },
+  // 🤲 Corps
+  { emoji:"👁️", fr:"Œil",        pular:"yitere",      cat:"Corps"   },
+  { emoji:"👂", fr:"Oreille",     pular:"nowru",       cat:"Corps"   },
+  { emoji:"👃", fr:"Nez",         pular:"hinere",      cat:"Corps"   },
+  { emoji:"👄", fr:"Bouche",      pular:"hunuko",      cat:"Corps"   },
+  { emoji:"✋", fr:"Main",        pular:"juuɗe",       cat:"Corps"   },
+  { emoji:"🦶", fr:"Pied",        pular:"koyngal",     cat:"Corps"   },
+  { emoji:"🦷", fr:"Dents",       pular:"ñiiɓe",       cat:"Corps"   },
+  { emoji:"💪", fr:"Bras",        pular:"hakke",       cat:"Corps"   },
+  // 🌿 Nature
+  { emoji:"🌧️", fr:"Pluie",      pular:"ndungu",      cat:"Nature"  },
+  { emoji:"🌊", fr:"Fleuve",      pular:"maayo",       cat:"Nature"  },
+  { emoji:"🌾", fr:"Champ",       pular:"ngesa",       cat:"Nature"  },
+  { emoji:"🌿", fr:"Herbe",       pular:"gaawri",      cat:"Nature"  },
+  { emoji:"⛰️", fr:"Montagne",   pular:"tugal",       cat:"Nature"  },
+  { emoji:"🌬️", fr:"Vent",       pular:"hendu",       cat:"Nature"  },
+  { emoji:"🌑", fr:"Nuit",        pular:"jamma",       cat:"Nature"  },
+  // 👨‍👩‍👧 Famille
+  { emoji:"👨", fr:"Père",        pular:"baaba",       cat:"Famille" },
+  { emoji:"👩", fr:"Mère",        pular:"yinaande",    cat:"Famille" },
+  { emoji:"👶", fr:"Enfant",      pular:"ɓiɗɗo",       cat:"Famille" },
+  { emoji:"👴", fr:"Grand-père",  pular:"kaawu",       cat:"Famille" },
+  { emoji:"👵", fr:"Grand-mère",  pular:"mawndoo",     cat:"Famille" },
+  { emoji:"👫", fr:"Époux",       pular:"gorko",       cat:"Famille" },
+  { emoji:"👭", fr:"Femme",       pular:"debbo",       cat:"Famille" },
+];
+
+const NIVEAUX = [
+  { min:0,   nom:"Débutant 🌱"   },
+  { min:50,  nom:"Apprenti ⭐"   },
+  { min:150, nom:"Pullo 🌟"      },
+  { min:350, nom:"Pullo Mawɗo 🔥"},
+  { min:700, nom:"Lamɗo 👑"      },
+];
+
+// ── État global ────────────────────────────────────────────────
+let jScore = 0, jStreak = 0, jMots = 0;
+let jMotActif = null, jCat = "Tout", jMode = "qcm";
+let jRecorder = null, jChunks = [], jBlob = null, jEnreg = false;
+let jPhraseRAG = null; // phrase active en mode Lire
+
+// ── Init catégories ────────────────────────────────────────────
+function initJeu() {
+  const cats = ["Tout", ...new Set(MOTS_JEU.map(m => m.cat))];
+  const div  = document.getElementById('jeu-cats');
+  const icons = { Animaux:'🐾', Objets:'🏠', Corps:'🤲', Nature:'🌿', Famille:'👨‍👩‍👧' };
+  cats.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'filtre' + (c === 'Tout' ? ' actif' : '');
+    btn.textContent = c === 'Tout' ? '🌍 Tout' : (icons[c]||'') + ' ' + c;
+    btn.onclick = () => {
+      jCat = c;
+      div.querySelectorAll('.filtre').forEach(b => b.classList.toggle('actif',
+        b.textContent === btn.textContent));
+      jSuivant();
+    };
+    div.appendChild(btn);
+  });
+  jSetMode('qcm');
+}
+
+// ── Changer de mode ────────────────────────────────────────────
+function jSetMode(mode) {
+  jMode = mode;
+  ['qcm','ecrire','parler','lire'].forEach(m => {
+    document.getElementById('mode-'+m).classList.toggle('actif', m === mode);
+    document.getElementById('zone-'+m).style.display = m === mode ? 'block' : 'none';
+  });
+  const motDisplay = document.getElementById('jeu-mot-display');
+  const ragDisplay = document.getElementById('jeu-rag-display');
+  const cats       = document.getElementById('jeu-cats');
+
+  if (mode === 'lire') {
+    motDisplay.style.display = 'none';
+    ragDisplay.style.display = 'block';
+    cats.style.display = 'none';
+    jChargerPhraseRAG();
+  } else {
+    motDisplay.style.display = 'block';
+    ragDisplay.style.display = 'none';
+    cats.style.display = 'flex';
+    jSuivant();
+  }
+}
+window.jSetMode = jSetMode;
+
+// ── Mot suivant (modes mot) ────────────────────────────────────
+function jSuivant(passe = false) {
+  if (passe) { jStreak = 0; jUI(); }
+  const liste = (jCat === 'Tout' ? MOTS_JEU : MOTS_JEU.filter(m => m.cat === jCat))
+    .filter(m => m !== jMotActif);
+  jMotActif = liste[Math.floor(Math.random() * liste.length)] || MOTS_JEU[0];
+
+  const el = document.getElementById('jeu-emoji');
+  el.style.animation = 'none'; el.offsetHeight; el.style.animation = '';
+  el.textContent = jMotActif.emoji;
+
+  document.getElementById('jeu-fr').textContent          = jMotActif.fr;
+  document.getElementById('jeu-cache').textContent       = '• • •';
+  document.getElementById('jeu-cache').className         = 'jeu-cache';
+  document.getElementById('jeu-adlam-reveal').style.display = 'none';
+  document.getElementById('jeu-result').style.display    = 'none';
+  document.getElementById('jeu-share').style.display     = 'none';
+
+  if (jMode === 'qcm')    jRendreQCM();
+  if (jMode === 'ecrire') {
+    const inp = document.getElementById('jeu-input');
+    inp.value = ''; inp.disabled = false; inp.focus();
+  }
+  if (jMode === 'parler') {
+    const btn = document.getElementById('jeu-btn');
+    btn.className = 'jeu-btn-enreg idle';
+    btn.textContent = '🎙️ Dire le mot en pular';
+    btn.disabled = false; btn.onclick = jeuToggle;
+  }
+  jBlob = null; jEnreg = false;
+}
+function jPasser() { jSuivant(true); }
+window.jeuPasser = jPasser;
+
+// ── Affichage résultat commun ──────────────────────────────────
+function jAfficherResultat(correct, motAttendu, transcription, bonus) {
+  const res = document.getElementById('jeu-result');
+  res.style.display = 'block';
+  const adlam = latinVersAdlam(motAttendu);
+  if (correct) {
+    res.className = 'jeu-result ok';
+    res.innerHTML = `✅ <strong>${motAttendu}</strong>
+      <span class="adlam" style="direction:rtl;font-size:1rem;"> ${adlam}</span><br>
+      <small>+${bonus} pts${jStreak>1?' 🔥 Série ×'+jStreak:''}</small>`;
+    if (jStreak >= 3) jConfetti();
+    toast(`✅ +${bonus} pts${jStreak>1?' 🔥×'+jStreak:''}!`);
+  } else {
+    res.className = 'jeu-result ko';
+    res.innerHTML = `❌ Réponse: <strong>${motAttendu}</strong>
+      <span class="adlam" style="direction:rtl;font-size:1rem;"> ${adlam}</span><br>
+      ${transcription ? `<small>Tu as dit/écrit: "${transcription}"</small>` : ''}`;
+  }
+  if (jScore >= 50) document.getElementById('jeu-share').style.display = 'block';
+  jUI();
+}
+
+function jReveleMot() {
+  const cache = document.getElementById('jeu-cache');
+  cache.textContent = jMotActif.pular;
+  cache.className = 'jeu-cache revele';
+  document.getElementById('jeu-adlam-reveal').textContent = latinVersAdlam(jMotActif.pular);
+  document.getElementById('jeu-adlam-reveal').style.display = 'block';
+}
+
+// ── QCM ───────────────────────────────────────────────────────
+function jRendreQCM() {
+  const distracteurs = MOTS_JEU
+    .filter(m => m !== jMotActif)
+    .sort(() => Math.random() - .5)
+    .slice(0, 3);
+  const choix = [jMotActif, ...distracteurs].sort(() => Math.random() - .5);
+  const div = document.getElementById('qcm-options');
+  div.innerHTML = '';
+  choix.forEach(m => {
+    const btn = document.createElement('button');
+    btn.className = 'qcm-option';
+    btn.innerHTML = `<div style="font-size:1rem;font-weight:700;">${m.pular}</div>
+      <div class="adlam" style="font-size:.8rem;direction:rtl;opacity:.7;">${latinVersAdlam(m.pular)}</div>`;
+    btn.onclick = () => jChoisir(m);
+    div.appendChild(btn);
+  });
+  document.getElementById('zone-qcm').style.display = 'block';
+}
+
+function jChoisir(choix) {
+  document.querySelectorAll('.qcm-option').forEach(b => {
+    b.disabled = true;
+    const mot = b.querySelector('div').textContent.trim();
+    if (mot === jMotActif.pular) b.classList.add('correct');
+    else if (mot === choix.pular && choix !== jMotActif) b.classList.add('incorrect');
+  });
+  const correct = choix === jMotActif;
+  const bonus = correct ? (jStreak>=4?30:jStreak>=2?20:10) : 0;
+  if (correct) { jScore+=bonus; jStreak++; jMots++; } else { jStreak=0; }
+  jReveleMot();
+  jAfficherResultat(correct, jMotActif.pular, choix.pular, bonus);
+
+  // Bouton suivant
+  setTimeout(() => {
+    const div = document.getElementById('zone-qcm');
+    const btnSuiv = document.createElement('button');
+    btnSuiv.className = 'jeu-btn-enreg suivant';
+    btnSuiv.style.marginTop = '8px';
+    btnSuiv.textContent = '➡️ Mot suivant';
+    btnSuiv.onclick = () => jSuivant();
+    div.appendChild(btnSuiv);
+  }, 300);
+}
+
+// ── Écrire ────────────────────────────────────────────────────
+function jValiderEcriture() {
+  const inp = document.getElementById('jeu-input');
+  const ecrit = inp.value.trim();
+  if (!ecrit) { inp.focus(); return; }
+  inp.disabled = true;
+  const correct = jCheck(ecrit, jMotActif.pular);
+  const bonus = correct ? (jStreak>=4?30:jStreak>=2?20:10) : 0;
+  if (correct) { jScore+=bonus; jStreak++; jMots++; } else { jStreak=0; }
+  jReveleMot();
+  jAfficherResultat(correct, jMotActif.pular, ecrit, bonus);
+
+  // Remplacement du bouton valider par "Mot suivant"
+  const btnV = document.querySelector('#zone-ecrire button');
+  btnV.textContent = '➡️ Suivant';
+  btnV.style.background = 'var(--or)';
+  btnV.style.color = '#0d1f15';
+  btnV.onclick = () => {
+    btnV.textContent = '✅';
+    btnV.style.background = 'var(--vert)';
+    btnV.style.color = 'white';
+    btnV.onclick = jValiderEcriture;
+    jSuivant();
+  };
+}
+window.jValiderEcriture = jValiderEcriture;
+
+// ── Parler ─────────────────────────────────────────────────────
+async function jeuToggle() {
+  if (jEnreg) {
+    jRecorder?.stop(); jEnreg = false;
+    const btn = document.getElementById('jeu-btn');
+    btn.className = 'jeu-btn-enreg analyse';
+    btn.textContent = '⏳ Analyse...'; btn.disabled = true;
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    jChunks = [];
+    jRecorder = new MediaRecorder(stream);
+    jRecorder.ondataavailable = e => jChunks.push(e.data);
+    jRecorder.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      jBlob = new Blob(jChunks, { type:'audio/webm' });
+      await jAnalyser('parler');
+    };
+    jRecorder.start(); jEnreg = true;
+    const btn = document.getElementById('jeu-btn');
+    btn.className = 'jeu-btn-enreg enreg';
+    btn.textContent = '⏹️ Arrêter (parle!)';
+    setTimeout(() => { if (jEnreg && jRecorder?.state==='recording') jRecorder.stop(); }, 4000);
+  } catch(e) { toast('❌ Micro non disponible', true); }
+}
+window.jeuToggle = jeuToggle;
+
+// ── Mode Lire (RAG) ────────────────────────────────────────────
+async function jChargerPhraseRAG(forcer = false) {
+  const phraseEl  = document.getElementById('jeu-rag-phrase');
+  const sourceEl  = document.getElementById('jeu-rag-source');
+  const btnLire   = document.getElementById('jeu-btn-lire');
+
+  phraseEl.textContent = '⏳ Chargement d\'une phrase...';
+  sourceEl.textContent = '';
+  document.getElementById('jeu-result').style.display = 'none';
+
+  try {
+    const r = await fetch(`${API}/api/phrases-jeu?n=5`, { headers: H });
+    const d = await r.json();
+
+    if (!d.phrases?.length) {
+      phraseEl.innerHTML = '<em style="color:var(--gris)">Aucune phrase disponible — ajoute des livres dans la section 📚 ci-dessus</em>';
+      return;
+    }
+    // Choisir une phrase aléatoire différente de la précédente
+    const autres = d.phrases.filter(p => p.texte !== jPhraseRAG?.texte);
+    jPhraseRAG = (autres.length ? autres : d.phrases)[Math.floor(Math.random() * (autres.length || d.phrases.length))];
+
+    phraseEl.textContent = jPhraseRAG.texte;
+    sourceEl.textContent = `📚 ${jPhraseRAG.titre} · ${jPhraseRAG.langue}`;
+
+    btnLire.className   = 'jeu-btn-enreg idle';
+    btnLire.textContent = '🎙️ Lire cette phrase à voix haute';
+    btnLire.disabled    = false; btnLire.onclick = jLireToggle;
+  } catch(e) {
+    phraseEl.innerHTML = '<em style="color:var(--rouge)">Erreur — serveur non démarré?</em>';
+  }
+}
+window.jChargerPhraseRAG = jChargerPhraseRAG;
+
+let jLireEnreg = false, jLireRecorder = null, jLireChunks = [];
+async function jLireToggle() {
+  const btn = document.getElementById('jeu-btn-lire');
+  if (jLireEnreg) {
+    jLireRecorder?.stop(); jLireEnreg = false;
+    btn.className = 'jeu-btn-enreg analyse';
+    btn.textContent = '⏳ Analyse...'; btn.disabled = true;
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    jLireChunks = [];
+    jLireRecorder = new MediaRecorder(stream);
+    jLireRecorder.ondataavailable = e => jLireChunks.push(e.data);
+    jLireRecorder.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      jBlob = new Blob(jLireChunks, { type:'audio/webm' });
+      await jAnalyser('lire');
+    };
+    jLireRecorder.start(); jLireEnreg = true;
+    btn.className = 'jeu-btn-enreg enreg';
+    btn.textContent = '⏹️ Arrêter';
+    // Auto-stop selon la longueur de la phrase
+    const duree = Math.min(Math.max((jPhraseRAG?.texte?.length || 50) * 60, 4000), 15000);
+    setTimeout(() => { if (jLireEnreg && jLireRecorder?.state==='recording') jLireRecorder.stop(); }, duree);
+  } catch(e) { toast('❌ Micro non disponible', true); }
+}
+window.jLireToggle = jLireToggle;
+
+// ── Analyse audio (parler + lire) ─────────────────────────────
+async function jAnalyser(modeSource) {
+  if (!jBlob) return;
+  const btnId = modeSource === 'lire' ? 'jeu-btn-lire' : 'jeu-btn';
+  try {
+    const fd = new FormData();
+    fd.append('audio', jBlob, 'jeu.webm');
+    const r = await fetch(`${API}/api/transcrire`, { method:'POST', body:fd, headers:H });
+    const d = await r.json();
+    const trans = d.text || '';
+
+    if (modeSource === 'lire') {
+      // Mode lecture : vérifier que l'utilisateur a bien lu la phrase
+      const attendu = jPhraseRAG?.texte || '';
+      const correct = jCheck(trans, attendu.split(' ').slice(0, 3).join(' ')); // au moins début
+      const bonus = correct ? (jStreak>=2?20:10) : 0;
+      if (correct) { jScore+=bonus; jStreak++; jMots++; } else { jStreak=0; }
+      jUI();
+
+      const res = document.getElementById('jeu-result');
+      res.style.display = 'block';
+      if (correct) {
+        res.className = 'jeu-result ok';
+        res.innerHTML = `✅ Lecture enregistrée! +${bonus} pts<br><small>${trans.slice(0,80)}</small>`;
+        if (jStreak>=3) jConfetti();
+        toast(`✅ +${bonus} pts!`);
+      } else {
+        res.className = 'jeu-result ko';
+        res.innerHTML = `❌ Peu clair — essaie de lire plus distinctement<br><small>Détecté: "${trans.slice(0,60)}"</small>`;
+      }
+      if (jScore >= 50) document.getElementById('jeu-share').style.display = 'block';
+
+      // Sauver dans corpus
+      await jSauver(trans, attendu);
+
+      const btn = document.getElementById(btnId);
+      btn.className = 'jeu-btn-enreg suivant';
+      btn.textContent = '➡️ Phrase suivante';
+      btn.disabled = false;
+      btn.onclick = () => { jChargerPhraseRAG(true); };
+
+    } else {
+      // Mode parler : vérifier le mot
+      const correct = jCheck(trans, jMotActif.pular);
+      const bonus = correct ? (jStreak>=4?30:jStreak>=2?20:10) : 0;
+      if (correct) { jScore+=bonus; jStreak++; jMots++; } else { jStreak=0; }
+      jReveleMot();
+      jAfficherResultat(correct, jMotActif.pular, trans, bonus);
+      await jSauver(trans, jMotActif.pular);
+
+      const btn = document.getElementById(btnId);
+      btn.className = 'jeu-btn-enreg suivant';
+      btn.textContent = '➡️ Mot suivant';
+      btn.disabled = false;
+      btn.onclick = () => { btn.onclick = jeuToggle; jSuivant(); };
+    }
+  } catch(e) {
+    toast('❌ ' + e.message, true);
+    const btn = document.getElementById(btnId);
+    if (btn) { btn.className='jeu-btn-enreg idle'; btn.textContent='🎙️ Réessayer'; btn.disabled=false; }
+  }
+}
+
+// ── Helpers ────────────────────────────────────────────────────
+function jNorm(s) {
+  return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z ɓɗƴɲŋ]/g,' ').replace(/\s+/g,' ').trim();
+}
+function jLev(a,b) {
+  const m=a.length,n=b.length,d=Array.from({length:m+1},(_,i)=>Array.from({length:n+1},(_,j)=>i||j));
+  for(let i=1;i<=m;i++) for(let j=1;j<=n;j++) d[i][j]=a[i-1]===b[j-1]?d[i-1][j-1]:1+Math.min(d[i-1][j],d[i][j-1],d[i-1][j-1]);
+  return d[m][n];
+}
+function jCheck(trans, attendu) {
+  const t=jNorm(trans), p=jNorm(attendu);
+  if(t.includes(p)) return true;
+  return t.split(' ').some(w=>w.length>2&&jLev(w,p)<=2);
+}
+function jUI() {
+  document.getElementById('jeu-score').textContent  = jScore;
+  document.getElementById('jeu-streak').textContent = jStreak>0?'🔥 '+jStreak:'0';
+  document.getElementById('jeu-mots').textContent   = jMots;
+  const niv=[...NIVEAUX].reverse().find(n=>jScore>=n.min)||NIVEAUX[0];
+  document.getElementById('jeu-niveau').textContent = niv.nom;
+}
+function jConfetti() {
+  const cols=['#c8a84b','#1a6b3c','#e53935','#fff','#ff9800'];
+  for(let i=0;i<30;i++){
+    const el=document.createElement('div'); el.className='confetti-piece';
+    el.style.cssText=`left:${Math.random()*100}vw;top:0;background:${cols[i%cols.length]};animation-delay:${Math.random()*.5}s;animation-duration:${.8+Math.random()*.6}s`;
+    document.body.appendChild(el); setTimeout(()=>el.remove(),1500);
+  }
+}
+async function jSauver(transcription, texteAttendu) {
+  if (!jBlob) return;
+  try {
+    const pseudo=(document.getElementById('pseudo-input').value.trim()||'anonyme')+'_jeu';
+    const fd=new FormData();
+    fd.append('audio',jBlob,'jeu.webm');
+    fd.append('transcription',transcription||texteAttendu||'');
+    fd.append('texte_final',texteAttendu||'');
+    fd.append('pseudo',pseudo);
+    await fetch(`${API}/api/valider`,{method:'POST',body:fd,headers:H});
+  } catch(e){/* silencieux */}
+}
+function jeuPartager() {
+  const niv=[...NIVEAUX].reverse().find(n=>jScore>=n.min)?.nom||'';
+  const txt=`🌍 J'apprends le pular avec Pular IA!\n🏆 Score: ${jScore} pts — ${niv}\n📚 ${jMots} mots appris\n🎯 Rejoins-moi → ${location.href}\n#Pular #Fulfulde #LangueAfricaine`;
+  if(navigator.share) navigator.share({title:'Pular IA',text:txt,url:location.href});
+  else navigator.clipboard.writeText(txt).then(()=>toast('✅ Texte copié! Colle sur TikTok/Insta'));
+}
+window.jeuPartager = jeuPartager;
+
+initJeu();
+
+// ═══════════════════════════════════════════════════════════════
+// ESPACE CRÉATEUR / PROFESSEUR
+// ═══════════════════════════════════════════════════════════════
+let profOuvert = false;
+let motsProfCache = [];
+
+function profTogglePanel() {
+  profOuvert = !profOuvert;
+  document.getElementById('prof-contenu').style.display = profOuvert ? 'block' : 'none';
+  document.getElementById('prof-lock').classList.toggle('ouvert', profOuvert);
+  if (profOuvert) { profSetTab('ajouter'); profChargerMots(); profChargerContribs(); profChargerStats(); }
+}
+window.profTogglePanel = profTogglePanel;
+
+function profSetTab(tab) {
+  ['ajouter','corriger','valider','stats'].forEach(t => {
+    document.getElementById('ptab-'+t).classList.toggle('actif', t===tab);
+    document.getElementById('ppanel-'+t).classList.toggle('actif', t===tab);
+  });
+  if (tab === 'corriger') profRendreListe();
+  if (tab === 'valider')  profChargerContribs();
+  if (tab === 'stats')    profChargerStats();
+}
+window.profSetTab = profSetTab;
+
+// ── Ajouter un mot ─────────────────────────────────────────────
+async function profAjouterMot() {
+  const emoji  = document.getElementById('pf-emoji').value.trim() || '📝';
+  const fr     = document.getElementById('pf-fr').value.trim();
+  const pular  = document.getElementById('pf-pular').value.trim();
+  const adlam  = document.getElementById('pf-adlam').value.trim() || latinVersAdlam(pular);
+  const catSel = document.getElementById('pf-cat').value;
+  const catNew = document.getElementById('pf-cat-custom').value.trim();
+  const cat    = catNew || catSel;
+  const note   = document.getElementById('pf-note').value.trim();
+  const pseudo = document.getElementById('pf-pseudo').value.trim() || 'prof_anonyme';
+
+  if (!fr || !pular) { toast('❌ Français et Pular sont obligatoires', true); return; }
+  if (!cat) { toast('❌ Choisis ou écris une catégorie', true); return; }
+
+  try {
+    const fd = new FormData();
+    fd.append('emoji', emoji); fd.append('fr', fr);  fd.append('pular', pular);
+    fd.append('adlam', adlam); fd.append('cat', cat); fd.append('note', note);
+    fd.append('pseudo', pseudo);
+    const r = await fetch(`${API}/api/prof/mot`, { method:'POST', body:fd, headers:H });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail||'Erreur');
+
+    toast(`✅ "${pular}" ajouté au jeu!`);
+    // Vider le formulaire
+    ['pf-emoji','pf-fr','pf-pular','pf-adlam','pf-note'].forEach(id => document.getElementById(id).value='');
+    document.getElementById('pf-cat').value = '';
+    // Recharger le jeu avec le nouveau mot
+    await chargerMotsCustom();
+    profChargerStats();
+  } catch(e) { toast('❌ '+e.message, true); }
+}
+window.profAjouterMot = profAjouterMot;
+
+// ── Charger et fusionner les mots custom dans le jeu ──────────
+async function chargerMotsCustom() {
+  try {
+    const r = await fetch(`${API}/api/prof/mots`, { headers:H });
+    motsProfCache = await r.json();
+    // Fusionner dans MOTS_JEU global (sans doublons)
+    motsProfCache.forEach(m => {
+      if (!MOTS_JEU.find(x => x.pular===m.pular)) {
+        MOTS_JEU.push({ emoji:m.emoji||'📝', fr:m.fr, pular:m.pular, adlam:m.adlam, cat:m.cat, note:m.note, id:m.id, custom:true });
+      }
+    });
+    // Reconstruire les catégories du jeu
+    const cats = document.getElementById('jeu-cats');
+    if (cats && cats.children.length > 0) {
+      const nouvCats = [...new Set(MOTS_JEU.map(m=>m.cat))];
+      // Ajouter boutons pour nouvelles catégories pas encore affichées
+      const icons = { Animaux:'🐾', Objets:'🏠', Corps:'🤲', Nature:'🌿', Famille:'👨‍👩‍👧', Proverbes:'💬', Chiffres:'🔢', Couleurs:'🎨', Grammaire:'📖' };
+      nouvCats.forEach(c => {
+        if (![...cats.querySelectorAll('.filtre')].some(b=>b.textContent.endsWith(c))) {
+          const btn = document.createElement('button');
+          btn.className = 'filtre';
+          btn.textContent = (icons[c]||'📝')+' '+c;
+          btn.onclick = () => {
+            document.getElementById('jeu-cats').querySelectorAll('.filtre')
+              .forEach(b=>b.classList.toggle('actif', b===btn));
+            jCat = c; jSuivant();
+          };
+          cats.appendChild(btn);
+        }
+      });
+    }
+  } catch(e) { /* silencieux */ }
+}
+
+// ── Afficher la liste dans l'onglet Corriger ─────────────────
+function profRendreListe() {
+  const div = document.getElementById('prof-liste-mots');
+  if (!motsProfCache.length) {
+    div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;">Aucun mot personnalisé pour l\'instant.<br>Utilise l\'onglet ➕ pour en ajouter.</div>';
+    return;
+  }
+  div.innerHTML = motsProfCache.map(m => `
+    <div class="mot-card" id="mc-${m.id}">
+      <div class="mc-emoji">${m.emoji||'📝'}</div>
+      <div class="mc-info">
+        <div class="mc-pular">${m.pular} <span class="badge-custom">custom</span></div>
+        <div class="mc-fr">${m.fr} · <span class="mc-adlam">${m.adlam||''}</span></div>
+        ${m.note?`<div style="font-size:.7rem;color:var(--gris);margin-top:2px;">💬 ${m.note}</div>`:''}
+      </div>
+      <div class="mc-actions">
+        <button class="btn-edit" onclick="profOuvrirEdit('${m.id}')">✏️</button>
+        <button class="btn-del"  onclick="profSupprimerMot('${m.id}')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+function profOuvrirEdit(id) {
+  const m = motsProfCache.find(x=>x.id===id);
+  if (!m) return;
+  document.getElementById('pedit-id').value    = id;
+  document.getElementById('pedit-emoji').value = m.emoji||'';
+  document.getElementById('pedit-fr').value    = m.fr||'';
+  document.getElementById('pedit-pular').value = m.pular||'';
+  document.getElementById('pedit-adlam').value = m.adlam||'';
+  document.getElementById('pedit-cat').value   = m.cat||'';
+  document.getElementById('pedit-note').value  = m.note||'';
+  document.getElementById('prof-edit-form').style.display = 'block';
+  document.getElementById('prof-edit-form').scrollIntoView({behavior:'smooth',block:'center'});
+}
+window.profOuvrirEdit = profOuvrirEdit;
+
+async function profSauverEdit() {
+  const id    = document.getElementById('pedit-id').value;
+  const pular = document.getElementById('pedit-pular').value.trim();
+  const fr    = document.getElementById('pedit-fr').value.trim();
+  if (!pular||!fr) { toast('❌ Pular et Français obligatoires', true); return; }
+  try {
+    const fd = new FormData();
+    fd.append('emoji', document.getElementById('pedit-emoji').value.trim()||'📝');
+    fd.append('fr',    fr); fd.append('pular', pular);
+    fd.append('adlam', document.getElementById('pedit-adlam').value.trim()||latinVersAdlam(pular));
+    fd.append('cat',   document.getElementById('pedit-cat').value.trim());
+    fd.append('note',  document.getElementById('pedit-note').value.trim());
+    const r = await fetch(`${API}/api/prof/mot/${id}`, { method:'PUT', body:fd, headers:H });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail||'Erreur');
+    toast('✅ Mot modifié!');
+    document.getElementById('prof-edit-form').style.display = 'none';
+    await chargerMotsCustom();
+    profRendreListe();
+  } catch(e) { toast('❌ '+e.message, true); }
+}
+window.profSauverEdit = profSauverEdit;
+
+async function profSupprimerMot(id) {
+  if (!confirm('Supprimer ce mot du jeu?')) return;
+  try {
+    const r = await fetch(`${API}/api/prof/mot/${id}`, { method:'DELETE', headers:H });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail||'Erreur');
+    toast('🗑️ Mot supprimé');
+    // Retirer de MOTS_JEU
+    const idx = MOTS_JEU.findIndex(m=>m.id===id);
+    if (idx>-1) MOTS_JEU.splice(idx,1);
+    motsProfCache = motsProfCache.filter(m=>m.id!==id);
+    profRendreListe();
+  } catch(e) { toast('❌ '+e.message, true); }
+}
+window.profSupprimerMot = profSupprimerMot;
+
+// ── Valider contributions ──────────────────────────────────────
+async function profChargerContribs() {
+  const div = document.getElementById('prof-contribs');
+  div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;">⏳ Chargement...</div>';
+  try {
+    const r = await fetch(`${API}/api/prof/contributions?limit=10`, { headers:H });
+    const d = await r.json();
+
+    if (!d.contributions?.length) {
+      div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;text-align:center;padding:20px;">🎉 Tout est validé! Aucune contribution en attente.</div>';
+      document.getElementById('prof-badge-pending').textContent = '';
+      document.getElementById('prof-nb-pending').style.display = 'none';
+      return;
+    }
+    const n = d.contributions.length;
+    document.getElementById('prof-badge-pending').textContent = ` (${n})`;
+    document.getElementById('prof-nb-pending').textContent = `${n} en attente`;
+    document.getElementById('prof-nb-pending').style.display = '';
+
+    div.innerHTML = d.contributions.map(c => `
+      <div class="contrib-card" id="cc-${c.id}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:.75rem;color:var(--gris);">👤 ${c.pseudo} · 🕐 ${c.date?.slice(0,10)||'?'}</span>
+          <span class="badge-pending">en attente</span>
+        </div>
+        <audio controls src="${API}/audio/${encodeURIComponent(c.audio_nom||'')}"></audio>
+        <div class="contrib-diff">
+          <div class="diff-attendu">✅ Attendu: <strong>${c.texte_final||'?'}</strong></div>
+          <div class="diff-transcrit">🤖 Transcrit: ${c.transcription_auto||'(vide)'}</div>
+        </div>
+        <input type="text" id="cc-correction-${c.id}" placeholder="Correction (si besoin)"
+          value="${c.texte_final||''}"
+          style="width:100%;padding:7px 10px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:6px;color:var(--texte);font-size:.88rem;outline:none;margin-bottom:6px;"
+          onfocus="this.style.borderColor='var(--or)'" onblur="this.style.borderColor='#2d5c3a'">
+        <div class="contrib-actions">
+          <button class="btn-accept" onclick="profValider('${c.id}','valider')">✅ Valider</button>
+          <button class="btn-edit-c" onclick="profValider('${c.id}','corriger')">✏️ Corriger</button>
+          <button class="btn-reject" onclick="profValider('${c.id}','rejeter')">❌ Rejeter</button>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    div.innerHTML = `<div style="color:var(--rouge);font-size:.85rem;">❌ ${e.message}</div>`;
+  }
+}
+window.profChargerContribs = profChargerContribs;
+
+async function profValider(id, action) {
+  const correction = document.getElementById(`cc-correction-${id}`)?.value.trim() || '';
+  try {
+    const fd = new FormData();
+    fd.append('id', id); fd.append('action', action); fd.append('correction', correction);
+    const r = await fetch(`${API}/api/prof/valider`, { method:'POST', body:fd, headers:H });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail||'Erreur');
+    const msg = action==='valider'?'✅ Validée!': action==='corriger'?'✏️ Corrigée!':'❌ Rejetée';
+    toast(msg);
+    document.getElementById(`cc-${id}`)?.remove();
+    profChargerStats();
+  } catch(e) { toast('❌ '+e.message, true); }
+}
+window.profValider = profValider;
+
+// ── Stats ──────────────────────────────────────────────────────
+async function profChargerStats() {
+  try {
+    const [sr, rag] = await Promise.all([
+      fetch(`${API}/api/stats`, {headers:H}).then(r=>r.json()),
+      fetch(`${API}/api/rag-stats`, {headers:H}).then(r=>r.json()),
+    ]);
+    document.getElementById('ps-mots-total').textContent = MOTS_JEU.length;
+    document.getElementById('ps-mots-custom').textContent = motsProfCache.length;
+    document.getElementById('ps-contribs').textContent = sr.total_contributions||0;
+    document.getElementById('ps-validees').textContent = sr.total_validations||0;
+    document.getElementById('ps-livres').textContent  = rag.total_livres||0;
+    document.getElementById('ps-chunks').textContent  = (rag.total_chunks||0).toLocaleString();
+  } catch(e) { /* silencieux */ }
+}
+
+async function profExporterTout() {
+  try {
+    const r = await fetch(`${API}/api/exporter-dataset`, { method:'POST', headers:H });
+    const d = await r.json();
+    if (d.ok) toast('✅ Dataset exporté → corpus-pular/dataset/');
+  } catch(e) { toast('❌ '+e.message, true); }
+}
+window.profExporterTout = profExporterTout;
+
+// Charger les mots custom au démarrage (après initJeu)
+chargerMotsCustom();
+// Vérifier contributions en attente
+(async () => {
+  try {
+    const r = await fetch(`${API}/api/prof/contributions?limit=1`, {headers:H});
+    const d = await r.json();
+    const n = d.total_pending||0;
+    if (n>0) {
+      document.getElementById('prof-nb-pending').textContent = `${n} en attente`;
+      document.getElementById('prof-nb-pending').style.display = '';
+    }
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>

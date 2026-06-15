@@ -1,0 +1,12 @@
+[build]
+dockerfile = "Dockerfile"
+
+[deploy]
+startCommand = "python scripts/community_webapp.py"
+healthcheckPath = "/api/stats"
+healthcheckTimeout = 120
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+[[mounts]]
+mountPath = "/app/corpus-pular"

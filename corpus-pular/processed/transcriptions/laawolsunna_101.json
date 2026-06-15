@@ -1,0 +1,59 @@
+{
+  "fichier": "corpus-pular\\processed\\telegram\\audio\\laawolsunna_101.ogg",
+  "nom": "laawolsunna_101.ogg",
+  "texte": "Bismillahirrahmanirrahim. Alhamdulillahi rabbila ulamina wa sallallahu ala Sayyidina Muhammadin Wali wa Sallam. kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa k Wa sallallahu ala sayedina Muhammadin wa ali wa sallam Wa sallallahu ala sayedina Muhammadin wa ali wa sallam Wa sallallahu ala sayedina Muhammadin wa ali wa sallam Wa sallallahu ala sayedina Muhammadin wa ali wa sallam",
+  "langue_detect": "sw",
+  "segments": [
+    {
+      "debut": 0.0,
+      "fin": 7.0,
+      "texte": "Bismillahirrahmanirrahim. Alhamdulillahi rabbila ulamina wa sallallahu ala Sayyidina Muhammadin Wali wa Sallam.",
+      "confiance": -0.5705,
+      "sans_voix": true
+    },
+    {
+      "debut": 7.0,
+      "fin": 37.0,
+      "texte": "kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa kwa k",
+      "confiance": -0.0776,
+      "sans_voix": true
+    },
+    {
+      "debut": 37.0,
+      "fin": 43.4,
+      "texte": "Wa sallallahu ala sayedina Muhammadin wa ali wa sallam",
+      "confiance": -0.4358,
+      "sans_voix": true
+    },
+    {
+      "debut": 43.4,
+      "fin": 46.6,
+      "texte": "Wa sallallahu ala sayedina Muhammadin wa ali wa sallam",
+      "confiance": -0.4358,
+      "sans_voix": true
+    },
+    {
+      "debut": 46.6,
+      "fin": 50.6,
+      "texte": "Wa sallallahu ala sayedina Muhammadin wa ali wa sallam",
+      "confiance": -0.4358,
+      "sans_voix": true
+    },
+    {
+      "debut": 50.6,
+      "fin": 54.6,
+      "texte": "Wa sallallahu ala sayedina Muhammadin wa ali wa sallam",
+      "confiance": -0.4358,
+      "sans_voix": true
+    }
+  ],
+  "meta": {
+    "modele": "small",
+    "duree_traitement_s": 511.91,
+    "taille_fichier_oct": 1058507,
+    "date": "2026-05-06T14:53:16.220530",
+    "nb_segments": 6,
+    "nb_tokens": 160
+  },
+  "statut": "ok"
+}

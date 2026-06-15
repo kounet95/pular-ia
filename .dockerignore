@@ -1,0 +1,32 @@
+# Credentials
+.env
+session_pular.session
+session_pular.session-journal
+
+# Données volumineuses (montées en volume)
+corpus-pular/
+
+# Artefacts ML
+*.bin
+*.safetensors
+*.pt
+models/
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Logs
+logs/
+
+# Dev
+.claude/
+.git/
+*.ipynb
+dataset_translit.zip
+DEMARRAGE_RAPIDE.md
+
+# OS
+.DS_Store
+Thumbs.db

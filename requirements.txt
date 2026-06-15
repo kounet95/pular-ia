@@ -1,0 +1,68 @@
+# ─────────────────────────────────────────────────────────────
+# PIPELINE CORPUS PULAR — Dépendances Python
+# Installer avec : pip install -r requirements.txt
+# ─────────────────────────────────────────────────────────────
+
+# ── Transcription audio (Whisper) ──────────────────────────────
+openai-whisper>=20231117
+torch>=2.1.0
+torchaudio>=2.1.0
+
+# ── OCR images ─────────────────────────────────────────────────
+Pillow>=10.0.0
+pytesseract>=0.3.10        # nécessite Tesseract-OCR installé sur le système
+opencv-python>=4.8.0       # prétraitement image (optionnel mais recommandé)
+
+# ── Extraction PDF / DOCX ──────────────────────────────────────
+pymupdf>=1.23.0            # extraction texte natif + rasterisation
+pdfplumber>=0.10.0         # extraction PDF alternative (meilleure pour les colonnes)
+python-docx>=1.1.0         # extraction DOCX/DOC
+
+# ── RAG (Retrieval-Augmented Generation) ───────────────────────
+chromadb>=0.4.24           # base vectorielle locale persistante
+sentence-transformers>=2.7.0  # embeddings multilingues (paraphrase-multilingual-MiniLM)
+
+# ── Dataset & ML ───────────────────────────────────────────────
+transformers>=4.40.0
+datasets>=2.18.0
+peft>=0.10.0               # LoRA fine-tuning
+trl>=0.8.0                 # SFTTrainer
+accelerate>=0.28.0         # multi-GPU
+bitsandbytes>=0.43.0       # quantification 4/8-bit (Linux requis)
+
+# ── Telegram scraping ──────────────────────────────────────────
+telethon>=1.34.0           # API Telegram officielle
+python-dotenv>=1.0.0       # chargement du fichier .env
+
+# ── TTS Pular (production bot) ─────────────────────────────────
+scipy>=1.11.0              # génération audio WAV
+
+# ── Utilitaires ────────────────────────────────────────────────
+tqdm>=4.66.0
+numpy>=1.24.0
+joblib>=1.3.0              # parallélisme utilitaire
+
+# ── Communauté — Couche 1 : Bot Telegram ───────────────────────
+python-telegram-bot>=20.0  # bot de contribution communautaire
+
+# ── Communauté — Couche 2 : Web App ────────────────────────────
+fastapi>=0.110.0           # serveur API REST
+uvicorn>=0.29.0            # serveur ASGI
+python-multipart>=0.0.9    # upload fichiers audio
+
+# ── Communauté — Couche 3 : Capture lives ──────────────────────
+yt-dlp>=2024.1.0           # capture flux Facebook / TikTok / YouTube
+
+# ─────────────────────────────────────────────────────────────
+# INSTALLATION SYSTÈME REQUISE (hors pip) :
+#
+# Tesseract OCR :
+#   Ubuntu/Debian : sudo apt install tesseract-ocr tesseract-ocr-fra tesseract-ocr-ara
+#   Windows       : https://github.com/UB-Mannheim/tesseract/wiki
+#   Mac           : brew install tesseract tesseract-lang
+#
+# ffmpeg (pour Whisper) :
+#   Ubuntu/Debian : sudo apt install ffmpeg
+#   Windows       : winget install ffmpeg
+#   Mac           : brew install ffmpeg
+# ─────────────────────────────────────────────────────────────

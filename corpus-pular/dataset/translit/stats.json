@@ -1,0 +1,11 @@
+{
+  "total": 20,
+  "train": 18,
+  "val": 1,
+  "test": 1,
+  "sources": {
+    "scraping": 0,
+    "silver": 514,
+    "gold": 1
+  }
+}

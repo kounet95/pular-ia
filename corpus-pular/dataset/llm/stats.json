@@ -1,0 +1,21 @@
+{
+  "date": "2026-06-14T23:02:40.821518",
+  "total": 684,
+  "train": 548,
+  "val": 68,
+  "test": 68,
+  "qualite": {
+    "silver": 531,
+    "gold": 133,
+    "bronze": 20
+  },
+  "sources": {
+    "segment_telegram": 504,
+    "mots_jeu": 132,
+    "translit_dataset": 20,
+    "rag_livres": 20,
+    "contribution_communautaire": 5,
+    "correction_communautaire": 1,
+    "transcription_telegram": 2
+  }
+}

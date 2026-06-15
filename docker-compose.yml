@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  webapp:
+    build: .
+    image: pular-ia:latest
+    container_name: pular-ia-webapp
+    restart: unless-stopped
+    ports:
+      - "${WEBAPP_PORT:-8080}:8080"
+    volumes:
+      # Toutes les données persistantes dans un seul dossier
+      - ./corpus-pular:/app/corpus-pular
+      - ./logs:/app/logs
+    env_file:
+      - .env
+    environment:
+      - WEBAPP_PORT=8080
+      - WHISPER_MODEL_BOT=${WHISPER_MODEL_BOT:-tiny}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/stats')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s

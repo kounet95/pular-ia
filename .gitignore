@@ -1,0 +1,38 @@
+# Credentials — NE PAS COMMITER
+.env
+session_pular.session
+session_pular.session-journal
+session_scraper.session
+session_scraper.session-journal
+
+# Claude Code (paramètres locaux)
+.claude/
+
+# Archives temporaires
+*.zip
+
+# Données corpus (trop lourdes pour Git — gérées par Railway persistent volume)
+corpus-pular/raw/
+corpus-pular/processed/telegram/audio/
+corpus-pular/community/audio/
+corpus-pular/rag/
+corpus-pular/livres/raw/
+
+# Modèles ML
+*.bin
+*.safetensors
+models/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Logs
+logs/*.log
+
+# OS
+.DS_Store
+Thumbs.db
