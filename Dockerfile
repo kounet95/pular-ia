@@ -14,6 +14,7 @@ RUN pip install --no-cache-dir --timeout 300 \
     --index-url https://download.pytorch.org/whl/cpu
 
 # ── 2. Whisper (dépend de torch) ─────────────────────────────────────────────
+RUN pip install --no-cache-dir setuptools
 RUN pip install --no-cache-dir --timeout 300 \
     openai-whisper==20231117
 
