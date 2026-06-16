@@ -18,22 +18,7 @@ WORKDIR /app
 # ── Dépendances Python ────────────────────────────────────────────────────────
 COPY requirements.txt .
 
-# Installer sans bitsandbytes (Linux-only, non requis pour la webapp)
-# et sans les librairies ML lourdes inutiles en prod webapp
-RUN pip install --no-cache-dir \
-        fastapi>=0.110.0 \
-        uvicorn>=0.29.0 \
-        python-multipart>=0.0.9 \
-        python-dotenv>=1.0.0 \
-        openai-whisper>=20231117 \
-        torch --index-url https://download.pytorch.org/whl/cpu \
-        torchaudio --index-url https://download.pytorch.org/whl/cpu \
-        pdfplumber>=0.10.0 \
-        python-docx>=1.1.0 \
-        chromadb>=0.4.24 \
-        sentence-transformers>=2.7.0 \
-        tqdm>=4.66.0 \
-        numpy>=1.24.0
+RUN pip install --no-cache-dir -r requirements.txt
 
 # ── Code source ───────────────────────────────────────────────────────────────
 COPY scripts/ ./scripts/
