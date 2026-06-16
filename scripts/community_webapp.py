@@ -477,38 +477,40 @@ async def api_rechercher(q: str, n: int = 5, langue: str = None):
 @app.get("/api/rag-stats")
 async def api_rag_stats():
     """Statistiques du corpus RAG."""
-    return JSONResponse(stats_rag())
+    return JSONResponse(await asyncio.to_thread(stats_rag))
+
+def _phrases_jeu_sync(n: int) -> list:
+    """Récupère n phrases courtes depuis ChromaDB (appelé dans un thread)."""
+    import re, random
+    from rag_livres import get_collection
+    collection = get_collection()
+    total = collection.count()
+    if total == 0:
+        return []
+    offset = random.randint(0, max(0, total - n * 6))
+    batch  = collection.get(
+        limit=n * 6, offset=offset,
+        include=["documents", "metadatas"],
+    )
+    phrases = []
+    for doc, meta in zip(batch["documents"], batch["metadatas"]):
+        for s in re.split(r"[.!?\n؟।]+", doc):
+            s = s.strip()
+            if 15 < len(s) < 180:
+                phrases.append({
+                    "texte":  s,
+                    "titre":  meta.get("titre", "?"),
+                    "langue": meta.get("langue", "?"),
+                })
+    random.shuffle(phrases)
+    return phrases[:n]
 
 @app.get("/api/phrases-jeu")
 async def api_phrases_jeu(n: int = 5):
     """Retourne des phrases courtes issues du RAG pour le mode 'Lire' du jeu."""
-    import re, random
     try:
-        from rag_livres import get_collection
-        collection = get_collection()
-        total = collection.count()
-        if total == 0:
-            return JSONResponse({"ok": True, "phrases": []})
-
-        # Tirer des chunks aléatoires
-        offset = random.randint(0, max(0, total - n * 6))
-        batch  = collection.get(
-            limit=n * 6, offset=offset,
-            include=["documents", "metadatas"],
-        )
-        phrases = []
-        for doc, meta in zip(batch["documents"], batch["metadatas"]):
-            for s in re.split(r"[.!?\n؟।]+", doc):
-                s = s.strip()
-                if 15 < len(s) < 180:
-                    phrases.append({
-                        "texte":  s,
-                        "titre":  meta.get("titre", "?"),
-                        "langue": meta.get("langue", "?"),
-                    })
-
-        random.shuffle(phrases)
-        return JSONResponse({"ok": True, "phrases": phrases[:n]})
+        phrases = await asyncio.to_thread(_phrases_jeu_sync, n)
+        return JSONResponse({"ok": True, "phrases": phrases})
     except Exception as e:
         log.warning(f"phrases-jeu: {e}")
         return JSONResponse({"ok": True, "phrases": []})
