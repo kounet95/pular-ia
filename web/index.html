@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Pular IA — Contribue au corpus</title>
+  <title>Pular Du Fouta Djallon IA — Contribue au corpus </title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌙</text></svg>">
   <style>
     :root {
@@ -1425,6 +1425,7 @@ async function chargerCorrection() {
 
   try {
     const r    = await fetch(`${API}/api/a-corriger`, { headers: H });
+    if (!r.ok) throw new Error(`Serveur indisponible (${r.status})`);
     const data = await r.json();
 
     if (data.fini) {
@@ -2137,7 +2138,7 @@ function profTogglePanel() {
   profOuvert = !profOuvert;
   document.getElementById('prof-contenu').style.display = profOuvert ? 'block' : 'none';
   document.getElementById('prof-lock').classList.toggle('ouvert', profOuvert);
-  if (profOuvert) { profSetTab('ajouter'); profChargerMots(); profChargerContribs(); profChargerStats(); }
+  if (profOuvert) { profSetTab('ajouter'); chargerMotsCustom(); profChargerContribs(); profChargerStats(); }
 }
 window.profTogglePanel = profTogglePanel;
 

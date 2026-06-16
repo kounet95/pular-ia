@@ -1,31 +1,43 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# Pular IA — Image Docker de production
-# Build : docker build -t pular-ia .
-# Run   : docker run -p 8080:8080 -v $(pwd)/corpus-pular:/app/corpus-pular pular-ia
-# ─────────────────────────────────────────────────────────────────────────────
-
 FROM python:3.11-slim
 
-# Dépendances système (ffmpeg requis par Whisper)
+# Dépendances système
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ffmpeg \
         build-essential \
-        git \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# ── Dépendances Python ────────────────────────────────────────────────────────
-COPY requirements.txt .
+# ── 1. PyTorch CPU uniquement (commande séparée — index différent) ────────────
+RUN pip install --no-cache-dir --timeout 300 \
+    torch==2.2.2 torchaudio==2.2.2 \
+    --index-url https://download.pytorch.org/whl/cpu
 
-RUN pip install --no-cache-dir -r requirements.txt
+# ── 2. Whisper (dépend de torch) ─────────────────────────────────────────────
+RUN pip install --no-cache-dir --timeout 300 \
+    openai-whisper==20231117
+
+# ── 3. Web + RAG ──────────────────────────────────────────────────────────────
+RUN pip install --no-cache-dir --timeout 300 \
+    fastapi==0.110.3 \
+    uvicorn==0.29.0 \
+    python-multipart==0.0.9 \
+    python-dotenv==1.0.1 \
+    pdfplumber==0.10.3 \
+    python-docx==1.1.2 \
+    tqdm==4.66.4 \
+    numpy==1.26.4
+
+# ── 4. ChromaDB + embeddings (lourd, isolé) ───────────────────────────────────
+RUN pip install --no-cache-dir --timeout 300 \
+    chromadb==0.4.24 \
+    sentence-transformers==2.7.0
 
 # ── Code source ───────────────────────────────────────────────────────────────
 COPY scripts/ ./scripts/
 COPY web/     ./web/
-COPY .env.example .env.example
 
-# ── Dossiers de données (montés en volume en prod) ────────────────────────────
+# ── Dossiers de données (montés en volume sur Railway) ───────────────────────
 RUN mkdir -p \
         corpus-pular/community/contributions \
         corpus-pular/community/audio \
@@ -35,9 +47,10 @@ RUN mkdir -p \
         corpus-pular/livres/raw \
         corpus-pular/livres/metadata \
         corpus-pular/rag/chroma \
+        corpus-pular/dataset/llm \
+        corpus-pular/dataset/translit \
         logs
 
-# ── Variables d'environnement par défaut ─────────────────────────────────────
 ENV WEBAPP_PORT=8080
 ENV WHISPER_MODEL_BOT=tiny
 ENV PYTHONUNBUFFERED=1
@@ -45,5 +58,4 @@ ENV PYTHONDONTWRITEBYTECODE=1
 
 EXPOSE 8080
 
-# Lancer depuis le répertoire /app (important pour les chemins relatifs)
 CMD ["python", "scripts/community_webapp.py"]
