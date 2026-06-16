@@ -43,7 +43,7 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 # ── Config ────────────────────────────────────────────────────────────────────
-PORT            = int(os.getenv("WEBAPP_PORT", 8000))
+PORT            = int(os.getenv("PORT", os.getenv("WEBAPP_PORT", 8080)))
 DOSSIER_CONTRIB = Path("./corpus-pular/community/contributions")
 DOSSIER_AUDIO   = Path("./corpus-pular/community/audio")
 FICHIER_STATS   = Path("./corpus-pular/community/stats.json")
@@ -118,6 +118,11 @@ app.add_middleware(
 # Chemin absolu du projet (indépendant du répertoire de lancement)
 PROJET_ROOT = Path(__file__).resolve().parent.parent
 HTML_PATH   = PROJET_ROOT / "web" / "index.html"
+
+# ── Health check (Railway l'appelle avant de router le trafic) ────────────────
+@app.get("/health")
+async def health():
+    return JSONResponse({"ok": True})
 
 # ── Page principale ────────────────────────────────────────────────────────────
 @app.get("/", response_class=HTMLResponse)

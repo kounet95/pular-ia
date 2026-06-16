@@ -3,8 +3,8 @@ dockerfile = "Dockerfile"
 
 [deploy]
 startCommand = "python scripts/community_webapp.py"
-healthcheckPath = "/api/stats"
-healthcheckTimeout = 120
+healthcheckPath = "/health"
+healthcheckTimeout = 30
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
 

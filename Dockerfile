@@ -33,9 +33,6 @@ RUN pip install --no-cache-dir --timeout 300 \
     chromadb==0.4.24 \
     sentence-transformers==2.7.0
 
-# ── 5. Pré-télécharger le modèle sentence-transformers (évite le blocage au 1er appel) ──
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')"
-
 # ── Code source ───────────────────────────────────────────────────────────────
 COPY scripts/ ./scripts/
 COPY web/     ./web/
