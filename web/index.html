@@ -814,10 +814,14 @@
 
       <!-- Tabs -->
       <div class="prof-tabs">
-        <button class="prof-tab actif" id="ptab-ajouter" onclick="profSetTab('ajouter')">➕ Ajouter un mot</button>
-        <button class="prof-tab" id="ptab-corriger"  onclick="profSetTab('corriger')">✏️ Corriger</button>
-        <button class="prof-tab" id="ptab-valider"   onclick="profSetTab('valider')">🎧 Valider contribs <span id="prof-badge-pending"></span></button>
-        <button class="prof-tab" id="ptab-stats"     onclick="profSetTab('stats')">📊 Tableau de bord</button>
+        <button class="prof-tab actif" id="ptab-ajouter"       onclick="profSetTab('ajouter')">➕ Mots</button>
+        <button class="prof-tab" id="ptab-corriger"            onclick="profSetTab('corriger')">✏️ Corriger</button>
+        <button class="prof-tab" id="ptab-phrases"             onclick="profSetTab('phrases')">📖 Phrases</button>
+        <button class="prof-tab" id="ptab-livres"              onclick="profSetTab('livres')">📚 Livres</button>
+        <button class="prof-tab" id="ptab-valider"             onclick="profSetTab('valider')">🎧 Valider <span id="prof-badge-pending"></span></button>
+        <button class="prof-tab" id="ptab-corrections"         onclick="profSetTab('corrections')">🔧 Corrections</button>
+        <button class="prof-tab" id="ptab-contributeurs"       onclick="profSetTab('contributeurs')">👥 Contributeurs</button>
+        <button class="prof-tab" id="ptab-stats"               onclick="profSetTab('stats')">📊 Stats</button>
       </div>
 
       <!-- ── Panel : Ajouter un mot ── -->
@@ -913,6 +917,83 @@
           width:100%;padding:12px;border-radius:10px;border:1px solid var(--or);
           background:transparent;color:var(--or);font-weight:700;cursor:pointer;margin-top:8px;
         ">⬇️ Exporter tout le dataset (JSONL)</button>
+      </div>
+
+      <!-- ── Panel : Phrases ── -->
+      <div id="ppanel-phrases" class="prof-panel">
+        <p style="font-size:.82rem;color:var(--gris);margin-bottom:12px;">
+          Ajoute des phrases qui apparaîtront dans la section "Lis ces phrases" pour guider la communauté.
+        </p>
+        <div class="form-prof" style="margin-bottom:14px;">
+          <div class="form-row">
+            <input id="pp-pular" type="text" placeholder="Phrase en pular *" maxlength="200"
+              oninput="document.getElementById('pp-adlam').value=latinVersAdlam(this.value)">
+            <input id="pp-adlam" type="text" placeholder="Adlam (auto)" class="adlam"
+              style="direction:rtl;font-size:1rem;" maxlength="300">
+          </div>
+          <input id="pp-fr" type="text" placeholder="Traduction française" maxlength="200"
+            style="width:100%;padding:9px 12px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;color:var(--texte);font-size:.9rem;outline:none;">
+          <div class="form-row" style="margin-top:6px;">
+            <select id="pp-cat" style="padding:9px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;color:var(--texte);">
+              <option value="Autre">Catégorie</option>
+              <option>Salutations</option><option>Islam</option><option>Famille</option>
+              <option>Quotidien</option><option>Nature</option><option>Culture</option>
+              <option>Proverbes</option>
+            </select>
+            <button onclick="profAjouterPhrase()" style="padding:9px 18px;border-radius:8px;border:none;background:var(--vert);color:white;font-weight:700;cursor:pointer;">➕ Ajouter</button>
+          </div>
+        </div>
+        <div id="prof-liste-phrases">
+          <div style="color:var(--gris);font-size:.85rem;">Chargement...</div>
+        </div>
+      </div>
+
+      <!-- ── Panel : Livres ── -->
+      <div id="ppanel-livres" class="prof-panel">
+        <p style="font-size:.82rem;color:var(--gris);margin-bottom:12px;">
+          Uploade des livres, poèmes ou articles en pular — ils seront indexés pour le RAG.
+        </p>
+        <div class="form-prof" style="margin-bottom:14px;">
+          <div class="form-row">
+            <input id="pl-titre"  type="text" placeholder="Titre *" maxlength="100">
+            <input id="pl-auteur" type="text" placeholder="Auteur" maxlength="80">
+          </div>
+          <div class="form-row">
+            <select id="pl-langue" style="padding:9px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;color:var(--texte);">
+              <option value="pular">Pular/Fulfulde</option>
+              <option value="francais">Français</option>
+              <option value="arabe">Arabe</option>
+              <option value="autre">Autre</option>
+            </select>
+            <input id="pl-fichier" type="file" accept=".pdf,.txt,.docx,.doc,.html,.md"
+              style="color:var(--gris);font-size:.85rem;">
+          </div>
+          <button onclick="profUploaderLivre()" style="padding:10px 20px;border-radius:8px;border:none;background:var(--vert);color:white;font-weight:700;cursor:pointer;width:100%;">📤 Uploader et indexer</button>
+          <div id="pl-status" style="font-size:.82rem;margin-top:6px;"></div>
+        </div>
+        <div id="prof-liste-livres">
+          <div style="color:var(--gris);font-size:.85rem;">Chargement...</div>
+        </div>
+      </div>
+
+      <!-- ── Panel : Corrections ── -->
+      <div id="ppanel-corrections" class="prof-panel">
+        <p style="font-size:.82rem;color:var(--gris);margin-bottom:10px;">
+          Historique des transcriptions déjà corrigées par la communauté.
+        </p>
+        <div id="prof-liste-corrections">
+          <div style="color:var(--gris);font-size:.85rem;">Chargement...</div>
+        </div>
+      </div>
+
+      <!-- ── Panel : Contributeurs ── -->
+      <div id="ppanel-contributeurs" class="prof-panel">
+        <p style="font-size:.82rem;color:var(--gris);margin-bottom:10px;">
+          Classement des contributeurs par nombre de contributions audio.
+        </p>
+        <div id="prof-liste-contributeurs">
+          <div style="color:var(--gris);font-size:.85rem;">Chargement...</div>
+        </div>
       </div>
 
     </div><!-- /prof-contenu -->
@@ -2134,6 +2215,8 @@ initJeu();
 let profOuvert = false;
 let motsProfCache = [];
 
+const PROF_TABS = ['ajouter','corriger','phrases','livres','valider','corrections','contributeurs','stats'];
+
 function profTogglePanel() {
   profOuvert = !profOuvert;
   document.getElementById('prof-contenu').style.display = profOuvert ? 'block' : 'none';
@@ -2143,13 +2226,17 @@ function profTogglePanel() {
 window.profTogglePanel = profTogglePanel;
 
 function profSetTab(tab) {
-  ['ajouter','corriger','valider','stats'].forEach(t => {
+  PROF_TABS.forEach(t => {
     document.getElementById('ptab-'+t).classList.toggle('actif', t===tab);
     document.getElementById('ppanel-'+t).classList.toggle('actif', t===tab);
   });
-  if (tab === 'corriger') profRendreListe();
-  if (tab === 'valider')  profChargerContribs();
-  if (tab === 'stats')    profChargerStats();
+  if (tab === 'corriger')      profRendreListe();
+  if (tab === 'valider')       profChargerContribs();
+  if (tab === 'stats')         profChargerStats();
+  if (tab === 'phrases')       profChargerPhrases();
+  if (tab === 'livres')        profChargerLivres();
+  if (tab === 'corrections')   profChargerCorrections();
+  if (tab === 'contributeurs') profChargerContributeurs();
 }
 window.profSetTab = profSetTab;
 
@@ -2385,8 +2472,238 @@ async function profExporterTout() {
 }
 window.profExporterTout = profExporterTout;
 
-// Charger les mots custom au démarrage (après initJeu)
+// ═══════════════════════════════════════════════════════════════
+// PHRASES CUSTOM
+// ═══════════════════════════════════════════════════════════════
+let phrasesProfCache = [];
+
+async function profChargerPhrases() {
+  const div = document.getElementById('prof-liste-phrases');
+  try {
+    const r = await fetch(`${API}/api/prof/phrases`, {headers:H});
+    phrasesProfCache = await r.json();
+    if (!phrasesProfCache.length) {
+      div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;">Aucune phrase ajoutée pour l\'instant.</div>';
+      return;
+    }
+    div.innerHTML = phrasesProfCache.map(p => `
+      <div style="background:#0a1a0f;border-radius:8px;padding:10px 12px;margin-bottom:8px;border:1px solid #1e3d28;" id="phr-${p.id}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div style="flex:1;">
+            <div style="color:var(--texte);font-size:.9rem;margin-bottom:2px;">${p.pular}</div>
+            ${p.adlam ? `<div class="adlam" style="direction:rtl;font-size:.85rem;color:var(--or);">${p.adlam}</div>` : ''}
+            ${p.fr    ? `<div style="font-size:.78rem;color:var(--gris);">🇫🇷 ${p.fr}</div>` : ''}
+            <span style="font-size:.7rem;background:#1e3d28;padding:2px 6px;border-radius:4px;color:var(--gris);">${p.cat}</span>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;">
+            <button onclick="profEditerPhrase('${p.id}')" style="background:none;border:1px solid #2d5c3a;color:var(--gris);border-radius:6px;padding:4px 8px;cursor:pointer;font-size:.8rem;">✏️</button>
+            <button onclick="profSupprimerPhrase('${p.id}')" style="background:none;border:1px solid #5c2d2d;color:#e57373;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:.8rem;">🗑️</button>
+          </div>
+        </div>
+        <div id="phr-edit-${p.id}" style="display:none;margin-top:8px;border-top:1px solid #1e3d28;padding-top:8px;">
+          <input id="phr-pular-${p.id}" value="${p.pular}" placeholder="Pular"
+            style="width:100%;padding:7px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:6px;color:var(--texte);font-size:.88rem;margin-bottom:4px;"
+            oninput="document.getElementById('phr-adlam-${p.id}').value=latinVersAdlam(this.value)">
+          <input id="phr-adlam-${p.id}" value="${p.adlam||''}" placeholder="Adlam"
+            class="adlam" style="direction:rtl;width:100%;padding:7px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:6px;color:var(--texte);font-size:.88rem;margin-bottom:4px;">
+          <input id="phr-fr-${p.id}" value="${p.fr||''}" placeholder="Traduction française"
+            style="width:100%;padding:7px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:6px;color:var(--texte);font-size:.88rem;margin-bottom:4px;">
+          <div style="display:flex;gap:6px;">
+            <button onclick="profSauverPhrase('${p.id}')" style="flex:1;padding:7px;border-radius:6px;border:none;background:var(--vert);color:white;font-weight:700;cursor:pointer;font-size:.85rem;">💾 Sauver</button>
+            <button onclick="profEditerPhrase('${p.id}')" style="padding:7px 12px;border-radius:6px;border:1px solid #2d5c3a;background:none;color:var(--gris);cursor:pointer;font-size:.85rem;">Annuler</button>
+          </div>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    div.innerHTML = `<div style="color:var(--rouge);font-size:.85rem;">❌ ${e.message}</div>`;
+  }
+}
+window.profChargerPhrases = profChargerPhrases;
+
+async function profAjouterPhrase() {
+  const pular = document.getElementById('pp-pular').value.trim();
+  const adlam = document.getElementById('pp-adlam').value.trim();
+  const fr    = document.getElementById('pp-fr').value.trim();
+  const cat   = document.getElementById('pp-cat').value;
+  const pseudo = document.getElementById('pseudo-input')?.value.trim() || 'prof';
+  if (!pular) { toast('❌ La phrase en pular est obligatoire', true); return; }
+  try {
+    const fd = new FormData();
+    fd.append('pular', pular); fd.append('adlam', adlam);
+    fd.append('fr', fr); fd.append('cat', cat); fd.append('pseudo', pseudo);
+    const r = await fetch(`${API}/api/prof/phrase`, {method:'POST', body:fd, headers:H});
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail||'Erreur');
+    toast('✅ Phrase ajoutée!');
+    ['pp-pular','pp-adlam','pp-fr'].forEach(id => document.getElementById(id).value='');
+    // Ajouter dans PHRASES global pour affichage immédiat
+    PHRASES.push({pular: d.phrase.pular, adlam: d.phrase.adlam, fr: d.phrase.fr, cat: d.phrase.cat, custom: true});
+    profChargerPhrases();
+  } catch(e) { toast('❌ '+e.message, true); }
+}
+window.profAjouterPhrase = profAjouterPhrase;
+
+function profEditerPhrase(id) {
+  const div = document.getElementById(`phr-edit-${id}`);
+  div.style.display = div.style.display === 'none' ? 'block' : 'none';
+}
+window.profEditerPhrase = profEditerPhrase;
+
+async function profSauverPhrase(id) {
+  const pular = document.getElementById(`phr-pular-${id}`).value.trim();
+  const adlam = document.getElementById(`phr-adlam-${id}`).value.trim();
+  const fr    = document.getElementById(`phr-fr-${id}`).value.trim();
+  if (!pular) { toast('❌ Pular obligatoire', true); return; }
+  try {
+    const fd = new FormData();
+    fd.append('pular', pular); fd.append('adlam', adlam); fd.append('fr', fr); fd.append('cat', 'Autre');
+    const r = await fetch(`${API}/api/prof/phrase/${id}`, {method:'PUT', body:fd, headers:H});
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail||'Erreur');
+    toast('✅ Phrase modifiée!');
+    profChargerPhrases();
+  } catch(e) { toast('❌ '+e.message, true); }
+}
+window.profSauverPhrase = profSauverPhrase;
+
+async function profSupprimerPhrase(id) {
+  if (!confirm('Supprimer cette phrase?')) return;
+  try {
+    const r = await fetch(`${API}/api/prof/phrase/${id}`, {method:'DELETE', headers:H});
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail||'Erreur');
+    toast('✅ Phrase supprimée');
+    profChargerPhrases();
+  } catch(e) { toast('❌ '+e.message, true); }
+}
+window.profSupprimerPhrase = profSupprimerPhrase;
+
+// ═══════════════════════════════════════════════════════════════
+// LIVRES
+// ═══════════════════════════════════════════════════════════════
+async function profChargerLivres() {
+  const div = document.getElementById('prof-liste-livres');
+  try {
+    const r = await fetch(`${API}/api/livres`, {headers:H});
+    const livres = await r.json();
+    if (!livres.length) {
+      div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;">Aucun livre indexé.</div>';
+      return;
+    }
+    div.innerHTML = `<div style="font-size:.78rem;color:var(--gris);margin-bottom:8px;">${livres.length} livre(s) indexé(s)</div>` +
+      livres.map(l => `
+        <div style="background:#0a1a0f;border-radius:8px;padding:10px 12px;margin-bottom:6px;border:1px solid #1e3d28;">
+          <div style="color:var(--or);font-size:.88rem;font-weight:600;">${l.titre}</div>
+          <div style="font-size:.78rem;color:var(--gris);">✍️ ${l.auteur||'?'} · 🌍 ${l.langue||'?'} · 📄 ${(l.nb_chars||0).toLocaleString()} car. · 🧩 ${l.nb_chunks||0} passages</div>
+          <div style="font-size:.7rem;color:#4a7a57;margin-top:2px;">🗓️ ${(l.date||'').slice(0,10)}</div>
+        </div>`).join('');
+  } catch(e) {
+    div.innerHTML = `<div style="color:var(--rouge);font-size:.85rem;">❌ ${e.message}</div>`;
+  }
+}
+window.profChargerLivres = profChargerLivres;
+
+async function profUploaderLivre() {
+  const titre   = document.getElementById('pl-titre').value.trim();
+  const auteur  = document.getElementById('pl-auteur').value.trim() || 'Anonyme';
+  const langue  = document.getElementById('pl-langue').value;
+  const fichier = document.getElementById('pl-fichier').files[0];
+  const status  = document.getElementById('pl-status');
+  if (!titre)   { toast('❌ Le titre est obligatoire', true); return; }
+  if (!fichier) { toast('❌ Choisis un fichier', true); return; }
+  status.innerHTML = '<span style="color:var(--or);">⏳ Upload en cours...</span>';
+  try {
+    const fd = new FormData();
+    fd.append('fichier', fichier); fd.append('titre', titre);
+    fd.append('auteur', auteur);   fd.append('langue', langue);
+    const r = await fetch(`${API}/api/upload-livre`, {method:'POST', body:fd, headers:H});
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail||'Erreur');
+    status.innerHTML = `<span style="color:#4caf50;">✅ ${d.message}</span>`;
+    document.getElementById('pl-titre').value = '';
+    document.getElementById('pl-fichier').value = '';
+    profChargerLivres();
+    profChargerStats();
+  } catch(e) {
+    status.innerHTML = `<span style="color:var(--rouge);">❌ ${e.message}</span>`;
+  }
+}
+window.profUploaderLivre = profUploaderLivre;
+
+// ═══════════════════════════════════════════════════════════════
+// CORRECTIONS HISTORIQUE
+// ═══════════════════════════════════════════════════════════════
+async function profChargerCorrections() {
+  const div = document.getElementById('prof-liste-corrections');
+  div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;">⏳ Chargement...</div>';
+  try {
+    const r = await fetch(`${API}/api/prof/corrections?limit=30`, {headers:H});
+    const d = await r.json();
+    if (!d.corrections?.length) {
+      div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;text-align:center;padding:20px;">Aucune correction pour l\'instant.</div>';
+      return;
+    }
+    div.innerHTML = `<div style="font-size:.78rem;color:var(--gris);margin-bottom:8px;">${d.total} correction(s)</div>` +
+      d.corrections.map(c => `
+        <div style="background:#0a1a0f;border-radius:8px;padding:10px 12px;margin-bottom:6px;border:1px solid #1e3d28;">
+          <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--gris);margin-bottom:4px;">
+            <span>👤 ${c.pseudo}</span><span>🗓️ ${(c.date||'').slice(0,10)}</span>
+          </div>
+          ${c.texte_auto ? `<div style="font-size:.8rem;color:#666;margin-bottom:2px;">🤖 <em>${c.texte_auto}</em></div>` : ''}
+          <div style="font-size:.88rem;color:var(--texte);">✅ ${c.texte_corrige}</div>
+        </div>`).join('');
+  } catch(e) {
+    div.innerHTML = `<div style="color:var(--rouge);font-size:.85rem;">❌ ${e.message}</div>`;
+  }
+}
+window.profChargerCorrections = profChargerCorrections;
+
+// ═══════════════════════════════════════════════════════════════
+// CONTRIBUTEURS
+// ═══════════════════════════════════════════════════════════════
+async function profChargerContributeurs() {
+  const div = document.getElementById('prof-liste-contributeurs');
+  div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;">⏳ Chargement...</div>';
+  try {
+    const r = await fetch(`${API}/api/prof/contributeurs`, {headers:H});
+    const d = await r.json();
+    if (!d.contributeurs?.length) {
+      div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;text-align:center;padding:20px;">Aucun contributeur pour l\'instant.</div>';
+      return;
+    }
+    const medals = ['🥇','🥈','🥉'];
+    div.innerHTML = `<div style="font-size:.78rem;color:var(--gris);margin-bottom:8px;">${d.total} contributeur(s)</div>` +
+      d.contributeurs.map((c, i) => `
+        <div style="background:#0a1a0f;border-radius:8px;padding:10px 14px;margin-bottom:6px;border:1px solid #1e3d28;display:flex;align-items:center;gap:12px;">
+          <span style="font-size:1.2rem;">${medals[i]||'🎙️'}</span>
+          <div style="flex:1;">
+            <div style="color:var(--texte);font-size:.9rem;font-weight:600;">${c.pseudo}</div>
+            <div style="font-size:.75rem;color:var(--gris);">🗓️ dernière: ${(c.derniere||'').slice(0,10)||'?'}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="color:var(--or);font-size:1.1rem;font-weight:700;">${c.nb}</div>
+            <div style="font-size:.7rem;color:var(--gris);">contributions</div>
+          </div>
+        </div>`).join('');
+  } catch(e) {
+    div.innerHTML = `<div style="color:var(--rouge);font-size:.85rem;">❌ ${e.message}</div>`;
+  }
+}
+window.profChargerContributeurs = profChargerContributeurs;
+
+// Charger les mots custom et phrases custom au démarrage
 chargerMotsCustom();
+(async () => {
+  try {
+    const r = await fetch(`${API}/api/prof/phrases`, {headers:H});
+    const phrases = await r.json();
+    phrases.forEach(p => {
+      if (!PHRASES.find(x => x.pular === p.pular)) {
+        PHRASES.push({pular: p.pular, adlam: p.adlam||'', fr: p.fr||'', cat: p.cat||'Autre', custom: true});
+      }
+    });
+  } catch(e) { /* silencieux */ }
+})();
 // Vérifier contributions en attente
 (async () => {
   try {

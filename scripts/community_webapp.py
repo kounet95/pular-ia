@@ -657,6 +657,119 @@ async def api_prof_supprimer_mot(mot_id: str):
     log.info(f"Mot supprimé: {mot_id}")
     return JSONResponse({"ok": True})
 
+# ── Phrases custom ─────────────────────────────────────────────────────────────
+FICHIER_PHRASES_CUSTOM = DOSSIER_JEU / "phrases_custom.json"
+
+def charger_phrases_custom() -> list[dict]:
+    if FICHIER_PHRASES_CUSTOM.exists():
+        with open(FICHIER_PHRASES_CUSTOM, encoding="utf-8") as f:
+            return json.load(f)
+    return []
+
+def sauver_phrases_custom(phrases: list[dict]):
+    with open(FICHIER_PHRASES_CUSTOM, "w", encoding="utf-8") as f:
+        json.dump(phrases, f, ensure_ascii=False, indent=2)
+
+@app.get("/api/prof/phrases")
+async def api_prof_phrases():
+    return JSONResponse(charger_phrases_custom())
+
+@app.post("/api/prof/phrase")
+async def api_prof_ajouter_phrase(
+    pular: str = Form(...),
+    adlam: str = Form(""),
+    fr:    str = Form(""),
+    cat:   str = Form("Autre"),
+    pseudo: str = Form("prof"),
+):
+    if not pular.strip():
+        raise HTTPException(400, "Le champ 'pular' est obligatoire.")
+    phrases = charger_phrases_custom()
+    nouveau = {
+        "id":     str(uuid.uuid4())[:8],
+        "pular":  pular.strip(),
+        "adlam":  adlam.strip() or latin_vers_adlam(pular.strip()),
+        "fr":     fr.strip(),
+        "cat":    cat.strip() or "Autre",
+        "pseudo": pseudo.strip(),
+        "date":   datetime.now().isoformat(),
+    }
+    phrases.append(nouveau)
+    sauver_phrases_custom(phrases)
+    log.info(f"Phrase ajoutée: '{pular[:50]}' ({pseudo})")
+    return JSONResponse({"ok": True, "phrase": nouveau})
+
+@app.put("/api/prof/phrase/{phrase_id}")
+async def api_prof_modifier_phrase(
+    phrase_id: str,
+    pular: str = Form(...),
+    adlam: str = Form(""),
+    fr:    str = Form(""),
+    cat:   str = Form("Autre"),
+):
+    phrases = charger_phrases_custom()
+    for p in phrases:
+        if p["id"] == phrase_id:
+            p.update({
+                "pular":   pular.strip(),
+                "adlam":   adlam.strip() or latin_vers_adlam(pular.strip()),
+                "fr":      fr.strip(),
+                "cat":     cat.strip() or "Autre",
+                "modifie": datetime.now().isoformat(),
+            })
+            sauver_phrases_custom(phrases)
+            return JSONResponse({"ok": True, "phrase": p})
+    raise HTTPException(404, f"Phrase {phrase_id} introuvable.")
+
+@app.delete("/api/prof/phrase/{phrase_id}")
+async def api_prof_supprimer_phrase(phrase_id: str):
+    phrases = charger_phrases_custom()
+    avant = len(phrases)
+    phrases = [p for p in phrases if p["id"] != phrase_id]
+    if len(phrases) == avant:
+        raise HTTPException(404, f"Phrase {phrase_id} introuvable.")
+    sauver_phrases_custom(phrases)
+    return JSONResponse({"ok": True})
+
+# ── Contributeurs ───────────────────────────────────────────────────────────────
+@app.get("/api/prof/contributeurs")
+async def api_prof_contributeurs():
+    contribs_par_pseudo: dict = {}
+    if DOSSIER_CONTRIB.exists():
+        for f in sorted(DOSSIER_CONTRIB.glob("*.json"), reverse=True):
+            try:
+                d = json.loads(f.read_text(encoding="utf-8"))
+                pseudo = d.get("pseudo", "anonyme")
+                if pseudo not in contribs_par_pseudo:
+                    contribs_par_pseudo[pseudo] = {"pseudo": pseudo, "nb": 0, "derniere": ""}
+                contribs_par_pseudo[pseudo]["nb"] += 1
+                ts = d.get("timestamp", "")
+                if ts > contribs_par_pseudo[pseudo]["derniere"]:
+                    contribs_par_pseudo[pseudo]["derniere"] = ts
+            except Exception:
+                pass
+    liste = sorted(contribs_par_pseudo.values(), key=lambda x: x["nb"], reverse=True)
+    return JSONResponse({"contributeurs": liste, "total": len(liste)})
+
+# ── Corrections déjà faites ────────────────────────────────────────────────────
+@app.get("/api/prof/corrections")
+async def api_prof_corrections(limit: int = 30):
+    corrections = []
+    if DOSSIER_CORRECTIONS.exists():
+        for f in sorted(DOSSIER_CORRECTIONS.glob("*.json"), reverse=True)[:limit]:
+            try:
+                d = json.loads(f.read_text(encoding="utf-8"))
+                corrections.append({
+                    "id":            d.get("id", f.stem),
+                    "pseudo":        d.get("pseudo", "?"),
+                    "date":          d.get("timestamp", ""),
+                    "texte_auto":    d.get("texte_auto", ""),
+                    "texte_corrige": d.get("texte_corrige", ""),
+                })
+            except Exception:
+                pass
+    return JSONResponse({"corrections": corrections, "total": len(corrections)})
+
 @app.get("/api/prof/contributions")
 async def api_prof_contributions(limit: int = 20):
     """Liste les contributions communautaires pour validation prof."""
