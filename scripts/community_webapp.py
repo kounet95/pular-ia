@@ -48,12 +48,39 @@ DOSSIER_CONTRIB = Path("./corpus-pular/community/contributions")
 DOSSIER_AUDIO   = Path("./corpus-pular/community/audio")
 FICHIER_STATS   = Path("./corpus-pular/community/stats.json")
 WHISPER_MODEL   = os.getenv("WHISPER_MODEL_BOT", "base")
+GROQ_API_KEY    = os.getenv("GROQ_API_KEY", "")
 
 for d in [DOSSIER_CONTRIB, DOSSIER_AUDIO]:
     d.mkdir(parents=True, exist_ok=True)
 
-# ── Whisper (chargé uniquement au premier appel, jamais au démarrage) ─────────
-_whisper_model  = None
+# ── Transcription via Groq API (production) ───────────────────────────────────
+def _transcrire_groq(audio_path: str) -> dict:
+    """Groq Whisper large-v3-turbo — ~1s, gratuit, scalable."""
+    from groq import Groq
+    client = Groq(api_key=GROQ_API_KEY)
+    with open(audio_path, "rb") as f:
+        result = client.audio.transcriptions.create(
+            file=(Path(audio_path).name, f),
+            model="whisper-large-v3-turbo",
+            prompt="Pular fulfulde fulani langue africaine.",
+            response_format="verbose_json",
+            temperature=0.0,
+        )
+    texte   = (result.text or "").strip()
+    langue  = getattr(result, "language", "?") or "?"
+    segs    = getattr(result, "segments", None) or []
+    log.info(f"[Groq] langue={langue} | '{texte[:80]}'")
+    return {
+        "text":     texte,
+        "language": langue,
+        "segments": [
+            {"start": s.get("start", 0), "end": s.get("end", 0), "text": s.get("text", "")}
+            for s in segs
+        ],
+    }
+
+# ── Whisper local (fallback dev / pas de clé Groq) ────────────────────────────
+_whisper_model      = None
 _whisper_chargement = False
 
 def get_whisper():
@@ -72,34 +99,36 @@ def get_whisper():
         finally:
             _whisper_chargement = False
     if _whisper_model is None:
-        raise RuntimeError("Whisper non disponible — voir les logs du serveur")
+        raise RuntimeError("Whisper non disponible — configure GROQ_API_KEY pour la prod")
     return _whisper_model
 
-def transcrire(audio_path: str) -> dict:
+def _transcrire_local(audio_path: str) -> dict:
     model = get_whisper()
     result = model.transcribe(
         audio_path,
         task="transcribe",
-        # Seuil bas = Whisper transcrit même si la parole est peu claire
         no_speech_threshold=0.3,
-        # Indice de contexte pour orienter la détection vers le pular/français
         initial_prompt="Pular fulfulde fulani langue africaine.",
-        # Désactiver la compression de log (évite les hallucinations silencieuses)
         logprob_threshold=-1.5,
         condition_on_previous_text=False,
         fp16=False,
     )
-    texte = result["text"].strip()
+    texte  = result["text"].strip()
     langue = result.get("language", "?")
-    log.info(f"Langue détectée: {langue} | texte: '{texte[:80]}'")
+    log.info(f"[Local] langue={langue} | '{texte[:80]}'")
     return {
-        "text": texte,
+        "text":     texte,
         "language": langue,
         "segments": [
             {"start": s["start"], "end": s["end"], "text": s["text"]}
             for s in result.get("segments", [])
         ],
     }
+
+def transcrire(audio_path: str) -> dict:
+    if GROQ_API_KEY:
+        return _transcrire_groq(audio_path)
+    return _transcrire_local(audio_path)
 
 # ── Stats ─────────────────────────────────────────────────────────────────────
 def charger_stats() -> dict:
@@ -158,18 +187,21 @@ async def api_transcrire(audio: UploadFile = File(...)):
             raise HTTPException(400, "Fichier audio vide ou trop court.")
         tmp.write_bytes(contenu)
 
-        # Conversion WAV dans un thread (ne bloque pas l'event loop)
-        log.info("Conversion ffmpeg en cours...")
-        await asyncio.to_thread(
-            subprocess.run,
-            ["ffmpeg", "-y", "-i", str(tmp), "-ar", "16000", "-ac", "1", str(wav_path)],
-            capture_output=True, check=True,
-        )
-        log.info(f"Conversion OK — {wav_path.stat().st_size} octets")
-
-        # Transcription Whisper dans un thread (lent sur CPU, ne pas bloquer)
-        log.info("Transcription Whisper en cours (peut prendre 30-60s sur CPU)...")
-        resultat = await asyncio.to_thread(transcrire, str(wav_path))
+        if GROQ_API_KEY:
+            # ── Groq : envoie le fichier original, pas besoin de ffmpeg ──────
+            log.info("[Groq] Transcription en cours...")
+            resultat = await asyncio.to_thread(_transcrire_groq, str(tmp))
+        else:
+            # ── Whisper local : conversion WAV nécessaire ────────────────────
+            log.info("Conversion ffmpeg en cours...")
+            await asyncio.to_thread(
+                subprocess.run,
+                ["ffmpeg", "-y", "-i", str(tmp), "-ar", "16000", "-ac", "1", str(wav_path)],
+                capture_output=True, check=True,
+            )
+            log.info(f"Conversion OK — {wav_path.stat().st_size} octets")
+            log.info("Transcription Whisper locale en cours (30-60s sur CPU)...")
+            resultat = await asyncio.to_thread(_transcrire_local, str(wav_path))
 
         texte = resultat["text"]
         log.info(f"Transcription OK: '{texte[:80]}'")

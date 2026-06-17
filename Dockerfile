@@ -28,7 +28,8 @@ RUN pip install --no-cache-dir --timeout 300 \
     pdfplumber==0.10.3 \
     python-docx==1.1.2 \
     tqdm==4.66.4 \
-    numpy==1.26.4
+    numpy==1.26.4 \
+    groq>=0.9.0
 
 # ── 4. ChromaDB + embeddings (lourd, isolé) ───────────────────────────────────
 RUN pip install --no-cache-dir --timeout 300 \
