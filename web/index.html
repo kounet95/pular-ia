@@ -836,6 +836,7 @@
         <button class="prof-tab" id="ptab-corrections"         onclick="profSetTab('corrections')">🔧 Corrections</button>
         <button class="prof-tab" id="ptab-contributeurs"       onclick="profSetTab('contributeurs')">👥 Contributeurs</button>
         <button class="prof-tab" id="ptab-stats"               onclick="profSetTab('stats')">📊 Stats</button>
+        <button class="prof-tab" id="ptab-entrainement"       onclick="profSetTab('entrainement')">🧠 Entraînement</button>
       </div>
 
       <!-- ── Panel : Ajouter un mot ── -->
@@ -1008,6 +1009,62 @@
         <div id="prof-liste-contributeurs">
           <div style="color:var(--gris);font-size:.85rem;">Chargement...</div>
         </div>
+      </div>
+
+      <!-- ── Panel : Entraînement ── -->
+      <div id="ppanel-entrainement" class="prof-panel">
+        <p style="font-size:.82rem;color:var(--gris);margin-bottom:14px;">
+          Fiabilité des transcriptions automatiques et export du dataset pour fine-tuner Whisper.
+        </p>
+
+        <!-- Métriques fiabilité -->
+        <div id="entr-loading" style="text-align:center;padding:20px;color:var(--gris);">
+          Calcul en cours… <span class="loader" style="vertical-align:middle;"></span>
+        </div>
+
+        <div id="entr-content" style="display:none;">
+
+          <!-- Indicateur principal WER -->
+          <div style="background:#0d1f15;border-radius:12px;padding:14px;margin-bottom:12px;text-align:center;">
+            <div style="font-size:.75rem;color:var(--gris);letter-spacing:.06em;margin-bottom:6px;">WORD ERROR RATE MOYEN</div>
+            <div id="entr-wer" style="font-size:2.4rem;font-weight:800;color:var(--or);line-height:1;">—%</div>
+            <div style="font-size:.78rem;color:var(--gris);margin-top:4px;">Plus bas = Whisper comprend mieux le pular</div>
+          </div>
+
+          <!-- Taux correct -->
+          <div style="background:#0d1f15;border-radius:12px;padding:14px;margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <span style="font-size:.82rem;color:var(--gris);">Transcriptions correctes (sans correction)</span>
+              <span id="entr-pct-ok" style="font-weight:700;color:#4caf7d;">—%</span>
+            </div>
+            <div style="background:#1a3322;border-radius:6px;height:10px;overflow:hidden;">
+              <div id="entr-bar-ok" style="height:100%;background:#4caf7d;width:0%;transition:width .6s;"></div>
+            </div>
+          </div>
+
+          <!-- Distribution WER par tranche -->
+          <div style="background:#0d1f15;border-radius:12px;padding:14px;margin-bottom:12px;">
+            <div style="font-size:.8rem;color:var(--gris);margin-bottom:10px;font-weight:600;">Distribution des erreurs</div>
+            <div id="entr-tranches" style="display:flex;flex-direction:column;gap:7px;"></div>
+          </div>
+
+          <!-- Grille chiffres corpus -->
+          <div class="stat-grid" id="entr-stat-grid" style="margin-bottom:14px;"></div>
+
+          <!-- Export dataset Whisper -->
+          <div style="background:#1a3322;border:1px solid #c8a84b55;border-radius:12px;padding:14px;margin-bottom:10px;">
+            <div style="font-size:.82rem;color:var(--or);font-weight:700;margin-bottom:6px;">📦 Export pour Fine-tuning Whisper</div>
+            <p style="font-size:.8rem;color:var(--gris);margin:0 0 10px;">
+              ZIP contenant les fichiers audio + <code style="background:#0d1f15;padding:1px 5px;border-radius:4px;">metadata.csv</code>
+              prêt pour Google Colab / HuggingFace.
+            </p>
+            <button onclick="profExporterWhisper()" id="entr-btn-export" style="
+              width:100%;padding:11px;border-radius:8px;border:1px solid var(--or);
+              background:transparent;color:var(--or);cursor:pointer;font-size:.88rem;font-weight:700;
+            ">⬇️ Télécharger le dataset Whisper (<span id="entr-nb-audio">—</span> paires)</button>
+          </div>
+
+        </div><!-- /entr-content -->
       </div>
 
     </div><!-- /prof-contenu -->
@@ -2255,7 +2312,7 @@ initJeu();
 let profOuvert = false;
 let motsProfCache = [];
 
-const PROF_TABS = ['ajouter','corriger','phrases','livres','valider','corrections','contributeurs','stats'];
+const PROF_TABS = ['ajouter','corriger','phrases','livres','valider','corrections','contributeurs','stats','entrainement'];
 
 function profTogglePanel() {
   profOuvert = !profOuvert;
@@ -2270,13 +2327,14 @@ function profSetTab(tab) {
     document.getElementById('ptab-'+t).classList.toggle('actif', t===tab);
     document.getElementById('ppanel-'+t).classList.toggle('actif', t===tab);
   });
-  if (tab === 'corriger')      profRendreListe();
-  if (tab === 'valider')       profChargerContribs();
-  if (tab === 'stats')         profChargerStats();
-  if (tab === 'phrases')       profChargerPhrases();
-  if (tab === 'livres')        profChargerLivres();
-  if (tab === 'corrections')   profChargerCorrections();
-  if (tab === 'contributeurs') profChargerContributeurs();
+  if (tab === 'corriger')       profRendreListe();
+  if (tab === 'valider')        profChargerContribs();
+  if (tab === 'stats')          profChargerStats();
+  if (tab === 'phrases')        profChargerPhrases();
+  if (tab === 'livres')         profChargerLivres();
+  if (tab === 'corrections')    profChargerCorrections();
+  if (tab === 'contributeurs')  profChargerContributeurs();
+  if (tab === 'entrainement')   profChargerEntrainement();
 }
 window.profSetTab = profSetTab;
 
@@ -2730,6 +2788,95 @@ async function profChargerContributeurs() {
   }
 }
 window.profChargerContributeurs = profChargerContributeurs;
+
+// ═══════════════════════════════════════════════════════════════
+// ENTRAÎNEMENT — fiabilité + export Whisper
+// ═══════════════════════════════════════════════════════════════
+async function profChargerEntrainement() {
+  const loading = document.getElementById('entr-loading');
+  const content = document.getElementById('entr-content');
+  loading.style.display = 'block';
+  content.style.display = 'none';
+  try {
+    const r = await fetch(`${API}/api/prof/fiabilite`, {headers:H});
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d = await r.json();
+
+    // WER principal
+    document.getElementById('entr-wer').textContent = d.wer_moyen + '%';
+    const werEl = document.getElementById('entr-wer');
+    werEl.style.color = d.wer_moyen < 20 ? '#4caf7d' : d.wer_moyen < 50 ? 'var(--or)' : '#e05a5a';
+
+    // Barre taux correct
+    const pct = d.taux_correct;
+    document.getElementById('entr-pct-ok').textContent = pct + '%';
+    document.getElementById('entr-bar-ok').style.width = pct + '%';
+    document.getElementById('entr-bar-ok').style.background = pct >= 60 ? '#4caf7d' : pct >= 30 ? '#c8a84b' : '#e05a5a';
+
+    // Distribution WER par tranche
+    const tranches = d.tranches_wer;
+    const total = d.avec_paire || 1;
+    const labels = {
+      '0':    {label: 'Parfait (WER = 0%)',      color: '#4caf7d'},
+      '1-25': {label: 'Bonne (WER 1–25%)',        color: '#8bc34a'},
+      '26-50':{label: 'Passable (WER 26–50%)',    color: '#c8a84b'},
+      '>50':  {label: 'Mauvaise (WER > 50%)',     color: '#e05a5a'},
+    };
+    document.getElementById('entr-tranches').innerHTML = Object.entries(tranches).map(([k, nb]) => {
+      const info = labels[k] || {label: k, color: 'var(--gris)'};
+      const pct2 = total > 0 ? Math.round(nb / total * 100) : 0;
+      return `<div>
+        <div style="display:flex;justify-content:space-between;font-size:.78rem;color:var(--gris);margin-bottom:3px;">
+          <span>${info.label}</span><span style="color:${info.color};font-weight:700;">${nb} (${pct2}%)</span>
+        </div>
+        <div style="background:#1a3322;border-radius:4px;height:7px;overflow:hidden;">
+          <div style="height:100%;width:${pct2}%;background:${info.color};transition:width .5s;"></div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Grille corpus
+    document.getElementById('entr-nb-audio').textContent = d.audio_utilisables;
+    document.getElementById('entr-stat-grid').innerHTML = [
+      {v: d.total_contributions, l: 'Contributions totales'},
+      {v: d.avec_paire,          l: 'Avec paire auto/corrigé'},
+      {v: d.corrects,            l: 'Transcriptions exactes'},
+      {v: d.corriges,            l: 'Corrections apportées'},
+      {v: d.audio_utilisables,   l: 'Fichiers audio utilisables'},
+      {v: d.wer_moyen + '%',     l: 'WER moyen Whisper'},
+    ].map(x => `<div class="stat-card"><div class="sv">${x.v}</div><div class="sl">${x.l}</div></div>`).join('');
+
+    loading.style.display = 'none';
+    content.style.display = 'block';
+  } catch(e) {
+    loading.innerHTML = `<div style="color:var(--rouge);">❌ ${e.message}</div>`;
+  }
+}
+window.profChargerEntrainement = profChargerEntrainement;
+
+async function profExporterWhisper() {
+  const btn = document.getElementById('entr-btn-export');
+  btn.disabled = true;
+  btn.textContent = '⏳ Préparation du ZIP...';
+  try {
+    const r = await fetch(`${API}/api/prof/exporter-whisper`, {headers:H});
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const blob = await r.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'pular_whisper_dataset.zip';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('✅ Dataset Whisper téléchargé!');
+  } catch(e) {
+    toast('❌ ' + e.message, true);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `⬇️ Télécharger le dataset Whisper (<span id="entr-nb-audio">${document.getElementById('entr-nb-audio')?.textContent||'—'}</span> paires)`;
+  }
+}
+window.profExporterWhisper = profExporterWhisper;
 
 // Charger les mots custom et phrases custom au démarrage
 chargerMotsCustom();

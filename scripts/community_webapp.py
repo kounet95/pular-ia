@@ -141,6 +141,23 @@ def sauver_stats(stats: dict):
     with open(FICHIER_STATS, "w", encoding="utf-8") as f:
         json.dump(stats, f, ensure_ascii=False, indent=2)
 
+# ── Métriques de fiabilité ────────────────────────────────────────────────────
+def calcul_wer(reference: str, hypothese: str) -> float:
+    """Word Error Rate : distance d'édition sur les mots, normalisée par len(reference)."""
+    ref = reference.lower().split()
+    hyp = hypothese.lower().split()
+    if not ref:
+        return 0.0 if not hyp else 1.0
+    n, m = len(ref), len(hyp)
+    d = list(range(m + 1))
+    for i in range(1, n + 1):
+        prev, d[0] = d[0], i
+        for j in range(1, m + 1):
+            temp = d[j]
+            d[j] = prev if ref[i-1] == hyp[j-1] else 1 + min(prev, d[j], d[j-1])
+            prev = temp
+    return d[m] / n
+
 # ── FastAPI ───────────────────────────────────────────────────────────────────
 app = FastAPI(title="Pular IA — Contribution communautaire")
 
@@ -769,6 +786,110 @@ async def api_prof_corrections(limit: int = 30):
             except Exception:
                 pass
     return JSONResponse({"corrections": corrections, "total": len(corrections)})
+
+@app.get("/api/prof/fiabilite")
+async def api_prof_fiabilite():
+    """Métriques de fiabilité des transcriptions automatiques (WER, taux de correction)."""
+    def _calculer():
+        total = avec_paire = corrects = 0
+        wers: list[float] = []
+        tranches = {"0": 0, "1-25": 0, "26-50": 0, ">50": 0}
+        audio_dispo = 0
+
+        if DOSSIER_CONTRIB.exists():
+            for f in DOSSIER_CONTRIB.glob("*.json"):
+                try:
+                    d = json.loads(f.read_text(encoding="utf-8"))
+                    total += 1
+                    auto  = d.get("transcription_auto", "").strip()
+                    final = d.get("texte_final", "").strip()
+                    if not auto or not final:
+                        continue
+                    avec_paire += 1
+                    audio_rel = d.get("audio", "")
+                    if audio_rel and (PROJET_ROOT / audio_rel).exists():
+                        audio_dispo += 1
+                    w = calcul_wer(final, auto)
+                    wers.append(w)
+                    if w == 0.0:
+                        corrects += 1
+                        tranches["0"] += 1
+                    elif w <= 0.25:
+                        tranches["1-25"] += 1
+                    elif w <= 0.50:
+                        tranches["26-50"] += 1
+                    else:
+                        tranches[">50"] += 1
+                except Exception:
+                    pass
+
+        wer_moyen    = round(sum(wers) / len(wers) * 100, 1) if wers else 0.0
+        taux_correct = round(corrects / avec_paire * 100, 1) if avec_paire else 0.0
+        return {
+            "total_contributions": total,
+            "avec_paire":          avec_paire,
+            "corrects":            corrects,
+            "corriges":            avec_paire - corrects,
+            "taux_correct":        taux_correct,
+            "wer_moyen":           wer_moyen,
+            "tranches_wer":        tranches,
+            "audio_utilisables":   audio_dispo,
+        }
+
+    return JSONResponse(await asyncio.to_thread(_calculer))
+
+
+@app.get("/api/prof/exporter-whisper")
+async def api_prof_exporter_whisper():
+    """Exporte les paires audio+texte validées en ZIP pour fine-tuner Whisper (HuggingFace format)."""
+    def _creer_zip() -> tuple:
+        buf = io.BytesIO()
+        nb = 0
+        lignes_meta = ['audio_path,text\n']
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+            if DOSSIER_CONTRIB.exists():
+                for f in DOSSIER_CONTRIB.glob("*.json"):
+                    try:
+                        d = json.loads(f.read_text(encoding="utf-8"))
+                        texte     = d.get("texte_final", "").strip()
+                        audio_rel = d.get("audio", "")
+                        if not texte or not audio_rel:
+                            continue
+                        audio_path = PROJET_ROOT / audio_rel
+                        if not audio_path.exists():
+                            continue
+                        arc_name = f"audio/{audio_path.name}"
+                        z.write(audio_path, arc_name)
+                        texte_esc = texte.replace('"', '""')
+                        lignes_meta.append(f'"{arc_name}","{texte_esc}"\n')
+                        nb += 1
+                    except Exception:
+                        pass
+            z.writestr("metadata.csv", "".join(lignes_meta))
+            readme = (
+                "# Dataset Pular — Whisper Fine-tuning\n\n"
+                f"Nombre de paires audio/texte : {nb}\n\n"
+                "## Format\n"
+                "- `audio/` : fichiers audio (.webm)\n"
+                "- `metadata.csv` : colonnes `audio_path,text`\n\n"
+                "## Utilisation (Google Colab)\n"
+                "```python\n"
+                "from datasets import load_dataset\n"
+                "ds = load_dataset('csv', data_files='metadata.csv')\n"
+                "```\n"
+            )
+            z.writestr("README.md", readme)
+        buf.seek(0)
+        return buf.read(), nb
+
+    contenu, nb = await asyncio.to_thread(_creer_zip)
+    log.info(f"Export Whisper dataset: {nb} paires audio/texte, {len(contenu)//1024} KB")
+    return StreamingResponse(
+        io.BytesIO(contenu),
+        media_type="application/zip",
+        headers={"Content-Disposition": "attachment; filename=pular_whisper_dataset.zip"},
+    )
+
 
 @app.get("/api/prof/contributions")
 async def api_prof_contributions(limit: int = 20):
