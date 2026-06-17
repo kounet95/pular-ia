@@ -60,12 +60,19 @@ def get_whisper():
     global _whisper_model, _whisper_chargement
     if _whisper_model is None and not _whisper_chargement:
         _whisper_chargement = True
-        import whisper, torch
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        log.info(f"Chargement Whisper '{WHISPER_MODEL}' sur {device.upper()}...")
-        _whisper_model = whisper.load_model(WHISPER_MODEL, device=device)
-        log.info(f"✅ Whisper prêt ({device.upper()})")
-        _whisper_chargement = False
+        try:
+            import whisper, torch
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            log.info(f"Chargement Whisper '{WHISPER_MODEL}' sur {device.upper()}...")
+            _whisper_model = whisper.load_model(WHISPER_MODEL, device=device)
+            log.info(f"✅ Whisper prêt ({device.upper()})")
+        except Exception as e:
+            log.error(f"❌ Échec chargement Whisper: {type(e).__name__}: {e}")
+            raise
+        finally:
+            _whisper_chargement = False
+    if _whisper_model is None:
+        raise RuntimeError("Whisper non disponible — voir les logs du serveur")
     return _whisper_model
 
 def transcrire(audio_path: str) -> dict:
@@ -181,8 +188,8 @@ async def api_transcrire(audio: UploadFile = File(...)):
     except HTTPException:
         raise
     except Exception as e:
-        log.error(f"Erreur transcription: {type(e).__name__}: {e}")
-        raise HTTPException(500, str(e))
+        log.error(f"Erreur transcription: {type(e).__name__}: {e}", exc_info=True)
+        raise HTTPException(500, f"{type(e).__name__}: {e}")
     finally:
         tmp.unlink(missing_ok=True)
         if wav_path.exists():
