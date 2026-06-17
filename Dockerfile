@@ -35,9 +35,10 @@ RUN pip install --no-cache-dir --timeout 300 \
     chromadb==0.4.24 \
     sentence-transformers==2.7.0
 
-# ── 5. Forcer numpy 1.x (chromadb/sentence-transformers tirent numpy 2.x) ────
-# numpy 2.x casse whisper et torch compilés contre numpy 1.x
-RUN pip install --no-cache-dir "numpy==1.26.4"
+# ── 5. Forcer numpy 1.26.4 + numba 0.59 compatibles ─────────────────────────
+# chromadb/sentence-transformers tirent numpy 2.x ET numba compilé pour numpy 2.x.
+# numba 0.59 = dernière version supportant numpy 1.x (obligatoire pour torch 2.2).
+RUN pip install --no-cache-dir "numpy==1.26.4" "numba==0.59.1"
 
 # ── Code source ───────────────────────────────────────────────────────────────
 COPY scripts/ ./scripts/
