@@ -501,6 +501,20 @@
     <p style="font-size:.8rem;color:var(--gris);margin-bottom:8px;">
       Vérifie et corrige si besoin, puis valide.
     </p>
+
+    <!-- Phrase de référence (visible uniquement quand une phrase est active) -->
+    <div id="phrase-ref-zone" style="display:none;background:#1a3322;border:1px solid #c8a84b55;border-radius:10px;padding:10px 14px;margin-bottom:10px;">
+      <div style="font-size:.75rem;color:var(--or);font-weight:600;margin-bottom:4px;letter-spacing:.04em;">📖 PHRASE DE RÉFÉRENCE</div>
+      <div id="phrase-ref-texte" style="font-size:1rem;font-weight:600;color:#e8dfc0;line-height:1.5;margin-bottom:8px;"></div>
+      <button onclick="corrigerAvecPhrase()" style="
+        width:100%;padding:8px;border-radius:8px;border:1px solid var(--or);
+        background:transparent;color:var(--or);cursor:pointer;font-size:.85rem;font-weight:600;
+        transition:background .2s;
+      " onmouseover="this.style.background='#c8a84b22'" onmouseout="this.style.background='transparent'">
+        ✏️ Utiliser le texte de la phrase comme correction
+      </button>
+    </div>
+
     <textarea id="texte-auto" rows="4" placeholder="Transcription en cours..."></textarea>
 
     <!-- Clavier Adlam virtuel -->
@@ -1127,6 +1141,15 @@ async function transcrire() {
       document.getElementById('btn-latin').classList.add('actif');
       document.getElementById('btn-adlam').classList.remove('actif');
       document.getElementById('zone-transcription').style.display = 'block';
+      // Afficher la phrase de référence si une phrase est active
+      const refZone  = document.getElementById('phrase-ref-zone');
+      const refTexte = document.getElementById('phrase-ref-texte');
+      if (phraseActive) {
+        refTexte.textContent = phraseActive.pular;
+        refZone.style.display = 'block';
+      } else {
+        refZone.style.display = 'none';
+      }
       document.getElementById('zone-transcription').scrollIntoView({ behavior: 'smooth' });
       toast("✅ Transcription prête (" + (data.language || '?') + ")");
     }
@@ -1170,6 +1193,7 @@ async function valider() {
 function annuler() {
   audioBlob = null;
   document.getElementById('zone-transcription').style.display = 'none';
+  document.getElementById('phrase-ref-zone').style.display    = 'none';
   document.getElementById('texte-auto').value = '';
   const btn = document.getElementById('btn-record');
   btn.disabled = false;
@@ -1177,6 +1201,22 @@ function annuler() {
   document.getElementById('btn-icon').textContent  = '🎙️';
   document.getElementById('btn-label').textContent = 'Appuyer pour parler';
   document.getElementById('timer').style.display   = 'none';
+}
+
+function corrigerAvecPhrase() {
+  if (!phraseActive) return;
+  const ta = document.getElementById('texte-auto');
+  ta.value = phraseActive.pular;
+  ta.dir   = 'ltr';
+  ta.classList.remove('adlam');
+  texteLatinCache = phraseActive.pular;
+  texteAdlamCache = '';
+  scriptActif = 'latin';
+  document.getElementById('btn-latin').classList.add('actif');
+  document.getElementById('btn-adlam').classList.remove('actif');
+  document.getElementById('clavier-adlam').classList.remove('visible');
+  ta.focus();
+  toast("✏️ Texte de la phrase copié — vérifie et valide!");
 }
 
 // ── Visualiseur ────────────────────────────────────────────────────────────
