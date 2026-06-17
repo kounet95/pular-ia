@@ -14,8 +14,9 @@ RUN pip install --no-cache-dir --timeout 300 \
     --index-url https://download.pytorch.org/whl/cpu
 
 # ── 2. Whisper (dépend de torch) ─────────────────────────────────────────────
+# setuptools<76 requis : v76+ a supprimé pkg_resources dont dépend openai-whisper
 RUN pip install --no-cache-dir "setuptools<76"
-RUN pip install --no-cache-dir --no-build-isolation --timeout 300 \
+RUN pip install --no-cache-dir --timeout 300 --no-build-isolation \
     openai-whisper==20231117
 
 # ── 3. Web + RAG ──────────────────────────────────────────────────────────────
