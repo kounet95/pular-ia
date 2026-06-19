@@ -1395,6 +1395,24 @@ function filtrerPhrases(cat) {
   });
 }
 
+function ajouterPhraseDepuisCorrection(texte) {
+  if (!texte || texte.trim().length < 3) return;
+  texte = texte.trim();
+  if (PHRASES.find(p => p.pular === texte)) return;
+  const p = { pular: texte, adlam: latinVersAdlam(texte), fr: '(contribution validée)', cat: 'Communauté' };
+  PHRASES.push(p);
+  // Ajouter le bouton filtre "Communauté" si absent
+  const filtres = document.getElementById('filtres');
+  if (filtres && ![...filtres.querySelectorAll('.filtre')].find(b => b.textContent === 'Communauté')) {
+    const btn = document.createElement('button');
+    btn.className = 'filtre';
+    btn.textContent = 'Communauté';
+    btn.onclick = () => { catActive = 'Communauté'; filtrerPhrases('Communauté'); };
+    filtres.appendChild(btn);
+  }
+  filtrerPhrases(catActive);
+}
+
 function selectionnerPhrase(p) {
   phraseActive = p;
   document.getElementById('phrase-pular').textContent = p.pular;
@@ -1668,6 +1686,7 @@ async function soumettreCorriger() {
     const d = await r.json();
     if (!d.ok) throw new Error(d.detail || 'Erreur');
     toast('✅ Correction sauvée! Baŋ-baŋ!');
+    ajouterPhraseDepuisCorrection(texte);
     chargerStats();
     chargerCorrection();
   } catch(e) { toast('❌ ' + e.message, true); }
@@ -2539,6 +2558,10 @@ async function profValider(id, action) {
     if (!d.ok) throw new Error(d.detail||'Erreur');
     const msg = action==='valider'?'✅ Validée!': action==='corriger'?'✏️ Corrigée!':'❌ Rejetée';
     toast(msg);
+    if (action === 'valider' || action === 'corriger') {
+      const texte = document.getElementById(`cc-correction-${id}`)?.value.trim();
+      ajouterPhraseDepuisCorrection(texte);
+    }
     document.getElementById(`cc-${id}`)?.remove();
     profChargerStats();
   } catch(e) { toast('❌ '+e.message, true); }
