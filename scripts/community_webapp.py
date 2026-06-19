@@ -891,6 +891,156 @@ async def api_prof_exporter_whisper():
     )
 
 
+# ── Dataset : consulter / ajouter / supprimer / évolution ──────────────────────
+
+@app.get("/api/prof/dataset")
+async def api_prof_dataset(page: int = 1, limit: int = 15, status: str = "all", q: str = ""):
+    """Liste paginée de toutes les contributions avec WER calculé."""
+    def _lire():
+        items = []
+        if not DOSSIER_CONTRIB.exists():
+            return {"items": [], "total": 0, "page": page, "pages": 1}
+        for f in sorted(DOSSIER_CONTRIB.glob("*.json"), key=lambda x: x.stat().st_mtime, reverse=True):
+            try:
+                d = json.loads(f.read_text(encoding="utf-8"))
+                st = d.get("status", "pending")
+                if status != "all" and st != status:
+                    continue
+                texte = (d.get("texte_final") or d.get("transcription_auto") or "").lower()
+                if q and q.lower() not in texte:
+                    continue
+                auto  = d.get("transcription_auto", "").strip()
+                final = d.get("texte_final", "").strip()
+                wer   = round(calcul_wer(final, auto) * 100, 1) if auto and final else None
+                audio_nom = Path(d.get("audio", "")).name if d.get("audio") else ""
+                items.append({
+                    "id":               d.get("id", f.stem),
+                    "pseudo":           d.get("pseudo", "?"),
+                    "date":             d.get("timestamp", "")[:10],
+                    "texte_final":      final,
+                    "transcription_auto": auto,
+                    "status":           st,
+                    "audio_nom":        audio_nom,
+                    "wer":              wer,
+                    "source":           d.get("source", ""),
+                })
+            except Exception:
+                pass
+        total  = len(items)
+        start  = (page - 1) * limit
+        return {
+            "items": items[start:start + limit],
+            "total": total,
+            "page":  page,
+            "pages": max(1, (total + limit - 1) // limit),
+        }
+    return JSONResponse(await asyncio.to_thread(_lire))
+
+
+@app.get("/api/prof/dataset/evolution")
+async def api_prof_dataset_evolution():
+    """Évolution journalière du corpus : nb contributions + WER moyen par jour."""
+    def _calculer():
+        par_jour: dict = {}
+        if DOSSIER_CONTRIB.exists():
+            for f in DOSSIER_CONTRIB.glob("*.json"):
+                try:
+                    d = json.loads(f.read_text(encoding="utf-8"))
+                    jour = (d.get("timestamp") or "")[:10] or "?"
+                    if jour not in par_jour:
+                        par_jour[jour] = {"count": 0, "wer_sum": 0.0, "wer_n": 0, "corrects": 0}
+                    par_jour[jour]["count"] += 1
+                    auto  = d.get("transcription_auto", "").strip()
+                    final = d.get("texte_final", "").strip()
+                    if auto and final:
+                        w = calcul_wer(final, auto)
+                        par_jour[jour]["wer_sum"] += w
+                        par_jour[jour]["wer_n"]   += 1
+                        if w == 0.0:
+                            par_jour[jour]["corrects"] += 1
+                except Exception:
+                    pass
+
+        cumul = 0
+        timeline = []
+        for jour, info in sorted(par_jour.items()):
+            if jour == "?":
+                continue
+            cumul += info["count"]
+            wer_moy = round(info["wer_sum"] / info["wer_n"] * 100, 1) if info["wer_n"] else None
+            taux_ok = round(info["corrects"] / info["wer_n"] * 100, 1) if info["wer_n"] else None
+            timeline.append({
+                "date":      jour,
+                "count":     info["count"],
+                "cumul":     cumul,
+                "wer_moy":   wer_moy,
+                "taux_ok":   taux_ok,
+            })
+
+        total_n   = sum(v["wer_n"]   for v in par_jour.values())
+        total_ws  = sum(v["wer_sum"] for v in par_jour.values())
+        total_ok  = sum(v["corrects"]for v in par_jour.values())
+        total_cnt = sum(v["count"]   for v in par_jour.values())
+        return {
+            "timeline":         timeline[-30:],
+            "total":            total_cnt,
+            "wer_global":       round(total_ws / total_n * 100, 1) if total_n else None,
+            "taux_ok_global":   round(total_ok / total_n * 100, 1) if total_n else None,
+        }
+    return JSONResponse(await asyncio.to_thread(_calculer))
+
+
+@app.post("/api/prof/dataset/ajouter")
+async def api_prof_dataset_ajouter(
+    pular:  str = Form(...),
+    fr:     str = Form(""),
+    pseudo: str = Form("prof"),
+):
+    """Ajoute une entrée texte directement dans le dataset (sans audio, statut validé)."""
+    pular = pular.strip()
+    if not pular:
+        raise HTTPException(400, "Le texte pular est obligatoire.")
+    id_ = uuid.uuid4().hex[:8]
+    entry = {
+        "id":                id_,
+        "pseudo":            pseudo or "prof",
+        "transcription_auto": pular,
+        "texte_final":       pular,
+        "fr":                fr.strip(),
+        "audio":             "",
+        "timestamp":         datetime.now().isoformat(),
+        "source":            "ajout_manuel",
+        "status":            "valider",
+    }
+    (DOSSIER_CONTRIB / f"{id_}.json").write_text(json.dumps(entry, ensure_ascii=False, indent=2), encoding="utf-8")
+    stats = charger_stats()
+    stats["total_contributions"] = stats.get("total_contributions", 0) + 1
+    stats["total_validations"]   = stats.get("total_validations",   0) + 1
+    sauver_stats(stats)
+    log.info(f"Dataset — entrée manuelle: {id_} = '{pular[:60]}'")
+    return JSONResponse({"ok": True, "id": id_})
+
+
+@app.delete("/api/prof/dataset/{id}")
+async def api_prof_dataset_supprimer(id: str):
+    """Supprime une contribution du dataset (et son audio si présent)."""
+    f = DOSSIER_CONTRIB / f"{id}.json"
+    if not f.exists():
+        raise HTTPException(404, "Entrée non trouvée.")
+    try:
+        d = json.loads(f.read_text(encoding="utf-8"))
+        audio_rel = d.get("audio", "")
+        if audio_rel:
+            ap = PROJET_ROOT / audio_rel
+            if ap.exists():
+                ap.unlink()
+    except Exception:
+        pass
+    f.unlink()
+    log.info(f"Dataset — suppression: {id}")
+    return JSONResponse({"ok": True})
+
+
 @app.get("/api/prof/contributions")
 async def api_prof_contributions(limit: int = 20):
     """Liste les contributions communautaires pour validation prof."""

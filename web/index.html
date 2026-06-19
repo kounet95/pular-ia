@@ -280,6 +280,25 @@
     .prof-tab:hover:not(.actif) { color:var(--texte); }
     .prof-panel { display:none; }
     .prof-panel.actif { display:block; }
+    .ds-tab {
+      padding:6px 12px; border-radius:6px; border:1px solid #2d5c3a;
+      background:transparent; color:var(--gris); font-size:.8rem; cursor:pointer; font-weight:600; transition:all .15s;
+    }
+    .ds-tab.actif { background:#1a3322; color:var(--or); border-color:var(--or); }
+    .ds-tab:hover:not(.actif) { color:var(--texte); }
+    .ds-entry {
+      background:#0a1a0f; border:1px solid #1e3d28; border-radius:8px;
+      padding:9px 12px; margin-bottom:6px; font-size:.82rem;
+    }
+    .ds-entry:hover { border-color:#2d5c3a; }
+    .ds-badge {
+      display:inline-block; padding:1px 7px; border-radius:10px;
+      font-size:.7rem; font-weight:700; margin-left:4px;
+    }
+    .ds-badge.valider   { background:#1a4d2e; color:#4caf7d; }
+    .ds-badge.pending   { background:#2a2010; color:#c8a84b; }
+    .ds-badge.corriger  { background:#1a2a40; color:#64b5f6; }
+    .ds-badge.rejeter   { background:#2d1515; color:#e05a5a; }
     .mot-card {
       display:flex; align-items:center; gap:10px; padding:8px 10px;
       background:#0a1a0f; border-radius:8px; border:1px solid #1e3d28;
@@ -837,6 +856,7 @@
         <button class="prof-tab" id="ptab-contributeurs"       onclick="profSetTab('contributeurs')">👥 Contributeurs</button>
         <button class="prof-tab" id="ptab-stats"               onclick="profSetTab('stats')">📊 Stats</button>
         <button class="prof-tab" id="ptab-entrainement"       onclick="profSetTab('entrainement')">🧠 Entraînement</button>
+        <button class="prof-tab" id="ptab-dataset"            onclick="profSetTab('dataset')">📁 Dataset</button>
       </div>
 
       <!-- ── Panel : Ajouter un mot ── -->
@@ -1009,6 +1029,96 @@
         <div id="prof-liste-contributeurs">
           <div style="color:var(--gris);font-size:.85rem;">Chargement...</div>
         </div>
+      </div>
+
+      <!-- ── Panel : Dataset ── -->
+      <div id="ppanel-dataset" class="prof-panel">
+
+        <!-- Sous-onglets -->
+        <div style="display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid #1e3d28;padding-bottom:10px;">
+          <button id="dtab-donnees"   onclick="dsSetTab('donnees')"   class="ds-tab actif">🔍 Données</button>
+          <button id="dtab-ajouter"   onclick="dsSetTab('ajouter')"   class="ds-tab">➕ Ajouter</button>
+          <button id="dtab-evolution" onclick="dsSetTab('evolution')" class="ds-tab">📈 Évolution</button>
+        </div>
+
+        <!-- ─ Vue : Données ─ -->
+        <div id="dspanel-donnees" class="ds-panel">
+          <div style="display:flex;gap:6px;margin-bottom:8px;">
+            <input id="ds-search" type="text" placeholder="🔍 Chercher dans le texte…"
+              oninput="dsChargerDonnees(1)"
+              style="flex:1;padding:8px 10px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;color:var(--texte);font-size:.85rem;outline:none;">
+            <select id="ds-status" onchange="dsChargerDonnees(1)"
+              style="padding:8px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;color:var(--texte);font-size:.82rem;">
+              <option value="all">Tous</option>
+              <option value="valider">Validés</option>
+              <option value="pending">En attente</option>
+              <option value="corriger">Corrigés</option>
+              <option value="rejeter">Rejetés</option>
+            </select>
+          </div>
+          <div id="ds-count" style="font-size:.75rem;color:var(--gris);margin-bottom:6px;"></div>
+          <div id="ds-liste"></div>
+          <div id="ds-pagination" style="display:flex;justify-content:center;gap:6px;margin-top:10px;flex-wrap:wrap;"></div>
+        </div>
+
+        <!-- ─ Vue : Ajouter ─ -->
+        <div id="dspanel-ajouter" class="ds-panel" style="display:none;">
+          <p style="font-size:.82rem;color:var(--gris);margin-bottom:12px;">
+            Ajoute directement du texte pular validé dans le dataset d'entraînement (sans enregistrement audio).
+          </p>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+            <textarea id="ds-pular" rows="3" placeholder="Texte en pular *" style="
+              background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;color:var(--texte);
+              padding:10px;font-size:.95rem;resize:vertical;outline:none;line-height:1.6;
+            "></textarea>
+            <input id="ds-fr" type="text" placeholder="Traduction française (optionnel)" style="
+              padding:8px 10px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;
+              color:var(--texte);font-size:.88rem;outline:none;">
+            <input id="ds-pseudo-ajout" type="text" placeholder="Ton pseudo" value="prof" style="
+              padding:8px 10px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;
+              color:var(--texte);font-size:.88rem;outline:none;">
+            <button onclick="dsAjouter()" style="
+              padding:11px;border-radius:8px;border:none;background:var(--vert);
+              color:white;font-weight:700;font-size:.92rem;cursor:pointer;">
+              ➕ Ajouter au dataset
+            </button>
+          </div>
+          <div id="ds-recent-label" style="font-size:.78rem;color:var(--gris);margin-bottom:6px;display:none;">Ajouts récents :</div>
+          <div id="ds-recent"></div>
+        </div>
+
+        <!-- ─ Vue : Évolution ─ -->
+        <div id="dspanel-evolution" class="ds-panel" style="display:none;">
+          <div id="ds-evo-loading" style="text-align:center;padding:20px;color:var(--gris);">
+            Calcul… <span class="loader" style="vertical-align:middle;"></span>
+          </div>
+          <div id="ds-evo-content" style="display:none;">
+            <!-- KPIs -->
+            <div class="stat-grid" id="ds-kpis" style="margin-bottom:14px;"></div>
+
+            <!-- Chart contributions/jour -->
+            <div style="background:#0a1a0f;border-radius:10px;padding:12px;margin-bottom:12px;">
+              <div style="font-size:.78rem;color:var(--gris);font-weight:600;margin-bottom:8px;">
+                📊 Contributions par jour <span id="ds-chart-period" style="font-weight:400;"></span>
+              </div>
+              <div id="ds-chart-bars" style="display:flex;align-items:flex-end;gap:2px;height:70px;"></div>
+              <div id="ds-chart-labels" style="display:flex;gap:2px;margin-top:3px;overflow:hidden;"></div>
+            </div>
+
+            <!-- Chart WER/jour -->
+            <div style="background:#0a1a0f;border-radius:10px;padding:12px;margin-bottom:12px;">
+              <div style="font-size:.78rem;color:var(--gris);font-weight:600;margin-bottom:8px;">
+                📉 WER moyen par jour <span style="font-size:.7rem;font-weight:400;">(plus bas = Whisper comprend mieux le pular)</span>
+              </div>
+              <div id="ds-wer-bars" style="display:flex;align-items:flex-end;gap:2px;height:55px;"></div>
+            </div>
+
+            <!-- Tableau récapitulatif -->
+            <div style="font-size:.78rem;color:var(--gris);font-weight:600;margin-bottom:6px;">Derniers jours</div>
+            <div id="ds-timeline-table"></div>
+          </div>
+        </div>
+
       </div>
 
       <!-- ── Panel : Entraînement ── -->
@@ -2331,7 +2441,7 @@ initJeu();
 let profOuvert = false;
 let motsProfCache = [];
 
-const PROF_TABS = ['ajouter','corriger','phrases','livres','valider','corrections','contributeurs','stats','entrainement'];
+const PROF_TABS = ['ajouter','corriger','phrases','livres','valider','corrections','contributeurs','stats','entrainement','dataset'];
 
 function profTogglePanel() {
   profOuvert = !profOuvert;
@@ -2354,6 +2464,7 @@ function profSetTab(tab) {
   if (tab === 'corrections')    profChargerCorrections();
   if (tab === 'contributeurs')  profChargerContributeurs();
   if (tab === 'entrainement')   profChargerEntrainement();
+  if (tab === 'dataset')        dsSetTab('donnees');
 }
 window.profSetTab = profSetTab;
 
@@ -2900,6 +3011,216 @@ async function profExporterWhisper() {
   }
 }
 window.profExporterWhisper = profExporterWhisper;
+
+// ═══════════════════════════════════════════════════════════════
+// DATASET — consulter / ajouter / évolution
+// ═══════════════════════════════════════════════════════════════
+const DS_TABS = ['donnees','ajouter','evolution'];
+let dsPageCourante = 1;
+let dsRecentAjouts = [];
+
+function dsSetTab(tab) {
+  DS_TABS.forEach(t => {
+    document.getElementById('dtab-'+t).classList.toggle('actif', t===tab);
+    document.getElementById('dspanel-'+t).style.display = t===tab ? 'block' : 'none';
+  });
+  if (tab === 'donnees')   dsChargerDonnees(1);
+  if (tab === 'evolution') dsChargerEvolution();
+}
+window.dsSetTab = dsSetTab;
+
+// ─ Vue Données ──────────────────────────────────────────────────────────────
+async function dsChargerDonnees(page) {
+  if (page !== undefined) dsPageCourante = page;
+  const q      = document.getElementById('ds-search').value.trim();
+  const status = document.getElementById('ds-status').value;
+  const liste  = document.getElementById('ds-liste');
+  const count  = document.getElementById('ds-count');
+  liste.innerHTML = '<div style="color:var(--gris);text-align:center;padding:10px;">⏳ Chargement…</div>';
+
+  try {
+    const r = await fetch(`${API}/api/prof/dataset?page=${dsPageCourante}&limit=15&status=${encodeURIComponent(status)}&q=${encodeURIComponent(q)}`, {headers:H});
+    const d = await r.json();
+
+    count.textContent = `${d.total} entrée(s) — page ${d.page}/${d.pages}`;
+
+    if (!d.items.length) {
+      liste.innerHTML = '<div style="color:var(--gris);text-align:center;padding:20px;">Aucune entrée trouvée.</div>';
+      document.getElementById('ds-pagination').innerHTML = '';
+      return;
+    }
+
+    const BADGE = {valider:'valider',pending:'pending',corriger:'corriger',rejeter:'rejeter'};
+    const STATUS_LABEL = {valider:'✅ validé',pending:'⏳ attente',corriger:'✏️ corrigé',rejeter:'❌ rejeté'};
+
+    liste.innerHTML = d.items.map(e => {
+      const badge = BADGE[e.status] || 'pending';
+      const wer   = e.wer !== null ? `<span style="font-size:.7rem;color:${e.wer===0?'#4caf7d':e.wer<25?'#8bc34a':e.wer<50?'#c8a84b':'#e05a5a'};margin-left:6px;">WER ${e.wer}%</span>` : '';
+      const audio = e.audio_nom ? `<button onclick="dsEcouterAudio('${e.audio_nom}')" style="border:none;background:transparent;color:var(--gris);cursor:pointer;font-size:.8rem;padding:0 4px;" title="Écouter">🔊</button>` : '';
+      const diff  = e.transcription_auto && e.texte_final && e.transcription_auto !== e.texte_final
+        ? `<div style="font-size:.75rem;color:#6a9e78;margin-top:3px;">🤖 <em>${e.transcription_auto}</em></div>` : '';
+      return `<div class="ds-entry">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;">
+          <div style="flex:1;">
+            <span style="color:var(--texte);font-weight:600;">${e.texte_final||'(vide)'}</span>
+            ${wer}
+            ${diff}
+            <div style="font-size:.72rem;color:var(--gris);margin-top:3px;">👤 ${e.pseudo} · 🗓️ ${e.date} · ${e.source||''}</div>
+          </div>
+          <div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">
+            <span class="ds-badge ${badge}">${STATUS_LABEL[e.status]||e.status}</span>
+            ${audio}
+            <button onclick="dsSupprimerEntree('${e.id}')" style="border:none;background:transparent;color:#555;cursor:pointer;font-size:.8rem;padding:0 4px;" title="Supprimer">🗑️</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Pagination
+    const pag = document.getElementById('ds-pagination');
+    let pagHtml = '';
+    if (d.page > 1) pagHtml += `<button onclick="dsChargerDonnees(${d.page-1})" style="padding:5px 10px;border-radius:6px;border:1px solid #2d5c3a;background:transparent;color:var(--gris);cursor:pointer;">◀</button>`;
+    for (let i = Math.max(1, d.page-2); i <= Math.min(d.pages, d.page+2); i++) {
+      pagHtml += `<button onclick="dsChargerDonnees(${i})" style="padding:5px 10px;border-radius:6px;border:1px solid ${i===d.page?'var(--or)':'#2d5c3a'};background:${i===d.page?'#1a3322':'transparent'};color:${i===d.page?'var(--or)':'var(--gris)'};cursor:pointer;">${i}</button>`;
+    }
+    if (d.page < d.pages) pagHtml += `<button onclick="dsChargerDonnees(${d.page+1})" style="padding:5px 10px;border-radius:6px;border:1px solid #2d5c3a;background:transparent;color:var(--gris);cursor:pointer;">▶</button>`;
+    pag.innerHTML = pagHtml;
+
+  } catch(e) {
+    liste.innerHTML = `<div style="color:var(--rouge);">❌ ${e.message}</div>`;
+  }
+}
+window.dsChargerDonnees = dsChargerDonnees;
+
+function dsEcouterAudio(nom) {
+  const a = new Audio(`${API}/audio/${encodeURIComponent(nom)}`);
+  a.play();
+}
+window.dsEcouterAudio = dsEcouterAudio;
+
+async function dsSupprimerEntree(id) {
+  if (!confirm('Supprimer cette entrée du dataset?')) return;
+  try {
+    const r = await fetch(`${API}/api/prof/dataset/${id}`, {method:'DELETE', headers:H});
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail||'Erreur');
+    toast('🗑️ Entrée supprimée');
+    dsChargerDonnees(dsPageCourante);
+  } catch(e) { toast('❌ '+e.message, true); }
+}
+window.dsSupprimerEntree = dsSupprimerEntree;
+
+// ─ Vue Ajouter ──────────────────────────────────────────────────────────────
+async function dsAjouter() {
+  const pular  = document.getElementById('ds-pular').value.trim();
+  const fr     = document.getElementById('ds-fr').value.trim();
+  const pseudo = document.getElementById('ds-pseudo-ajout').value.trim() || 'prof';
+  if (!pular) { toast('❌ Le texte pular est obligatoire', true); return; }
+
+  try {
+    const fd = new FormData();
+    fd.append('pular', pular); fd.append('fr', fr); fd.append('pseudo', pseudo);
+    const r = await fetch(`${API}/api/prof/dataset/ajouter`, {method:'POST', body:fd, headers:H});
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail||'Erreur');
+
+    toast('✅ Ajouté au dataset!');
+    document.getElementById('ds-pular').value = '';
+    document.getElementById('ds-fr').value    = '';
+
+    // Ajouter dans "ajouts récents" localement
+    dsRecentAjouts.unshift({pular, fr, id: d.id});
+    document.getElementById('ds-recent-label').style.display = 'block';
+    document.getElementById('ds-recent').innerHTML = dsRecentAjouts.slice(0,5).map(x =>
+      `<div style="background:#0a1a0f;border-radius:7px;padding:7px 10px;margin-bottom:4px;font-size:.82rem;">
+        <span style="color:var(--texte);font-weight:600;">${x.pular}</span>
+        ${x.fr ? `<span style="color:var(--gris);margin-left:6px;font-style:italic;">— ${x.fr}</span>` : ''}
+        <span style="font-size:.7rem;color:#4caf7d;margin-left:6px;">✅ ajouté</span>
+      </div>`
+    ).join('');
+
+    // Aussi dans PHRASES proposées
+    ajouterPhraseDepuisCorrection(pular);
+    profChargerStats();
+  } catch(e) { toast('❌ '+e.message, true); }
+}
+window.dsAjouter = dsAjouter;
+
+// ─ Vue Évolution ────────────────────────────────────────────────────────────
+async function dsChargerEvolution() {
+  document.getElementById('ds-evo-loading').style.display  = 'block';
+  document.getElementById('ds-evo-content').style.display  = 'none';
+  try {
+    const r = await fetch(`${API}/api/prof/dataset/evolution`, {headers:H});
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d = await r.json();
+    const tl = d.timeline || [];
+
+    // KPIs
+    document.getElementById('ds-kpis').innerHTML = [
+      {v: d.total,                       l: 'Total contributions'},
+      {v: (d.wer_global ?? '—')+'%',     l: 'WER global Whisper'},
+      {v: (d.taux_ok_global ?? '—')+'%', l: 'Transcriptions exactes'},
+      {v: tl.length > 0 ? tl[tl.length-1].cumul : d.total, l: 'Corpus cumulé'},
+    ].map(x => `<div class="stat-card"><div class="sv">${x.v}</div><div class="sl">${x.l}</div></div>`).join('');
+
+    document.getElementById('ds-chart-period').textContent = tl.length ? `(${tl[0].date} → ${tl[tl.length-1].date})` : '';
+
+    if (tl.length === 0) {
+      document.getElementById('ds-chart-bars').innerHTML = '<span style="color:var(--gris);font-size:.78rem;">Pas encore de données.</span>';
+      document.getElementById('ds-wer-bars').innerHTML   = '';
+      document.getElementById('ds-timeline-table').innerHTML = '';
+    } else {
+      // Chart contributions/jour
+      const maxCount = Math.max(...tl.map(j => j.count), 1);
+      document.getElementById('ds-chart-bars').innerHTML = tl.map(j => {
+        const h = Math.round(j.count / maxCount * 68);
+        return `<div title="${j.date}: ${j.count}" style="flex:1;min-width:6px;height:${h}px;background:var(--vert);border-radius:2px 2px 0 0;"></div>`;
+      }).join('');
+      document.getElementById('ds-chart-labels').innerHTML = tl.map((j,i) => {
+        const show = tl.length <= 10 || i % Math.ceil(tl.length/8) === 0;
+        return `<div style="flex:1;font-size:.55rem;color:var(--gris);text-align:center;overflow:hidden;">${show ? j.date.slice(5) : ''}</div>`;
+      }).join('');
+
+      // Chart WER/jour
+      const wers = tl.map(j => j.wer_moy).filter(w => w !== null);
+      const maxWer = Math.max(...wers, 1);
+      document.getElementById('ds-wer-bars').innerHTML = tl.map(j => {
+        if (j.wer_moy === null) return `<div style="flex:1;min-width:6px;"></div>`;
+        const h = Math.round(j.wer_moy / maxWer * 52);
+        const col = j.wer_moy < 20 ? '#4caf7d' : j.wer_moy < 50 ? '#c8a84b' : '#e05a5a';
+        return `<div title="${j.date}: WER ${j.wer_moy}%" style="flex:1;min-width:6px;height:${h}px;background:${col};border-radius:2px 2px 0 0;"></div>`;
+      }).join('');
+
+      // Tableau derniers jours
+      document.getElementById('ds-timeline-table').innerHTML = `
+        <table style="width:100%;border-collapse:collapse;font-size:.75rem;">
+          <thead><tr style="color:var(--gris);">
+            <th style="text-align:left;padding:4px 6px;">Date</th>
+            <th style="text-align:right;padding:4px 6px;">Contrib.</th>
+            <th style="text-align:right;padding:4px 6px;">Cumulé</th>
+            <th style="text-align:right;padding:4px 6px;">WER moy.</th>
+            <th style="text-align:right;padding:4px 6px;">Exactes</th>
+          </tr></thead>
+          <tbody>${[...tl].reverse().slice(0,10).map(j => `
+            <tr style="border-top:1px solid #1e3d28;">
+              <td style="padding:4px 6px;color:var(--texte);">${j.date}</td>
+              <td style="padding:4px 6px;text-align:right;color:var(--or);">+${j.count}</td>
+              <td style="padding:4px 6px;text-align:right;color:var(--gris);">${j.cumul}</td>
+              <td style="padding:4px 6px;text-align:right;color:${j.wer_moy===null?'var(--gris)':j.wer_moy<20?'#4caf7d':j.wer_moy<50?'#c8a84b':'#e05a5a'};">${j.wer_moy !== null ? j.wer_moy+'%' : '—'}</td>
+              <td style="padding:4px 6px;text-align:right;color:${j.taux_ok===null?'var(--gris)':'#4caf7d'};">${j.taux_ok !== null ? j.taux_ok+'%' : '—'}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    document.getElementById('ds-evo-loading').style.display = 'none';
+    document.getElementById('ds-evo-content').style.display = 'block';
+  } catch(e) {
+    document.getElementById('ds-evo-loading').innerHTML = `<div style="color:var(--rouge);">❌ ${e.message}</div>`;
+  }
+}
+window.dsChargerEvolution = dsChargerEvolution;
 
 // Charger les mots custom et phrases custom au démarrage
 chargerMotsCustom();
