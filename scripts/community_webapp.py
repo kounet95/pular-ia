@@ -450,6 +450,7 @@ async def api_corriger(
 from rag_livres import (
     extraire_texte, indexer_livre, rechercher as rag_rechercher,
     charger_index, sauver_index, stats_rag, exporter_dataset,
+    get_collection,
     DOSSIER_RAW as LIVRES_RAW,
 )
 
@@ -522,6 +523,81 @@ async def api_upload_livre(
 async def api_livres():
     """Liste tous les livres indexés."""
     return JSONResponse(charger_index())
+
+
+@app.get("/api/livres/{livre_id}/passages")
+async def api_livre_passages(livre_id: str, n: int = 8):
+    """Retourne les N premiers passages indexés d'un livre."""
+    def _get():
+        try:
+            col   = get_collection()
+            total = col.count()
+            if total == 0:
+                return []
+            res = col.get(
+                where={"livre_id": livre_id},
+                limit=n,
+                include=["documents", "metadatas"],
+            )
+            docs  = res.get("documents") or []
+            metas = res.get("metadatas") or []
+            return [
+                {"texte": d, "chunk_id": m.get("chunk_id", i)}
+                for i, (d, m) in enumerate(zip(docs, metas))
+            ]
+        except Exception as e:
+            log.warning(f"Passages {livre_id}: {e}")
+            return []
+    passages = await asyncio.to_thread(_get)
+    return JSONResponse({"passages": passages})
+
+
+@app.get("/api/livres/{livre_id}/fichier")
+async def api_livre_fichier(livre_id: str):
+    """Télécharger le fichier original d'un livre."""
+    livres = charger_index()
+    livre  = next((l for l in livres if l["id"] == livre_id), None)
+    if not livre:
+        raise HTTPException(404, "Livre non trouvé.")
+    fichier = livre.get("fichier", "")
+    chemin  = LIVRES_RAW / fichier if fichier else None
+    if not chemin or not chemin.exists():
+        raise HTTPException(404, "Fichier original introuvable.")
+    from fastapi.responses import FileResponse
+    return FileResponse(chemin, filename=chemin.name)
+
+
+@app.delete("/api/livres/{livre_id}")
+async def api_supprimer_livre(livre_id: str):
+    """Supprime un livre : index JSON + fichier + chunks ChromaDB."""
+    livres = charger_index()
+    livre  = next((l for l in livres if l["id"] == livre_id), None)
+    if not livre:
+        raise HTTPException(404, "Livre non trouvé.")
+
+    # 1. Supprimer le fichier original
+    fichier = livre.get("fichier", "")
+    if fichier:
+        chemin = LIVRES_RAW / fichier
+        if chemin.exists():
+            chemin.unlink()
+
+    # 2. Supprimer les chunks ChromaDB
+    def _suppr_chroma():
+        try:
+            col = get_collection()
+            col.delete(where={"livre_id": livre_id})
+            log.info(f"Chunks supprimés pour livre {livre_id}")
+        except Exception as e:
+            log.warning(f"Suppression chunks: {e}")
+    await asyncio.to_thread(_suppr_chroma)
+
+    # 3. Mettre à jour l'index JSON
+    livres = [l for l in livres if l["id"] != livre_id]
+    sauver_index(livres)
+
+    log.info(f"Livre supprimé: {livre_id} — {livre.get('titre','?')}")
+    return JSONResponse({"ok": True})
 
 @app.get("/api/rechercher")
 async def api_rechercher(q: str, n: int = 5, langue: str = None):
@@ -747,6 +823,225 @@ async def api_prof_supprimer_phrase(phrase_id: str):
         raise HTTPException(404, f"Phrase {phrase_id} introuvable.")
     sauver_phrases_custom(phrases)
     return JSONResponse({"ok": True})
+
+# ── Données de base : phrases + mots (éditables via le panel prof) ─────────────
+FICHIER_PHRASES_BASE = DOSSIER_JEU / "phrases_base.json"
+FICHIER_MOTS_BASE    = DOSSIER_JEU / "mots_base.json"
+
+_PHRASES_SEED = [
+    ("Jam waali? Jam tan, baŋ-baŋ.",           "Comment vas-tu? Je vais bien, merci.",                      "Salutations"),
+    ("Hol tò innde maa?",                       "Comment t'appelles-tu?",                                    "Salutations"),
+    ("Innde am ko Amadou. Mi jooɗii e Kanade.", "Je m'appelle Amadou. J'habite au Canada.",                  "Salutations"),
+    ("A jaaraama walaa! Alla hokku jam.",        "Merci beaucoup! Qu'Allah te donne la paix.",               "Salutations"),
+    ("Nde ndarii? Nde warii?",                  "D'où viens-tu? Où vas-tu?",                                "Salutations"),
+    ("Bismillahi Rahmaani Rahiimi.",             "Au nom d'Allah, le Clément, le Miséricordieux.",           "Islam"),
+    ("Alhamdulillaahi Rabbil aalamiin.",         "Louange à Allah, Seigneur des mondes.",                    "Islam"),
+    ("Allahu Akbar, Allah mo Moƴƴo, Allah mo Jom baawɗe fof.", "Allah est Grand, Allah est Bon, Allah est Tout-Puissant.", "Islam"),
+    ("Mi andaa ko Allah yiɗi. Mi yiɗi janngude Al-Qur'aana.", "Je sais ce qu'Allah aime. J'aime lire le Coran.", "Islam"),
+    ("Ramadan woni lewru barke e naafoore.",     "Le Ramadan est un mois de bénédiction et de bienfaits.",  "Islam"),
+    ("Minen kuɓɓi. Mi jogii debbo e ɓiɓɓe tati.", "Je suis marié. J'ai une femme et trois enfants.",       "Famille"),
+    ("Baaba am woni ngesa. Yinaande am woni galle.", "Mon père est au champ. Ma mère est à la maison.",    "Famille"),
+    ("Mi yiɗi ɓiɓɓe am haa ɓuri fof.",          "J'aime mes enfants plus que tout.",                       "Famille"),
+    ("Worɓe e rewɓe fof poti yiɗde famili maɓɓe.", "Les hommes et les femmes doivent aimer leur famille.", "Famille"),
+    ("Hannde subaka, mi ñaami nyiiri e kosam.",  "Ce matin, j'ai mangé du riz avec du lait.",               "Quotidien"),
+    ("Ndiyam moƴƴi. Ñaamdu moƴƴi faa jeyɗo.",   "L'eau est bonne. La nourriture est bonne pour celui qui en a.", "Quotidien"),
+    ("Mi yahay suudu janngo sakkitin.",           "J'irai à l'école demain matin.",                         "Quotidien"),
+    ("Leydi pular woni leydi moƴƴere.",          "Le pays peul est un beau pays.",                          "Quotidien"),
+    ("Ko waɗi-ɗaa hannde? Mi golliima tawa.",    "Qu'as-tu fait aujourd'hui? J'ai travaillé fort.",         "Quotidien"),
+    ("Nagge am jogii ɓiɓɓe ɗiɗi yontere hee.",  "Ma vache a eu deux veaux cette semaine.",                 "Nature"),
+    ("Ladde mawndi. Ladde moƴƴi faa aynaaɓe.",  "La forêt est grande. La forêt est bonne pour les éleveurs.", "Nature"),
+    ("Ndungu wari. Ndiyam ɓurtii e maayo.",      "La saison des pluies est arrivée. L'eau a débordé du fleuve.", "Nature"),
+    ("Winde mawndi woni dow ladde.",              "Le grand village est au-dessus de la forêt.",             "Nature"),
+    ("Pulaagu woni ndimaagu e moƴƴere e muuɗum.", "Le Pulaagu c'est la noblesse, la bonté et la pudeur.",  "Culture"),
+    ("Semteende woni tiitoonde Pullo kañum.",    "La pudeur est le fondement de l'identité peule.",         "Culture"),
+    ("Ko feewde haa ɓuri yiɗde woni gollirde.",  "Ce qui est bien et ce qu'on aime, c'est ce qu'il faut faire.", "Culture"),
+    ("Gerɗol peelo woni moƴƴere e teddungal.",   "La musique peule est beauté et dignité.",                 "Culture"),
+]
+
+_MOTS_SEED = [
+    ("🐄","Vache","nagge","Animaux"),    ("🐑","Mouton","mbabba","Animaux"),
+    ("🐐","Chèvre","mbewa","Animaux"),   ("🐎","Cheval","puccu","Animaux"),
+    ("🐓","Poule","gertooɗe","Animaux"), ("🐕","Chien","rawaandu","Animaux"),
+    ("🐈","Chat","muuse","Animaux"),     ("🦁","Lion","liingu","Animaux"),
+    ("🐊","Caïman","baylo","Animaux"),   ("🦅","Aigle","galeejo","Animaux"),
+    ("🐍","Serpent","mbeewa","Animaux"), ("🦋","Papillon","lekki","Animaux"),
+    ("🏠","Maison","galle","Objets"),    ("💧","Eau","ndiyam","Objets"),
+    ("🔥","Feu","jaango","Objets"),      ("☀️","Soleil","naange","Objets"),
+    ("🌙","Lune","lewru","Objets"),      ("🌳","Arbre","ledde","Objets"),
+    ("🥛","Lait","kosam","Objets"),      ("🍚","Riz","nyiiri","Objets"),
+    ("📚","Livre","defte","Objets"),     ("🥁","Tambour","tammbari","Objets"),
+    ("🔪","Couteau","lahal","Objets"),   ("🪣","Calebasse","hoore","Objets"),
+    ("👁️","Œil","yitere","Corps"),      ("👂","Oreille","nowru","Corps"),
+    ("👃","Nez","hinere","Corps"),       ("👄","Bouche","hunuko","Corps"),
+    ("✋","Main","juuɗe","Corps"),       ("🦶","Pied","koyngal","Corps"),
+    ("🦷","Dents","ñiiɓe","Corps"),      ("💪","Bras","hakke","Corps"),
+    ("🌧️","Pluie","ndungu","Nature"),   ("🌊","Fleuve","maayo","Nature"),
+    ("🌾","Champ","ngesa","Nature"),     ("🌿","Herbe","gaawri","Nature"),
+    ("⛰️","Montagne","tugal","Nature"),  ("🌬️","Vent","hendu","Nature"),
+    ("🌑","Nuit","jamma","Nature"),
+    ("👨","Père","baaba","Famille"),     ("👩","Mère","yinaande","Famille"),
+    ("👶","Enfant","ɓiɗɗo","Famille"),  ("👴","Grand-père","kaawu","Famille"),
+    ("👵","Grand-mère","mawndoo","Famille"),("👫","Époux","gorko","Famille"),
+    ("👭","Femme","debbo","Famille"),
+]
+
+def charger_phrases_base() -> list[dict]:
+    if FICHIER_PHRASES_BASE.exists():
+        return json.loads(FICHIER_PHRASES_BASE.read_text(encoding="utf-8"))
+    data = [{"id": f"ph{i}", "pular": p, "fr": f, "cat": c} for i, (p, f, c) in enumerate(_PHRASES_SEED)]
+    FICHIER_PHRASES_BASE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    return data
+
+def sauver_phrases_base(phrases: list[dict]):
+    FICHIER_PHRASES_BASE.write_text(json.dumps(phrases, ensure_ascii=False, indent=2), encoding="utf-8")
+
+def charger_mots_base() -> list[dict]:
+    if FICHIER_MOTS_BASE.exists():
+        return json.loads(FICHIER_MOTS_BASE.read_text(encoding="utf-8"))
+    data = [{"id": f"m{i}", "emoji": e, "fr": f, "pular": p, "cat": c} for i, (e, f, p, c) in enumerate(_MOTS_SEED)]
+    FICHIER_MOTS_BASE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    return data
+
+def sauver_mots_base(mots: list[dict]):
+    FICHIER_MOTS_BASE.write_text(json.dumps(mots, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+@app.get("/api/phrases-toutes")
+async def api_phrases_toutes():
+    """Toutes les phrases : base + custom fusionnées."""
+    base   = charger_phrases_base()
+    custom = charger_phrases_custom()
+    base_pular = {p["pular"] for p in base}
+    return JSONResponse(base + [p for p in custom if p.get("pular") not in base_pular])
+
+@app.put("/api/prof/phrase-base/{phrase_id}")
+async def api_modifier_phrase_base(
+    phrase_id: str,
+    pular: str = Form(...),
+    fr:    str = Form(""),
+    cat:   str = Form("Autre"),
+):
+    phrases = charger_phrases_base()
+    idx = next((i for i, p in enumerate(phrases) if p.get("id") == phrase_id), None)
+    if idx is None:
+        raise HTTPException(404, "Phrase de base non trouvée.")
+    phrases[idx].update({"pular": pular.strip(), "fr": fr.strip(), "cat": cat})
+    sauver_phrases_base(phrases)
+    return JSONResponse({"ok": True})
+
+@app.delete("/api/prof/phrase-base/{phrase_id}")
+async def api_supprimer_phrase_base(phrase_id: str):
+    phrases = charger_phrases_base()
+    sauver_phrases_base([p for p in phrases if p.get("id") != phrase_id])
+    return JSONResponse({"ok": True})
+
+@app.get("/api/mots-tous")
+async def api_mots_tous():
+    """Tous les mots : base + custom fusionnés."""
+    base   = charger_mots_base()
+    custom = charger_mots_custom()
+    base_pular = {m["pular"] for m in base}
+    return JSONResponse(base + [m for m in custom if m.get("pular") not in base_pular])
+
+@app.put("/api/prof/mot-base/{mot_id}")
+async def api_modifier_mot_base(
+    mot_id: str,
+    emoji: str = Form("❓"),
+    fr:    str = Form(...),
+    pular: str = Form(...),
+    cat:   str = Form("Autre"),
+):
+    mots = charger_mots_base()
+    idx = next((i for i, m in enumerate(mots) if m.get("id") == mot_id), None)
+    if idx is None:
+        raise HTTPException(404, "Mot de base non trouvé.")
+    mots[idx].update({"emoji": emoji.strip(), "fr": fr.strip(), "pular": pular.strip(), "cat": cat})
+    sauver_mots_base(mots)
+    return JSONResponse({"ok": True})
+
+@app.delete("/api/prof/mot-base/{mot_id}")
+async def api_supprimer_mot_base(mot_id: str):
+    mots = charger_mots_base()
+    sauver_mots_base([m for m in mots if m.get("id") != mot_id])
+    return JSONResponse({"ok": True})
+
+
+# ── Telegram scraping ──────────────────────────────────────────────────────────
+_telegram_en_cours = False
+_TELEGRAM_DOSSIER  = PROJET_ROOT / "corpus-pular" / "processed" / "telegram"
+_TELEGRAM_STATUS   = _TELEGRAM_DOSSIER / "status.json"
+
+@app.get("/api/prof/telegram/status")
+async def api_telegram_status():
+    nb_audio = len(list((_TELEGRAM_DOSSIER / "audio").glob("*"))) if (_TELEGRAM_DOSSIER / "audio").exists() else 0
+    nb_msg   = 0
+    jsonl_dir = _TELEGRAM_DOSSIER / "jsonl"
+    if jsonl_dir.exists():
+        for f in jsonl_dir.glob("*.jsonl"):
+            try: nb_msg += sum(1 for _ in f.open(encoding="utf-8"))
+            except Exception: pass
+    base = {
+        "configured": bool(os.getenv("TELEGRAM_API_ID") and os.getenv("TELEGRAM_API_HASH")),
+        "nb_audio": nb_audio,
+        "nb_messages": nb_msg,
+        "en_cours": _telegram_en_cours,
+    }
+    if _TELEGRAM_STATUS.exists():
+        try: base.update(json.loads(_TELEGRAM_STATUS.read_text(encoding="utf-8")))
+        except Exception: pass
+    return JSONResponse(base)
+
+@app.post("/api/prof/telegram/lancer")
+async def api_telegram_lancer(
+    canaux:     str  = Form(""),
+    limite:     int  = Form(200),
+    sans_audio: bool = Form(False),
+):
+    """Lance le scraper Telegram en arrière-plan."""
+    global _telegram_en_cours
+    if _telegram_en_cours:
+        raise HTTPException(409, "Un scraping est déjà en cours.")
+    if not os.getenv("TELEGRAM_API_ID") or not os.getenv("TELEGRAM_API_HASH"):
+        raise HTTPException(400, "Configure TELEGRAM_API_ID, TELEGRAM_API_HASH et TELEGRAM_PHONE dans Railway Variables.")
+
+    _telegram_en_cours = True
+
+    async def _run():
+        global _telegram_en_cours
+        import sys
+        try:
+            args = [sys.executable, str(PROJET_ROOT / "scripts" / "telegram_scraper.py"),
+                    "--limite", str(limite)]
+            if canaux.strip():
+                args += ["--canaux"] + canaux.strip().split()
+            if sans_audio:
+                args += ["--sans-audio"]
+            debut = datetime.now().isoformat()
+            proc = await asyncio.create_subprocess_exec(
+                *args, cwd=str(PROJET_ROOT),
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            _, _ = await asyncio.wait_for(proc.communicate(), timeout=3600)
+            status = {
+                "dernier_run": debut,
+                "fin_run": datetime.now().isoformat(),
+                "ok": proc.returncode == 0,
+                "canaux": canaux.strip() or "défaut",
+                "limite": limite,
+                "en_cours": False,
+            }
+            _TELEGRAM_STATUS.parent.mkdir(parents=True, exist_ok=True)
+            _TELEGRAM_STATUS.write_text(json.dumps(status, ensure_ascii=False, indent=2), encoding="utf-8")
+            log.info(f"Scraping Telegram terminé: code={proc.returncode}")
+        except Exception as e:
+            log.error(f"Erreur scraping Telegram: {e}")
+        finally:
+            _telegram_en_cours = False
+
+    asyncio.create_task(_run())
+    return JSONResponse({"ok": True, "message": "Scraping lancé en arrière-plan (jusqu'à 1h)."})
+
 
 # ── Contributeurs ───────────────────────────────────────────────────────────────
 @app.get("/api/prof/contributeurs")

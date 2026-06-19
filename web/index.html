@@ -857,6 +857,7 @@
         <button class="prof-tab" id="ptab-stats"               onclick="profSetTab('stats')">📊 Stats</button>
         <button class="prof-tab" id="ptab-entrainement"       onclick="profSetTab('entrainement')">🧠 Entraînement</button>
         <button class="prof-tab" id="ptab-dataset"            onclick="profSetTab('dataset')">📁 Dataset</button>
+        <button class="prof-tab" id="ptab-telegram"           onclick="profSetTab('telegram')">📡 Telegram</button>
       </div>
 
       <!-- ── Panel : Ajouter un mot ── -->
@@ -892,6 +893,17 @@
             padding:12px;border-radius:10px;border:none;background:var(--vert);
             color:white;font-weight:700;cursor:pointer;font-size:.95rem;
           ">➕ Ajouter au jeu</button>
+        </div>
+
+        <!-- Liste complète de tous les mots -->
+        <div style="margin-top:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-size:.78rem;color:var(--or);font-weight:600;">TOUS LES MOTS DU JEU</span>
+            <input id="pf-search" type="text" placeholder="🔍 Chercher…" oninput="profChargerTousMots()"
+              style="padding:5px 8px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:6px;color:var(--texte);font-size:.78rem;outline:none;width:140px;">
+          </div>
+          <div id="prof-tous-mots-count" style="font-size:.72rem;color:var(--gris);margin-bottom:6px;"></div>
+          <div id="prof-tous-mots"></div>
         </div>
       </div>
 
@@ -956,10 +968,11 @@
 
       <!-- ── Panel : Phrases ── -->
       <div id="ppanel-phrases" class="prof-panel">
-        <p style="font-size:.82rem;color:var(--gris);margin-bottom:12px;">
-          Ajoute des phrases qui apparaîtront dans la section "Lis ces phrases" pour guider la communauté.
-        </p>
-        <div class="form-prof" style="margin-bottom:14px;">
+        <!-- Formulaire ajout/édition -->
+        <div class="form-prof" id="pp-form" style="margin-bottom:14px;background:#0a1a0f;border-radius:10px;padding:12px;">
+          <div style="font-size:.78rem;color:var(--or);font-weight:600;margin-bottom:8px;" id="pp-form-titre">➕ Nouvelle phrase</div>
+          <input id="pp-id"   type="hidden" value="">
+          <input id="pp-type" type="hidden" value="custom">
           <div class="form-row">
             <input id="pp-pular" type="text" placeholder="Phrase en pular *" maxlength="200"
               oninput="document.getElementById('pp-adlam').value=latinVersAdlam(this.value)">
@@ -967,17 +980,24 @@
               style="direction:rtl;font-size:1rem;" maxlength="300">
           </div>
           <input id="pp-fr" type="text" placeholder="Traduction française" maxlength="200"
-            style="width:100%;padding:9px 12px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;color:var(--texte);font-size:.9rem;outline:none;">
+            style="width:100%;padding:9px 12px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;color:var(--texte);font-size:.9rem;outline:none;margin-top:6px;">
           <div class="form-row" style="margin-top:6px;">
             <select id="pp-cat" style="padding:9px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;color:var(--texte);">
               <option value="Autre">Catégorie</option>
               <option>Salutations</option><option>Islam</option><option>Famille</option>
               <option>Quotidien</option><option>Nature</option><option>Culture</option>
-              <option>Proverbes</option>
+              <option>Proverbes</option><option>Communauté</option>
             </select>
-            <button onclick="profAjouterPhrase()" style="padding:9px 18px;border-radius:8px;border:none;background:var(--vert);color:white;font-weight:700;cursor:pointer;">➕ Ajouter</button>
+            <button id="pp-btn-save" onclick="profSauverPhrasePanel()" style="padding:9px 18px;border-radius:8px;border:none;background:var(--vert);color:white;font-weight:700;cursor:pointer;">💾 Sauver</button>
+            <button onclick="ppAnnuler()" style="padding:9px 12px;border-radius:8px;border:1px solid #2d5c3a;background:transparent;color:var(--gris);cursor:pointer;">✕</button>
           </div>
         </div>
+
+        <!-- Recherche -->
+        <input id="pp-search" type="text" placeholder="🔍 Chercher une phrase…" oninput="profChargerPhrases()"
+          style="width:100%;padding:8px 10px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;color:var(--texte);font-size:.85rem;outline:none;margin-bottom:8px;">
+
+        <div id="pp-count" style="font-size:.75rem;color:var(--gris);margin-bottom:6px;"></div>
         <div id="prof-liste-phrases">
           <div style="color:var(--gris);font-size:.85rem;">Chargement...</div>
         </div>
@@ -1119,6 +1139,51 @@
           </div>
         </div>
 
+      </div>
+
+      <!-- ── Panel : Telegram ── -->
+      <div id="ppanel-telegram" class="prof-panel">
+        <p style="font-size:.82rem;color:var(--gris);margin-bottom:14px;">
+          Scrape les canaux Telegram pular pour enrichir ton dataset audio.
+        </p>
+
+        <!-- Statut configuration -->
+        <div id="tg-config-alert" style="display:none;background:#2d1515;border:1px solid #e05a5a55;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:.8rem;color:#e05a5a;">
+          ⚠️ Configure <strong>TELEGRAM_API_ID</strong>, <strong>TELEGRAM_API_HASH</strong> et <strong>TELEGRAM_PHONE</strong> dans les variables Railway avant de lancer.
+          <br><a href="https://my.telegram.org" target="_blank" style="color:#e05a5a;text-decoration:underline;">my.telegram.org → API development tools</a>
+        </div>
+
+        <!-- Chiffres actuels -->
+        <div class="stat-grid" id="tg-stats" style="margin-bottom:14px;"></div>
+
+        <!-- Formulaire de lancement -->
+        <div style="background:#0a1a0f;border-radius:10px;padding:12px;margin-bottom:12px;">
+          <div style="font-size:.78rem;color:var(--or);font-weight:600;margin-bottom:10px;">⚙️ Paramètres du scraping</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <input id="tg-canaux" type="text" placeholder="Canaux (ex: DDTV226 laawolsunna) — vide = défaut"
+              style="padding:8px 10px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;color:var(--texte);font-size:.85rem;outline:none;">
+            <div style="display:flex;gap:8px;align-items:center;">
+              <label style="font-size:.8rem;color:var(--gris);">Limite messages :</label>
+              <input id="tg-limite" type="number" value="200" min="10" max="5000"
+                style="width:80px;padding:6px 8px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:6px;color:var(--texte);font-size:.85rem;outline:none;">
+              <label style="font-size:.8rem;color:var(--gris);display:flex;align-items:center;gap:4px;">
+                <input id="tg-sans-audio" type="checkbox" style="accent-color:var(--vert);">
+                Textes seulement (sans audio)
+              </label>
+            </div>
+          </div>
+          <button onclick="tgLancer()" id="tg-btn-lancer" style="
+            margin-top:10px;width:100%;padding:11px;border-radius:8px;border:none;
+            background:var(--vert);color:white;font-weight:700;cursor:pointer;font-size:.92rem;
+          ">🚀 Lancer le scraping</button>
+        </div>
+
+        <!-- Dernier run info -->
+        <div id="tg-dernier-run" style="font-size:.78rem;color:var(--gris);"></div>
+        <div id="tg-en-cours" style="display:none;text-align:center;padding:10px;color:var(--or);">
+          ⏳ Scraping en cours… <span class="loader" style="vertical-align:middle;"></span>
+          <div style="font-size:.72rem;color:var(--gris);margin-top:4px;">Peut prendre 10–60 minutes. Tu peux fermer ce panel.</div>
+        </div>
       </div>
 
       <!-- ── Panel : Entraînement ── -->
@@ -1468,9 +1533,23 @@ const PHRASES = [
 let phraseActive   = null;
 let catActive      = "Tout";
 
-function initPhrases() {
-  const cats = ["Tout", ...new Set(PHRASES.map(p => p.cat))];
+async function initPhrases() {
+  // Charger toutes les phrases depuis l'API (base + custom), sinon fallback local
+  try {
+    const r = await fetch(`${API}/api/phrases-toutes`, {headers:H});
+    if (r.ok) {
+      const data = await r.json();
+      if (data.length) {
+        // Remplacer le tableau local par les données du serveur
+        PHRASES.length = 0;
+        data.forEach(p => PHRASES.push(p));
+      }
+    }
+  } catch(e) { /* fallback silencieux sur PHRASES statiques */ }
+
   const filtres = document.getElementById('filtres');
+  filtres.innerHTML = '';
+  const cats = ["Tout", ...new Set(PHRASES.map(p => p.cat))];
   cats.forEach(cat => {
     const btn = document.createElement('button');
     btn.className = 'filtre' + (cat === 'Tout' ? ' actif' : '');
@@ -2050,9 +2129,22 @@ let jRecorder = null, jChunks = [], jBlob = null, jEnreg = false;
 let jPhraseRAG = null; // phrase active en mode Lire
 
 // ── Init catégories ────────────────────────────────────────────
-function initJeu() {
+async function initJeu() {
+  // Charger les mots depuis l'API (base + custom), sinon fallback local
+  try {
+    const r = await fetch(`${API}/api/mots-tous`, {headers:H});
+    if (r.ok) {
+      const data = await r.json();
+      if (data.length) {
+        MOTS_JEU.length = 0;
+        data.forEach(m => MOTS_JEU.push(m));
+      }
+    }
+  } catch(e) { /* fallback silencieux */ }
+
   const cats = ["Tout", ...new Set(MOTS_JEU.map(m => m.cat))];
   const div  = document.getElementById('jeu-cats');
+  div.innerHTML = '';
   const icons = { Animaux:'🐾', Objets:'🏠', Corps:'🤲', Nature:'🌿', Famille:'👨‍👩‍👧' };
   cats.forEach(c => {
     const btn = document.createElement('button');
@@ -2441,7 +2533,7 @@ initJeu();
 let profOuvert = false;
 let motsProfCache = [];
 
-const PROF_TABS = ['ajouter','corriger','phrases','livres','valider','corrections','contributeurs','stats','entrainement','dataset'];
+const PROF_TABS = ['ajouter','corriger','phrases','livres','valider','corrections','contributeurs','stats','entrainement','dataset','telegram'];
 
 function profTogglePanel() {
   profOuvert = !profOuvert;
@@ -2465,12 +2557,17 @@ function profSetTab(tab) {
   if (tab === 'contributeurs')  profChargerContributeurs();
   if (tab === 'entrainement')   profChargerEntrainement();
   if (tab === 'dataset')        dsSetTab('donnees');
+  if (tab === 'telegram')       tgChargerStatus();
+  if (tab === 'ajouter')        profChargerTousMots();
 }
 window.profSetTab = profSetTab;
 
 // ── Ajouter un mot ─────────────────────────────────────────────
 async function profAjouterMot() {
-  const emoji  = document.getElementById('pf-emoji').value.trim() || '📝';
+  const emojiEl = document.getElementById('pf-emoji');
+  const editId   = emojiEl.dataset.editId   || '';
+  const editBase = emojiEl.dataset.editBase || '';
+  const emoji  = emojiEl.value.trim() || '📝';
   const fr     = document.getElementById('pf-fr').value.trim();
   const pular  = document.getElementById('pf-pular').value.trim();
   const adlam  = document.getElementById('pf-adlam').value.trim() || latinVersAdlam(pular);
@@ -2485,19 +2582,30 @@ async function profAjouterMot() {
 
   try {
     const fd = new FormData();
-    fd.append('emoji', emoji); fd.append('fr', fr);  fd.append('pular', pular);
+    fd.append('emoji', emoji); fd.append('fr', fr); fd.append('pular', pular);
     fd.append('adlam', adlam); fd.append('cat', cat); fd.append('note', note);
     fd.append('pseudo', pseudo);
-    const r = await fetch(`${API}/api/prof/mot`, { method:'POST', body:fd, headers:H });
+
+    let r;
+    if (editId) {
+      const url = editBase === 'true' ? `/api/prof/mot-base/${editId}` : `/api/prof/mot/${editId}`;
+      r = await fetch(`${API}${url}`, {method:'PUT', body:fd, headers:H});
+    } else {
+      r = await fetch(`${API}/api/prof/mot`, {method:'POST', body:fd, headers:H});
+    }
     const d = await r.json();
     if (!d.ok) throw new Error(d.detail||'Erreur');
 
-    toast(`✅ "${pular}" ajouté au jeu!`);
-    // Vider le formulaire
+    toast(editId ? `✅ "${pular}" modifié!` : `✅ "${pular}" ajouté au jeu!`);
     ['pf-emoji','pf-fr','pf-pular','pf-adlam','pf-note'].forEach(id => document.getElementById(id).value='');
     document.getElementById('pf-cat').value = '';
-    // Recharger le jeu avec le nouveau mot
+    delete emojiEl.dataset.editId;
+    delete emojiEl.dataset.editBase;
+    const btnAjouter = document.querySelector('[onclick="profAjouterMot()"]');
+    if (btnAjouter) btnAjouter.textContent = '➕ Ajouter au jeu';
     await chargerMotsCustom();
+    profChargerTousMots();
+    initJeu();
     profChargerStats();
   } catch(e) { toast('❌ '+e.message, true); }
 }
@@ -2813,27 +2921,103 @@ window.profSupprimerPhrase = profSupprimerPhrase;
 // ═══════════════════════════════════════════════════════════════
 // LIVRES
 // ═══════════════════════════════════════════════════════════════
+const LANGUE_LABEL = { pular:'🌍 Pular','pular-adlam':'𞤀 Adlam', francais:'🇫🇷 Français', arabe:'🕌 Arabe', anglais:'🇬🇧 Anglais', mixte:'🔀 Mixte', autre:'📄 Autre' };
+
 async function profChargerLivres() {
   const div = document.getElementById('prof-liste-livres');
+  div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;text-align:center;padding:10px;">⏳ Chargement…</div>';
   try {
     const r = await fetch(`${API}/api/livres`, {headers:H});
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const livres = await r.json();
     if (!livres.length) {
-      div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;">Aucun livre indexé.</div>';
+      div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;text-align:center;padding:20px;">📭 Aucun document indexé.<br><span style="font-size:.75rem;">Uploade un PDF, TXT ou DOCX ci-dessus.</span></div>';
       return;
     }
-    div.innerHTML = `<div style="font-size:.78rem;color:var(--gris);margin-bottom:8px;">${livres.length} livre(s) indexé(s)</div>` +
+
+    div.innerHTML = `<div style="font-size:.75rem;color:var(--gris);margin-bottom:10px;font-weight:600;">${livres.length} DOCUMENT(S) INDEXÉ(S)</div>` +
       livres.map(l => `
-        <div style="background:#0a1a0f;border-radius:8px;padding:10px 12px;margin-bottom:6px;border:1px solid #1e3d28;">
-          <div style="color:var(--or);font-size:.88rem;font-weight:600;">${l.titre}</div>
-          <div style="font-size:.78rem;color:var(--gris);">✍️ ${l.auteur||'?'} · 🌍 ${l.langue||'?'} · 📄 ${(l.nb_chars||0).toLocaleString()} car. · 🧩 ${l.nb_chunks||0} passages</div>
-          <div style="font-size:.7rem;color:#4a7a57;margin-top:2px;">🗓️ ${(l.date||'').slice(0,10)}</div>
+        <div id="livre-card-${l.id}" style="background:#0a1a0f;border-radius:10px;padding:12px 14px;margin-bottom:8px;border:1px solid #1e3d28;">
+
+          <!-- En-tête -->
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+            <div style="flex:1;">
+              <div style="color:var(--or);font-size:.92rem;font-weight:700;margin-bottom:3px;">📄 ${l.titre}</div>
+              <div style="font-size:.75rem;color:var(--gris);">
+                ✍️ ${l.auteur||'?'} &nbsp;·&nbsp;
+                ${LANGUE_LABEL[l.langue]||l.langue||'?'} &nbsp;·&nbsp;
+                🧩 ${l.nb_chunks||0} passages &nbsp;·&nbsp;
+                📝 ${((l.nb_chars||0)/1000).toFixed(1)}k car. &nbsp;·&nbsp;
+                🗓️ ${(l.date||'').slice(0,10)}
+              </div>
+            </div>
+            <div style="display:flex;gap:4px;flex-shrink:0;">
+              <button onclick="livreTelechargement('${l.id}')" title="Télécharger le fichier original"
+                style="padding:5px 8px;border-radius:6px;border:1px solid #2d5c3a;background:transparent;color:var(--gris);cursor:pointer;font-size:.75rem;">⬇️</button>
+              <button onclick="livreSupprimer('${l.id}','${l.titre.replace(/'/g,"\\'")}')"
+                style="padding:5px 8px;border-radius:6px;border:1px solid #3d1515;background:transparent;color:#e05a5a;cursor:pointer;font-size:.75rem;">🗑️</button>
+            </div>
+          </div>
+
+          <!-- Bouton passages -->
+          <button onclick="livreTogglePassages('${l.id}')"
+            style="margin-top:8px;width:100%;padding:6px;border-radius:6px;border:1px solid #2d5c3a;
+                   background:transparent;color:var(--gris);cursor:pointer;font-size:.78rem;text-align:left;">
+            👁️ Voir les passages indexés
+          </button>
+
+          <!-- Zone passages (cachée par défaut) -->
+          <div id="livre-passages-${l.id}" style="display:none;margin-top:8px;"></div>
+
         </div>`).join('');
+
   } catch(e) {
     div.innerHTML = `<div style="color:var(--rouge);font-size:.85rem;">❌ ${e.message}</div>`;
   }
 }
 window.profChargerLivres = profChargerLivres;
+
+async function livreTogglePassages(id) {
+  const zone = document.getElementById(`livre-passages-${id}`);
+  if (zone.style.display !== 'none') { zone.style.display = 'none'; return; }
+  zone.style.display = 'block';
+  zone.innerHTML = '<div style="color:var(--gris);font-size:.78rem;padding:6px;">⏳ Chargement des passages…</div>';
+  try {
+    const r = await fetch(`${API}/api/livres/${id}/passages?n=8`, {headers:H});
+    const d = await r.json();
+    if (!d.passages.length) {
+      zone.innerHTML = '<div style="color:var(--gris);font-size:.78rem;padding:6px;">Aucun passage trouvé.</div>';
+      return;
+    }
+    zone.innerHTML = d.passages.map((p, i) => `
+      <div style="background:#0d1f15;border-radius:6px;padding:8px 10px;margin-bottom:5px;border-left:2px solid var(--or);">
+        <div style="font-size:.65rem;color:var(--gris);margin-bottom:3px;">Passage #${i+1}</div>
+        <div style="font-size:.8rem;color:var(--texte);line-height:1.5;">${p.texte.slice(0,300)}${p.texte.length>300?'…':''}</div>
+      </div>`).join('') +
+      (d.passages.length === 8 ? `<div style="font-size:.72rem;color:var(--gris);text-align:center;padding:4px;">… et d'autres passages</div>` : '');
+  } catch(e) {
+    zone.innerHTML = `<div style="color:var(--rouge);font-size:.78rem;">❌ ${e.message}</div>`;
+  }
+}
+window.livreTogglePassages = livreTogglePassages;
+
+function livreTelechargement(id) {
+  window.open(`${API}/api/livres/${id}/fichier`, '_blank');
+}
+window.livreTelechargement = livreTelechargement;
+
+async function livreSupprimer(id, titre) {
+  if (!confirm(`Supprimer "${titre}" et tous ses passages indexés ?`)) return;
+  try {
+    const r = await fetch(`${API}/api/livres/${id}`, {method:'DELETE', headers:H});
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail||'Erreur');
+    toast(`🗑️ "${titre}" supprimé`);
+    profChargerLivres();
+    profChargerStats();
+  } catch(e) { toast('❌ '+e.message, true); }
+}
+window.livreSupprimer = livreSupprimer;
 
 async function profUploaderLivre() {
   const titre   = document.getElementById('pl-titre').value.trim();
@@ -3221,6 +3405,239 @@ async function dsChargerEvolution() {
   }
 }
 window.dsChargerEvolution = dsChargerEvolution;
+
+// ═══════════════════════════════════════════════════════════════
+// PHRASES — gestion complète (base + custom)
+// ═══════════════════════════════════════════════════════════════
+let ppEditMode = false;
+
+async function profChargerPhrases() {
+  const div = document.getElementById('prof-liste-phrases');
+  const q   = (document.getElementById('pp-search')?.value || '').toLowerCase();
+  div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;padding:10px;">⏳ Chargement…</div>';
+  try {
+    const r = await fetch(`${API}/api/phrases-toutes`, {headers:H});
+    const all = await r.json();
+    const liste = q ? all.filter(p => p.pular?.toLowerCase().includes(q) || p.fr?.toLowerCase().includes(q)) : all;
+    document.getElementById('pp-count').textContent = `${liste.length} phrase(s)`;
+    if (!liste.length) { div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;">Aucune phrase.</div>'; return; }
+    div.innerHTML = liste.map(p => {
+      const isBase = p.id?.startsWith('ph');
+      return `<div style="background:#0a1a0f;border-radius:8px;padding:9px 12px;margin-bottom:5px;border:1px solid ${isBase?'#1e3d28':'#c8a84b44'};">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;">
+          <div style="flex:1;">
+            <div style="color:var(--texte);font-weight:600;font-size:.88rem;">${p.pular}</div>
+            ${p.fr ? `<div style="font-size:.75rem;color:var(--gris);font-style:italic;">${p.fr}</div>` : ''}
+            <span style="font-size:.65rem;background:${isBase?'#1a3322':'#2a1a00'};color:${isBase?'#4caf7d':'var(--or)'};padding:1px 6px;border-radius:8px;">${p.cat||'?'} ${isBase?'· base':'· custom'}</span>
+          </div>
+          <div style="display:flex;gap:4px;">
+            <button onclick="ppEditer('${p.id}','${(p.pular||'').replace(/'/g,"\\'")}','${(p.fr||'').replace(/'/g,"\\'")}','${p.cat||''}')" style="padding:4px 7px;border-radius:5px;border:1px solid #2d5c3a;background:transparent;color:var(--gris);cursor:pointer;font-size:.75rem;">✏️</button>
+            <button onclick="ppSupprimer('${p.id}','${isBase}')" style="padding:4px 7px;border-radius:5px;border:1px solid #3d1515;background:transparent;color:#e05a5a;cursor:pointer;font-size:.75rem;">🗑️</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    div.innerHTML = `<div style="color:var(--rouge);">❌ ${e.message}</div>`;
+  }
+}
+window.profChargerPhrases = profChargerPhrases;
+
+function ppEditer(id, pular, fr, cat) {
+  document.getElementById('pp-id').value    = id;
+  document.getElementById('pp-type').value  = id.startsWith('ph') ? 'base' : 'custom';
+  document.getElementById('pp-pular').value = pular;
+  document.getElementById('pp-fr').value    = fr;
+  document.getElementById('pp-adlam').value = latinVersAdlam(pular);
+  const sel = document.getElementById('pp-cat');
+  for (let o of sel.options) if (o.value === cat) { sel.value = cat; break; }
+  document.getElementById('pp-form-titre').textContent = '✏️ Modifier la phrase';
+  ppEditMode = true;
+  document.getElementById('pp-form').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+window.ppEditer = ppEditer;
+
+function ppAnnuler() {
+  ppEditMode = false;
+  ['pp-id','pp-pular','pp-adlam','pp-fr'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('pp-type').value = 'custom';
+  document.getElementById('pp-form-titre').textContent = '➕ Nouvelle phrase';
+}
+window.ppAnnuler = ppAnnuler;
+
+async function profSauverPhrasePanel() {
+  const id    = document.getElementById('pp-id').value.trim();
+  const type  = document.getElementById('pp-type').value;
+  const pular = document.getElementById('pp-pular').value.trim();
+  const fr    = document.getElementById('pp-fr').value.trim();
+  const cat   = document.getElementById('pp-cat').value;
+  if (!pular) { toast('❌ Le texte pular est obligatoire', true); return; }
+
+  try {
+    const fd = new FormData();
+    fd.append('pular', pular); fd.append('fr', fr); fd.append('cat', cat);
+
+    let r;
+    if (ppEditMode && id) {
+      const url = type === 'base' ? `/api/prof/phrase-base/${id}` : `/api/prof/phrase/${id}`;
+      r = await fetch(`${API}${url}`, {method:'PUT', body:fd, headers:H});
+    } else {
+      fd.append('adlam', latinVersAdlam(pular));
+      r = await fetch(`${API}/api/prof/phrase`, {method:'POST', body:fd, headers:H});
+    }
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail||'Erreur');
+    toast(ppEditMode ? '✅ Phrase modifiée!' : '✅ Phrase ajoutée!');
+    ppAnnuler();
+    profChargerPhrases();
+    // Recharger les phrases dans l'interface utilisateur
+    initPhrases();
+  } catch(e) { toast('❌ '+e.message, true); }
+}
+window.profSauverPhrasePanel = profSauverPhrasePanel;
+
+async function ppSupprimer(id, isBase) {
+  if (!confirm('Supprimer cette phrase?')) return;
+  try {
+    const url = isBase === 'true' ? `/api/prof/phrase-base/${id}` : `/api/prof/phrase/${id}`;
+    const r = await fetch(`${API}${url}`, {method:'DELETE', headers:H});
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail||'Erreur');
+    toast('🗑️ Phrase supprimée');
+    profChargerPhrases();
+    initPhrases();
+  } catch(e) { toast('❌ '+e.message, true); }
+}
+window.ppSupprimer = ppSupprimer;
+
+// ═══════════════════════════════════════════════════════════════
+// MOTS DU JEU — gestion complète (base + custom)
+// ═══════════════════════════════════════════════════════════════
+async function profChargerTousMots() {
+  const div = document.getElementById('prof-tous-mots');
+  const cnt = document.getElementById('prof-tous-mots-count');
+  if (!div) return;
+  const q = (document.getElementById('pf-search')?.value || '').toLowerCase();
+  div.innerHTML = '<div style="color:var(--gris);font-size:.78rem;padding:4px;">⏳</div>';
+  try {
+    const r = await fetch(`${API}/api/mots-tous`, {headers:H});
+    const all = await r.json();
+    const liste = q ? all.filter(m => m.fr?.toLowerCase().includes(q) || m.pular?.toLowerCase().includes(q)) : all;
+    cnt.textContent = `${liste.length} mot(s) au total`;
+    if (!liste.length) { div.innerHTML = '<div style="color:var(--gris);font-size:.78rem;">Aucun mot.</div>'; return; }
+    div.innerHTML = liste.map(m => {
+      const isBase = m.id?.startsWith('m');
+      return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#0a1a0f;border-radius:7px;margin-bottom:4px;border:1px solid ${isBase?'#1e3d28':'#c8a84b33'};">
+        <span style="font-size:1.1rem;">${m.emoji||'📝'}</span>
+        <div style="flex:1;min-width:0;">
+          <span style="color:var(--texte);font-size:.85rem;font-weight:600;">${m.pular}</span>
+          <span style="color:var(--gris);font-size:.78rem;margin-left:6px;">— ${m.fr}</span>
+          <span style="font-size:.65rem;color:${isBase?'#4caf7d':'var(--or)'};margin-left:4px;">${m.cat}</span>
+        </div>
+        <div style="display:flex;gap:3px;flex-shrink:0;">
+          <button onclick="motEditer('${m.id}','${(m.emoji||'').replace(/'/g,"\\'")}','${(m.fr||'').replace(/'/g,"\\'")}','${(m.pular||'').replace(/'/g,"\\'")}','${m.cat||''}','${isBase}')"
+            style="padding:3px 6px;border-radius:5px;border:1px solid #2d5c3a;background:transparent;color:var(--gris);cursor:pointer;font-size:.72rem;">✏️</button>
+          <button onclick="motSupprimer('${m.id}','${isBase}')"
+            style="padding:3px 6px;border-radius:5px;border:1px solid #3d1515;background:transparent;color:#e05a5a;cursor:pointer;font-size:.72rem;">🗑️</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    div.innerHTML = `<div style="color:var(--rouge);font-size:.78rem;">❌ ${e.message}</div>`;
+  }
+}
+window.profChargerTousMots = profChargerTousMots;
+
+function motEditer(id, emoji, fr, pular, cat, isBase) {
+  document.getElementById('pf-emoji').value = emoji;
+  document.getElementById('pf-fr').value    = fr;
+  document.getElementById('pf-pular').value = pular;
+  document.getElementById('pf-adlam').value = latinVersAdlam(pular);
+  document.getElementById('pf-cat').value   = cat;
+  // Store edit context for profAjouterMot to detect
+  document.getElementById('pf-emoji').dataset.editId   = id;
+  document.getElementById('pf-emoji').dataset.editBase = isBase;
+  document.querySelector('[onclick="profAjouterMot()"]').textContent = '💾 Sauver modification';
+  document.getElementById('pf-emoji').scrollIntoView({behavior:'smooth',block:'nearest'});
+  toast('✏️ Modifie les champs et clique Sauver', false);
+}
+window.motEditer = motEditer;
+
+async function motSupprimer(id, isBase) {
+  if (!confirm('Supprimer ce mot du jeu?')) return;
+  try {
+    const url = isBase === 'true' ? `/api/prof/mot-base/${id}` : `/api/prof/mot/${id}`;
+    const r = await fetch(`${API}${url}`, {method:'DELETE', headers:H});
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail||'Erreur');
+    toast('🗑️ Mot supprimé');
+    profChargerTousMots();
+    initJeu();
+  } catch(e) { toast('❌ '+e.message, true); }
+}
+window.motSupprimer = motSupprimer;
+
+// ═══════════════════════════════════════════════════════════════
+// TELEGRAM — scraping
+// ═══════════════════════════════════════════════════════════════
+async function tgChargerStatus() {
+  try {
+    const r = await fetch(`${API}/api/prof/telegram/status`, {headers:H});
+    const d = await r.json();
+
+    const alert = document.getElementById('tg-config-alert');
+    if (alert) alert.style.display = d.configured ? 'none' : 'block';
+
+    const stats = document.getElementById('tg-stats');
+    if (stats) stats.innerHTML = [
+      {v: d.nb_audio,    l: 'Fichiers audio scrapés'},
+      {v: d.nb_messages, l: 'Messages collectés'},
+      {v: d.dernier_run ? d.dernier_run.slice(0,10) : '—', l: 'Dernier scraping'},
+      {v: d.ok === true ? '✅ Succès' : d.ok === false ? '❌ Échec' : '—', l: 'Statut dernier run'},
+    ].map(x => `<div class="stat-card"><div class="sv" style="font-size:${typeof x.v==='string'&&x.v.length>4?'.85rem':'1.4rem'};">${x.v}</div><div class="sl">${x.l}</div></div>`).join('');
+
+    const enCours = document.getElementById('tg-en-cours');
+    const btn     = document.getElementById('tg-btn-lancer');
+    if (d.en_cours) {
+      if (enCours) enCours.style.display = 'block';
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Scraping en cours…'; }
+    } else {
+      if (enCours) enCours.style.display = 'none';
+      if (btn) { btn.disabled = false; btn.textContent = '🚀 Lancer le scraping'; }
+    }
+
+    if (d.fin_run) {
+      const el = document.getElementById('tg-dernier-run');
+      if (el) el.textContent = `Dernier run : ${d.dernier_run?.slice(0,16)||'?'} → ${d.fin_run?.slice(0,16)||'?'} | ${d.canaux||''} | limite ${d.limite||'?'}`;
+    }
+  } catch(e) { /* silencieux */ }
+}
+window.tgChargerStatus = tgChargerStatus;
+
+async function tgLancer() {
+  const canaux    = document.getElementById('tg-canaux').value.trim();
+  const limite    = parseInt(document.getElementById('tg-limite').value) || 200;
+  const sansAudio = document.getElementById('tg-sans-audio').checked;
+
+  const btn = document.getElementById('tg-btn-lancer');
+  btn.disabled = true; btn.textContent = '⏳ Lancement…';
+
+  try {
+    const fd = new FormData();
+    fd.append('canaux', canaux);
+    fd.append('limite', limite);
+    if (sansAudio) fd.append('sans_audio', 'true');
+    const r = await fetch(`${API}/api/prof/telegram/lancer`, {method:'POST', body:fd, headers:H});
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail||'Erreur');
+    toast('🚀 Scraping Telegram lancé en arrière-plan!');
+    setTimeout(tgChargerStatus, 2000);
+  } catch(e) {
+    toast('❌ '+e.message, true);
+    btn.disabled = false; btn.textContent = '🚀 Lancer le scraping';
+  }
+}
+window.tgLancer = tgLancer;
 
 // Charger les mots custom et phrases custom au démarrage
 chargerMotsCustom();
