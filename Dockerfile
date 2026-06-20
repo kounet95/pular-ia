@@ -32,9 +32,11 @@ RUN pip install --no-cache-dir --timeout 300 \
     groq>=0.9.0
 
 # ── 4. ChromaDB + embeddings (lourd, isolé) ───────────────────────────────────
+# onnxruntime requis par chromadb SentenceTransformerEmbeddingFunction
 RUN pip install --no-cache-dir --timeout 300 \
     chromadb==0.4.24 \
-    sentence-transformers==2.7.0
+    sentence-transformers==2.7.0 \
+    onnxruntime==1.17.3
 
 # ── 5. Forcer numpy 1.26.4 + numba 0.59 compatibles ─────────────────────────
 # chromadb/sentence-transformers tirent numpy 2.x ET numba compilé pour numpy 2.x.
