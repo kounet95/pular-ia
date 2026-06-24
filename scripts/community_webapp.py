@@ -116,10 +116,15 @@ def construire_prompt_vocabulaire() -> str:
         except Exception:
             pass
 
-    # Limiter à 200 mots (≈ 220 tokens Whisper max)
-    vocab = mots_uniques[:200]
+    # Groq limite le prompt à 896 caractères
+    MAX_CHARS = 880
     base  = "Pular fulfulde Fouta Djallon fulani langue africaine."
-    prompt = f"{base} {' '.join(vocab)}" if vocab else base
+    prompt = base
+    for mot in mots_uniques:
+        candidat = f"{prompt} {mot}"
+        if len(candidat) > MAX_CHARS:
+            break
+        prompt = candidat
 
     _prompt_cache        = prompt
     _prompt_last_refresh = now
