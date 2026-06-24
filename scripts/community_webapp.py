@@ -118,8 +118,19 @@ def construire_prompt_vocabulaire() -> str:
 
     # Groq compte en octets UTF-8 (limite = 896) — les lettres pular comme ɓ ɗ ŋ
     # valent 2 octets chacune, d'où l'écart entre len() Python et le décompte Groq.
+    # Le prompt commence par des PHRASES complètes (meilleur signal pour Whisper
+    # qu'une liste de mots isolés) puis complète avec le vocabulaire disponible.
     MAX_BYTES = 870
-    base   = "Pular fulfulde Fouta Djallon fulani langue africaine."
+    PHRASES_SEED = [
+        "Jam waali? Jam tan, baŋ-baŋ.",
+        "Mi yiɗi pular fulfulde.",
+        "Hol tò innde maa?",
+        "Bismillahi Rahmaani Rahiimi.",
+        "Baaba am, yinaande am, ɓiɗɗo am.",
+        "Nagge, mbabba, mbewa, puccu.",
+        "Ndiyam, jaango, naange, lewru.",
+    ]
+    base   = " ".join(PHRASES_SEED)
     prompt = base
     nb_mots = 0
     for mot in mots_uniques:
@@ -155,7 +166,7 @@ def _transcrire_groq(audio_path: str) -> dict:
             model="whisper-large-v3-turbo",
             prompt=prompt,
             response_format="verbose_json",
-            temperature=0.0,
+            temperature=0.2,
         )
     texte   = (result.text or "").strip()
     langue  = getattr(result, "language", "?") or "?"
@@ -205,6 +216,7 @@ def _transcrire_local(audio_path: str) -> dict:
         task="transcribe",
         no_speech_threshold=0.3,
         initial_prompt=prompt,
+        temperature=0.2,
         logprob_threshold=-1.5,
         condition_on_previous_text=False,
         fp16=False,
