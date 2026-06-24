@@ -153,13 +153,17 @@ def _transcrire_groq(audio_path: str) -> dict:
     langue  = getattr(result, "language", "?") or "?"
     segs    = getattr(result, "segments", None) or []
     log.info(f"[Groq] langue={langue} | '{texte[:80]}'")
+
+    def _seg(s):
+        # groq>=0.9 retourne des objets Pydantic (pas des dicts)
+        if isinstance(s, dict):
+            return {"start": s.get("start", 0), "end": s.get("end", 0), "text": s.get("text", "")}
+        return {"start": getattr(s, "start", 0), "end": getattr(s, "end", 0), "text": getattr(s, "text", "")}
+
     return {
         "text":     texte,
         "language": langue,
-        "segments": [
-            {"start": s.get("start", 0), "end": s.get("end", 0), "text": s.get("text", "")}
-            for s in segs
-        ],
+        "segments": [_seg(s) for s in segs],
     }
 
 # ── Whisper local (fallback dev / pas de clé Groq) ────────────────────────────
