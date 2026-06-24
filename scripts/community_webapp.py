@@ -53,16 +53,96 @@ GROQ_API_KEY    = os.getenv("GROQ_API_KEY", "")
 for d in [DOSSIER_CONTRIB, DOSSIER_AUDIO]:
     d.mkdir(parents=True, exist_ok=True)
 
+# ── Prompt vocabulaire dynamique (alimenté par les mots + documents ajoutés) ──
+import time as _time
+_prompt_cache:        str   = ""
+_prompt_last_refresh: float = 0.0
+
+def construire_prompt_vocabulaire() -> str:
+    """
+    Construit le initial_prompt Whisper à partir des mots du jeu et des phrases.
+    Mis en cache 5 min. Invalidé à chaque ajout de document/mot via
+    invalider_cache_prompt().
+    """
+    global _prompt_cache, _prompt_last_refresh
+    now = _time.time()
+    if _prompt_cache and (now - _prompt_last_refresh) < 300:
+        return _prompt_cache
+
+    mots_uniques: list[str] = []
+    vus: set[str] = set()
+
+    def ajouter(w: str):
+        w = w.strip(" .,!?;:()'\"").lower()
+        if len(w) > 1 and w not in vus:
+            vus.add(w)
+            mots_uniques.append(w)
+
+    # 1. Mots du jeu (base + custom) — chargés plus tard dans le fichier,
+    #    on lit directement les JSON pour éviter la dépendance circulaire.
+    DOSSIER_JEU_LOCAL = PROJET_ROOT / "corpus-pular" / "jeu"
+    for nom_fichier in ("mots_base.json", "mots_custom.json"):
+        p = DOSSIER_JEU_LOCAL / nom_fichier
+        if p.exists():
+            try:
+                for m in json.loads(p.read_text(encoding="utf-8")):
+                    pular = m.get("pular", "")
+                    if pular:
+                        ajouter(pular)
+            except Exception:
+                pass
+
+    # 2. Phrases (extraire les tokens pular)
+    for nom_fichier in ("phrases_base.json", "phrases_custom.json"):
+        p = DOSSIER_JEU_LOCAL / nom_fichier
+        if p.exists():
+            try:
+                for ph in json.loads(p.read_text(encoding="utf-8")):
+                    for token in ph.get("pular", "").split():
+                        ajouter(token)
+            except Exception:
+                pass
+
+    # 3. Vocabulaire extrait des documents RAG (fichiers _vocab.json)
+    DOSSIER_META = PROJET_ROOT / "corpus-pular" / "livres" / "metadata"
+    if DOSSIER_META.exists():
+        try:
+            for vocab_file in sorted(DOSSIER_META.glob("*_vocab.json")):
+                mots_doc = json.loads(vocab_file.read_text(encoding="utf-8"))
+                for mot in mots_doc:
+                    ajouter(mot)
+                if len(mots_uniques) >= 200:
+                    break
+        except Exception:
+            pass
+
+    # Limiter à 200 mots (≈ 220 tokens Whisper max)
+    vocab = mots_uniques[:200]
+    base  = "Pular fulfulde Fouta Djallon fulani langue africaine."
+    prompt = f"{base} {' '.join(vocab)}" if vocab else base
+
+    _prompt_cache        = prompt
+    _prompt_last_refresh = now
+    log.info(f"Prompt vocabulaire: {len(vocab)} mots, {len(prompt)} chars")
+    return prompt
+
+def invalider_cache_prompt():
+    """Appeler après tout ajout de mot ou de document pour forcer la reconstruction."""
+    global _prompt_last_refresh
+    _prompt_last_refresh = 0.0
+
+
 # ── Transcription via Groq API (production) ───────────────────────────────────
 def _transcrire_groq(audio_path: str) -> dict:
     """Groq Whisper large-v3-turbo — ~1s, gratuit, scalable."""
     from groq import Groq
     client = Groq(api_key=GROQ_API_KEY)
+    prompt = construire_prompt_vocabulaire()
     with open(audio_path, "rb") as f:
         result = client.audio.transcriptions.create(
             file=(Path(audio_path).name, f),
             model="whisper-large-v3-turbo",
-            prompt="Pular fulfulde fulani langue africaine.",
+            prompt=prompt,
             response_format="verbose_json",
             temperature=0.0,
         )
@@ -103,12 +183,13 @@ def get_whisper():
     return _whisper_model
 
 def _transcrire_local(audio_path: str) -> dict:
-    model = get_whisper()
+    model  = get_whisper()
+    prompt = construire_prompt_vocabulaire()
     result = model.transcribe(
         audio_path,
         task="transcribe",
         no_speech_threshold=0.3,
-        initial_prompt="Pular fulfulde fulani langue africaine.",
+        initial_prompt=prompt,
         logprob_threshold=-1.5,
         condition_on_previous_text=False,
         fp16=False,
@@ -503,6 +584,7 @@ async def api_upload_livre(
             "date":      datetime.now().isoformat(),
         })
         sauver_index(livres)
+        invalider_cache_prompt()
 
         log.info(f"Livre indexé: '{titre}' — {nb_chunks} chunks")
         return JSONResponse({
@@ -710,6 +792,7 @@ async def api_prof_ajouter_mot(
     }
     mots.append(nouveau)
     sauver_mots_custom(mots)
+    invalider_cache_prompt()
     log.info(f"Mot custom ajouté: {nouveau['pular']} ({pseudo})")
     return JSONResponse({"ok": True, "mot": nouveau})
 
@@ -736,6 +819,7 @@ async def api_prof_modifier_mot(
                 "modifie": datetime.now().isoformat(),
             })
             sauver_mots_custom(mots)
+            invalider_cache_prompt()
             return JSONResponse({"ok": True, "mot": m})
     raise HTTPException(404, f"Mot {mot_id} introuvable.")
 

@@ -229,6 +229,20 @@ def indexer_livre(
             ajoutes += len(filtre)
 
     log.info(f"Indexé '{titre}': {ajoutes}/{len(chunks)} chunks nouveaux")
+
+    # Sauvegarder les mots uniques extraits pour le prompt Whisper
+    if chunks:
+        import re as _re
+        mots_vocab: set[str] = set()
+        for chunk in chunks:
+            for token in _re.split(r"[\s,.:;!?()\[\]\"']+", chunk):
+                t = token.strip().lower()
+                if len(t) > 2:
+                    mots_vocab.add(t)
+        vocab_path = DOSSIER_META / f"{livre_id}_vocab.json"
+        with open(vocab_path, "w", encoding="utf-8") as f:
+            json.dump(sorted(mots_vocab), f, ensure_ascii=False)
+
     return ajoutes
 
 def rechercher(
