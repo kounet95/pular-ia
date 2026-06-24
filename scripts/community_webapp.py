@@ -116,19 +116,22 @@ def construire_prompt_vocabulaire() -> str:
         except Exception:
             pass
 
-    # Groq limite le prompt à 896 caractères
-    MAX_CHARS = 880
-    base  = "Pular fulfulde Fouta Djallon fulani langue africaine."
+    # Groq compte en octets UTF-8 (limite = 896) — les lettres pular comme ɓ ɗ ŋ
+    # valent 2 octets chacune, d'où l'écart entre len() Python et le décompte Groq.
+    MAX_BYTES = 870
+    base   = "Pular fulfulde Fouta Djallon fulani langue africaine."
     prompt = base
+    nb_mots = 0
     for mot in mots_uniques:
         candidat = f"{prompt} {mot}"
-        if len(candidat) > MAX_CHARS:
+        if len(candidat.encode("utf-8")) > MAX_BYTES:
             break
         prompt = candidat
+        nb_mots += 1
 
     _prompt_cache        = prompt
     _prompt_last_refresh = now
-    log.info(f"Prompt vocabulaire: {len(vocab)} mots, {len(prompt)} chars")
+    log.info(f"Prompt vocabulaire: {nb_mots} mots, {len(prompt.encode('utf-8'))} octets UTF-8")
     return prompt
 
 def invalider_cache_prompt():
