@@ -3503,9 +3503,7 @@ async function profSauverPhrasePanel() {
     if (!d.ok) throw new Error(d.detail||'Erreur');
     toast(ppEditMode ? '✅ Phrase modifiée!' : '✅ Phrase ajoutée!');
     ppAnnuler();
-    profChargerPhrases();
-    // Recharger les phrases dans l'interface utilisateur
-    initPhrases();
+    await Promise.all([profChargerPhrases(), initPhrases()]);
   } catch(e) { toast('❌ '+e.message, true); }
 }
 window.profSauverPhrasePanel = profSauverPhrasePanel;

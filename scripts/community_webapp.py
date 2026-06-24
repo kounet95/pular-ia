@@ -1023,7 +1023,10 @@ async def api_phrases_toutes():
     base   = charger_phrases_base()
     custom = charger_phrases_custom()
     base_pular = {p["pular"] for p in base}
-    return JSONResponse(base + [p for p in custom if p.get("pular") not in base_pular])
+    return JSONResponse(
+        base + [p for p in custom if p.get("pular") not in base_pular],
+        headers={"Cache-Control": "no-store"},
+    )
 
 @app.put("/api/prof/phrase-base/{phrase_id}")
 async def api_modifier_phrase_base(
@@ -1036,9 +1039,16 @@ async def api_modifier_phrase_base(
     idx = next((i for i, p in enumerate(phrases) if p.get("id") == phrase_id), None)
     if idx is None:
         raise HTTPException(404, "Phrase de base non trouvée.")
-    phrases[idx].update({"pular": pular.strip(), "fr": fr.strip(), "cat": cat})
+    pular_clean = pular.strip()
+    phrases[idx].update({
+        "pular": pular_clean,
+        "adlam": latin_vers_adlam(pular_clean),
+        "fr":    fr.strip(),
+        "cat":   cat,
+        "modifie": datetime.now().isoformat(),
+    })
     sauver_phrases_base(phrases)
-    return JSONResponse({"ok": True})
+    return JSONResponse({"ok": True, "phrase": phrases[idx]})
 
 @app.delete("/api/prof/phrase-base/{phrase_id}")
 async def api_supprimer_phrase_base(phrase_id: str):
