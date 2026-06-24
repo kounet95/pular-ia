@@ -510,14 +510,8 @@
 
   <!-- Transcription & validation -->
   <div class="carte" id="zone-transcription">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <h2 style="margin:0;">📝 Transcription automatique</h2>
-      <div class="script-toggle">
-        <button id="btn-latin" class="actif" onclick="basculerScript('latin')">Latin</button>
-        <button id="btn-adlam" onclick="basculerScript('adlam')">𞤀𞤣𞤤𞤢𞤥</button>
-      </div>
-    </div>
-    <p style="font-size:.8rem;color:var(--gris);margin-bottom:8px;">
+    <h2 style="margin-bottom:8px;">📝 Transcription automatique</h2>
+    <p style="font-size:.8rem;color:var(--gris);margin-bottom:10px;">
       Vérifie et corrige si besoin, puis valide.
     </p>
 
@@ -534,10 +528,23 @@
       </button>
     </div>
 
-    <textarea id="texte-auto" rows="4" placeholder="Transcription en cours..."></textarea>
+    <!-- Latin -->
+    <div style="font-size:.72rem;color:var(--gris);font-weight:600;letter-spacing:.05em;margin-bottom:4px;">🔤 LATIN</div>
+    <textarea id="texte-auto" rows="3" placeholder="Transcription en cours..."
+      oninput="document.getElementById('texte-adlam-affiche').textContent = latinVersAdlam(this.value); texteLatinCache = this.value; texteAdlamCache = latinVersAdlam(this.value);"
+    ></textarea>
 
     <!-- Clavier Adlam virtuel -->
     <div id="clavier-adlam" class="clavier-adlam"></div>
+
+    <!-- Adlam -->
+    <div style="font-size:.72rem;color:var(--or);font-weight:600;letter-spacing:.05em;margin:10px 0 4px;">𞤀𞤣𞤤𞤢𞤥 ADLAM</div>
+    <div id="texte-adlam-affiche" class="adlam" style="
+      width:100%;background:#0a1a0f;border:1px solid #2d5c3a55;
+      border-radius:8px;color:var(--or);padding:12px;font-size:1.15rem;
+      min-height:52px;line-height:1.9;direction:rtl;text-align:right;
+      word-break:break-word;
+    "></div>
 
     <div class="btn-row" style="margin-top:12px;">
       <button class="btn btn-valider"  onclick="valider()">✅ Valider</button>
@@ -1363,15 +1370,14 @@ async function transcrire() {
       toast("⚠️ Aucune parole détectée. Parle plus fort, plus près du micro.", true);
     } else {
       texteLatinCache = data.text;
-      texteAdlamCache = data.text_adlam || '';
+      texteAdlamCache = data.text_adlam || latinVersAdlam(data.text);
       scriptActif     = 'latin';
       const ta = document.getElementById('texte-auto');
       ta.value             = data.text;
       ta.dataset.original  = data.text;
       ta.dir               = 'ltr';
       ta.classList.remove('adlam');
-      document.getElementById('btn-latin').classList.add('actif');
-      document.getElementById('btn-adlam').classList.remove('actif');
+      document.getElementById('texte-adlam-affiche').textContent = texteAdlamCache;
       document.getElementById('zone-transcription').style.display = 'block';
       // Afficher la phrase de référence si une phrase est active
       const refZone  = document.getElementById('phrase-ref-zone');
@@ -1427,6 +1433,7 @@ function annuler() {
   document.getElementById('zone-transcription').style.display = 'none';
   document.getElementById('phrase-ref-zone').style.display    = 'none';
   document.getElementById('texte-auto').value = '';
+  document.getElementById('texte-adlam-affiche').textContent = '';
   const btn = document.getElementById('btn-record');
   btn.disabled = false;
   btn.classList.remove('enregistrement');
@@ -1442,10 +1449,9 @@ function corrigerAvecPhrase() {
   ta.dir   = 'ltr';
   ta.classList.remove('adlam');
   texteLatinCache = phraseActive.pular;
-  texteAdlamCache = '';
+  texteAdlamCache = latinVersAdlam(phraseActive.pular);
+  document.getElementById('texte-adlam-affiche').textContent = texteAdlamCache;
   scriptActif = 'latin';
-  document.getElementById('btn-latin').classList.add('actif');
-  document.getElementById('btn-adlam').classList.remove('actif');
   document.getElementById('clavier-adlam').classList.remove('visible');
   ta.focus();
   toast("✏️ Texte de la phrase copié — vérifie et valide!");
@@ -1668,11 +1674,10 @@ let texteLatinCache = '';
 let texteAdlamCache = '';
 
 async function basculerScript(script) {
+  // Les deux scripts sont maintenant toujours visibles — cette fonction
+  // ne gère plus qu'un toggle optionnel du clavier Adlam virtuel.
   const ta = document.getElementById('texte-auto');
   scriptActif = script;
-
-  document.getElementById('btn-latin').classList.toggle('actif', script === 'latin');
-  document.getElementById('btn-adlam').classList.toggle('actif', script === 'adlam');
   document.getElementById('clavier-adlam').classList.toggle('visible', script === 'adlam');
 
   if (script === 'adlam') {
