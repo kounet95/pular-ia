@@ -454,24 +454,43 @@
     .filtre.actif { background: var(--vert); color: white; border-color: var(--vert); }
     .phrase-card {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      flex-direction: column;
       padding: 12px 14px;
       background: #0d1f15;
       border: 1px solid #1e3d28;
       border-radius: 10px;
-      cursor: pointer;
       transition: border-color .15s, background .15s;
-      gap: 10px;
+      gap: 8px;
     }
     .phrase-card:hover  { border-color: var(--or); background: #111f16; }
     .phrase-card.active { border-color: var(--or); background: #162b1c; }
+    .phrase-card-row    { display:flex; justify-content:space-between; align-items:center; gap:10px; cursor:pointer; }
     .phrase-card .txt   { flex: 1; }
     .phrase-card .pular { font-size: .95rem; font-weight: 600; color: var(--texte); }
     .phrase-card .fr    { font-size: .78rem; color: var(--gris); margin-top: 2px; font-style: italic; }
     .phrase-card .cat   {
       font-size: .7rem; padding: 2px 8px; border-radius: 10px;
       background: #1e3d28; color: var(--gris); white-space: nowrap;
+    }
+    .btn-corriger {
+      font-size: .65rem; padding: 3px 7px; border-radius: 6px;
+      border: 1px solid #2d5c3a; background: transparent; color: var(--gris);
+      cursor: pointer; white-space: nowrap; margin-top: 4px;
+      transition: border-color .15s, color .15s;
+    }
+    .btn-corriger:hover { border-color: var(--or); color: var(--or); }
+    .phrase-form {
+      display: none; flex-direction: column; gap: 7px;
+      padding-top: 8px; border-top: 1px solid #1e3d28;
+    }
+    .phrase-form input {
+      background: #0a160f; border: 1px solid #2d5c3a; border-radius: 7px;
+      color: var(--texte); padding: 7px 10px; font-size: .82rem; width: 100%; box-sizing: border-box;
+    }
+    .phrase-form-btns { display:flex; gap:8px; }
+    .phrase-form-btns button {
+      padding: 6px 14px; border-radius: 7px; font-size: .78rem;
+      cursor: pointer; font-weight: 600; border: none;
     }
   </style>
 </head>
@@ -866,6 +885,7 @@
         <button class="prof-tab" id="ptab-phrases"             onclick="profSetTab('phrases')">📖 Phrases</button>
         <button class="prof-tab" id="ptab-livres"              onclick="profSetTab('livres')">📚 Livres</button>
         <button class="prof-tab" id="ptab-valider"             onclick="profSetTab('valider')">🎧 Valider <span id="prof-badge-pending"></span></button>
+        <button class="prof-tab" id="ptab-suggestions"          onclick="profSetTab('suggestions')">💡 Suggestions <span id="badge-suggestions" style="display:none;background:#c8a84b;color:#000;border-radius:10px;padding:1px 6px;font-size:.68rem;margin-left:3px;"></span></button>
         <button class="prof-tab" id="ptab-corrections"         onclick="profSetTab('corrections')">🔧 Corrections</button>
         <button class="prof-tab" id="ptab-contributeurs"       onclick="profSetTab('contributeurs')">👥 Contributeurs</button>
         <button class="prof-tab" id="ptab-stats"               onclick="profSetTab('stats')">📊 Stats</button>
@@ -1046,6 +1066,16 @@
       </div>
 
       <!-- ── Panel : Corrections ── -->
+      <!-- ── Panel : Suggestions de correction de phrases ── -->
+      <div id="ppanel-suggestions" class="prof-panel">
+        <p style="font-size:.82rem;color:var(--gris);margin-bottom:10px;">
+          Corrections de phrases proposées par la communauté. Applique ou ignore chaque suggestion.
+        </p>
+        <div id="prof-liste-suggestions">
+          <div style="color:var(--gris);font-size:.85rem;">Chargement...</div>
+        </div>
+      </div>
+
       <div id="ppanel-corrections" class="prof-panel">
         <p style="font-size:.82rem;color:var(--gris);margin-bottom:10px;">
           Historique des transcriptions déjà corrigées par la communauté.
@@ -1584,19 +1614,75 @@ function filtrerPhrases(cat) {
   const grille = document.getElementById('grille-phrases');
   grille.innerHTML = '';
   liste.forEach((p, i) => {
+    const pid = p.id || ('ph_' + i);
     const card = document.createElement('div');
     card.className = 'phrase-card' + (phraseActive === p ? ' active' : '');
+    card.dataset.pid = pid;
+    const pE = p.pular.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const fE = p.fr.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     card.innerHTML = `
-      <div class="txt">
-        <div class="pular">${p.pular}</div>
-        <div class="adlam" style="font-size:.78rem;color:var(--or);opacity:.7;direction:rtl;text-align:right;margin-top:2px;">${latinVersAdlam(p.pular)}</div>
-        <div class="fr">${p.fr}</div>
+      <div class="phrase-card-row" onclick="selectionnerPhrase(PHRASES.find(x=>x.id==='${pid}')||PHRASES[${i}])">
+        <div class="txt">
+          <div class="pular">${p.pular}</div>
+          <div class="adlam" style="font-size:.78rem;color:var(--or);opacity:.7;direction:rtl;text-align:right;margin-top:2px;">${latinVersAdlam(p.pular)}</div>
+          <div class="fr">${p.fr}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
+          <span class="cat">${p.cat}</span>
+          <button class="btn-corriger" onclick="event.stopPropagation();toggleFormPhrase('${pid}')">✏️ Corriger</button>
+        </div>
       </div>
-      <span class="cat">${p.cat}</span>
+      <div class="phrase-form" id="pform-${pid}">
+        <input id="pinput-pular-${pid}" type="text" placeholder="Texte Pular corrigé" value="${pE}">
+        <input id="pinput-fr-${pid}"    type="text" placeholder="Traduction française (optionnel)" value="${fE}">
+        <div class="phrase-form-btns">
+          <button onclick="soumettreCorrection('${pid}','${pE}','${p.cat}')"
+            style="background:var(--vert);color:white;">Envoyer la correction</button>
+          <button onclick="toggleFormPhrase('${pid}')"
+            style="background:#2a3a2a;color:var(--gris);">Annuler</button>
+        </div>
+        <div id="pform-msg-${pid}" style="font-size:.75rem;color:var(--gris);"></div>
+      </div>
     `;
-    card.onclick = () => selectionnerPhrase(p);
     grille.appendChild(card);
   });
+}
+
+function toggleFormPhrase(pid) {
+  const form = document.getElementById('pform-' + pid);
+  if (!form) return;
+  const ouvert = form.style.display === 'flex';
+  form.style.display = ouvert ? 'none' : 'flex';
+  if (!ouvert) document.getElementById('pinput-pular-' + pid)?.focus();
+}
+
+async function soumettreCorrection(pid, pularOriginal, cat) {
+  const pularInput = document.getElementById('pinput-pular-' + pid);
+  const frInput    = document.getElementById('pinput-fr-' + pid);
+  const msg        = document.getElementById('pform-msg-' + pid);
+  if (!pularInput || !msg) return;
+  const pularCorrige = pularInput.value.trim();
+  if (!pularCorrige) { msg.textContent = 'Le texte ne peut pas être vide.'; return; }
+  msg.textContent = 'Envoi...';
+  try {
+    const fd = new FormData();
+    fd.append('phrase_id', pid);
+    fd.append('pular_original', pularOriginal);
+    fd.append('pular_corrige', pularCorrige);
+    fd.append('fr_corrige', frInput ? frInput.value.trim() : '');
+    fd.append('pseudo', 'utilisateur');
+    const r = await fetch('/api/suggestion-phrase', { method: 'POST', body: fd });
+    const d = await r.json();
+    if (d.ok) {
+      msg.style.color = '#4caf7a';
+      msg.textContent = 'Correction envoyée ! Merci.';
+      setTimeout(() => toggleFormPhrase(pid), 1800);
+    } else {
+      msg.textContent = 'Erreur lors de l\'envoi.';
+    }
+  } catch(e) {
+    msg.textContent = 'Erreur réseau.';
+  }
 }
 
 function ajouterPhraseDepuisCorrection(texte) {
@@ -2547,13 +2633,13 @@ initJeu();
 let profOuvert = false;
 let motsProfCache = [];
 
-const PROF_TABS = ['ajouter','corriger','phrases','livres','valider','corrections','contributeurs','stats','entrainement','dataset','telegram'];
+const PROF_TABS = ['ajouter','corriger','phrases','livres','valider','suggestions','corrections','contributeurs','stats','entrainement','dataset','telegram'];
 
 function profTogglePanel() {
   profOuvert = !profOuvert;
   document.getElementById('prof-contenu').style.display = profOuvert ? 'block' : 'none';
   document.getElementById('prof-lock').classList.toggle('ouvert', profOuvert);
-  if (profOuvert) { profSetTab('ajouter'); chargerMotsCustom(); profChargerContribs(); profChargerStats(); }
+  if (profOuvert) { profSetTab('ajouter'); chargerMotsCustom(); profChargerContribs(); profChargerStats(); profChargerSuggestions(); }
 }
 window.profTogglePanel = profTogglePanel;
 
@@ -2567,6 +2653,7 @@ function profSetTab(tab) {
   if (tab === 'stats')          profChargerStats();
   if (tab === 'phrases')        profChargerPhrases();
   if (tab === 'livres')         profChargerLivres();
+  if (tab === 'suggestions')    profChargerSuggestions();
   if (tab === 'corrections')    profChargerCorrections();
   if (tab === 'contributeurs')  profChargerContributeurs();
   if (tab === 'entrainement')   profChargerEntrainement();
@@ -2575,6 +2662,73 @@ function profSetTab(tab) {
   if (tab === 'ajouter')        profChargerTousMots();
 }
 window.profSetTab = profSetTab;
+
+// ── Suggestions de correction de phrases ───────────────────────
+async function profChargerSuggestions() {
+  const el = document.getElementById('prof-liste-suggestions');
+  if (!el) return;
+  try {
+    const r = await fetch('/api/prof/suggestions-phrases');
+    const liste = await r.json();
+    const badge = document.getElementById('badge-suggestions');
+    if (badge) { badge.textContent = liste.length; badge.style.display = liste.length ? 'inline' : 'none'; }
+    if (!liste.length) { el.innerHTML = '<div style="color:var(--gris);font-size:.85rem;">Aucune suggestion en attente.</div>'; return; }
+    el.innerHTML = liste.map(s => `
+      <div style="background:#0d1f15;border:1px solid #2d5c3a44;border-radius:10px;padding:12px;margin-bottom:10px;">
+        <div style="font-size:.72rem;color:var(--gris);margin-bottom:6px;">${s.pseudo} — ${s.timestamp ? s.timestamp.slice(0,16).replace('T',' ') : ''}</div>
+        <div style="margin-bottom:4px;">
+          <span style="font-size:.68rem;color:var(--gris);">AVANT</span>
+          <div style="color:#aaa;font-size:.88rem;">${s.pular_original}</div>
+        </div>
+        <div style="margin-bottom:8px;">
+          <span style="font-size:.68rem;color:var(--or);">APRÈS</span>
+          <input id="sug-pular-${s.fichier}" type="text" value="${s.pular_corrige.replace(/"/g,'&quot;')}"
+            style="width:100%;box-sizing:border-box;background:#0a160f;border:1px solid #2d5c3a;border-radius:7px;color:var(--texte);padding:6px 9px;font-size:.88rem;margin-top:3px;">
+        </div>
+        ${s.fr_corrige ? `<div style="margin-bottom:8px;font-size:.8rem;color:var(--gris);">Traduction proposée : <em>${s.fr_corrige}</em></div>` : ''}
+        <div style="display:flex;gap:8px;">
+          <button onclick="profAppliquerSuggestion('${s.fichier}','${s.phrase_id}','${(s.fr_corrige||'').replace(/'/g,"&#39;")}')"
+            style="padding:6px 14px;border-radius:7px;border:none;background:var(--vert);color:white;font-weight:700;cursor:pointer;font-size:.8rem;">
+            Appliquer</button>
+          <button onclick="profIgnorerSuggestion('${s.fichier}')"
+            style="padding:6px 14px;border-radius:7px;border:none;background:#2a3a2a;color:var(--gris);cursor:pointer;font-size:.8rem;">
+            Ignorer</button>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    el.innerHTML = '<div style="color:red;font-size:.85rem;">Erreur de chargement.</div>';
+  }
+}
+
+async function profAppliquerSuggestion(fichier, phraseId, frCorrige) {
+  const pularInput = document.getElementById('sug-pular-' + fichier);
+  const pular = pularInput ? pularInput.value.trim() : '';
+  if (!pular) return;
+  const fd = new FormData();
+  fd.append('phrase_id', phraseId);
+  fd.append('pular_corrige', pular);
+  fd.append('fr_corrige', frCorrige);
+  fd.append('fichier', fichier);
+  try {
+    const r = await fetch('/api/prof/appliquer-suggestion-phrase', { method: 'POST', body: fd });
+    const d = await r.json();
+    if (d.ok) {
+      toast('Correction appliquée !');
+      await profChargerSuggestions();
+      await initPhrases();
+    } else {
+      toast('Erreur : phrase non trouvée.', true);
+    }
+  } catch(e) { toast('Erreur réseau.', true); }
+}
+
+async function profIgnorerSuggestion(fichier) {
+  try {
+    await fetch('/api/prof/suggestion-phrase/' + encodeURIComponent(fichier), { method: 'DELETE' });
+    await profChargerSuggestions();
+  } catch(e) { toast('Erreur réseau.', true); }
+}
 
 // ── Ajouter un mot ─────────────────────────────────────────────
 async function profAjouterMot() {

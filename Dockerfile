@@ -52,6 +52,7 @@ RUN mkdir -p \
         corpus-pular/community/contributions \
         corpus-pular/community/audio \
         corpus-pular/community/corrections \
+        corpus-pular/community/corrections_phrases \
         corpus-pular/processed/transcriptions \
         corpus-pular/jeu \
         corpus-pular/livres/raw \

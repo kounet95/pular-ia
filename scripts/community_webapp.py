@@ -428,10 +428,12 @@ async def api_stats():
 # ══════════════════════════════════════════════════════════════════════════════
 
 DOSSIER_TRANSCRIPTIONS = PROJET_ROOT / "corpus-pular" / "processed" / "transcriptions"
-DOSSIER_CORRECTIONS    = PROJET_ROOT / "corpus-pular" / "community" / "corrections"
-FICHIER_SAUTS          = PROJET_ROOT / "corpus-pular" / "community" / "sauts.json"
+DOSSIER_CORRECTIONS          = PROJET_ROOT / "corpus-pular" / "community" / "corrections"
+DOSSIER_CORRECTIONS_PHRASES  = PROJET_ROOT / "corpus-pular" / "community" / "corrections_phrases"
+FICHIER_SAUTS                = PROJET_ROOT / "corpus-pular" / "community" / "sauts.json"
 
 DOSSIER_CORRECTIONS.mkdir(parents=True, exist_ok=True)
+DOSSIER_CORRECTIONS_PHRASES.mkdir(parents=True, exist_ok=True)
 
 def charger_sauts() -> set:
     if FICHIER_SAUTS.exists():
@@ -1054,6 +1056,74 @@ async def api_modifier_phrase_base(
 async def api_supprimer_phrase_base(phrase_id: str):
     phrases = charger_phrases_base()
     sauver_phrases_base([p for p in phrases if p.get("id") != phrase_id])
+    return JSONResponse({"ok": True})
+
+# ── Suggestions de correction de phrases (communauté) ─────────────────────────
+@app.post("/api/suggestion-phrase")
+async def api_suggestion_phrase(
+    phrase_id:      str = Form(...),
+    pular_original: str = Form(...),
+    pular_corrige:  str = Form(...),
+    fr_corrige:     str = Form(""),
+    pseudo:         str = Form("anonyme"),
+):
+    pular_c = pular_corrige.strip()
+    if not pular_c:
+        raise HTTPException(400, "Le texte corrigé est vide.")
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+    entry = {
+        "fichier":        f"{phrase_id}_{ts}.json",
+        "phrase_id":      phrase_id,
+        "pseudo":         pseudo[:50],
+        "pular_original": pular_original.strip(),
+        "pular_corrige":  pular_c,
+        "fr_corrige":     fr_corrige.strip(),
+        "timestamp":      datetime.now().isoformat(),
+    }
+    path = DOSSIER_CORRECTIONS_PHRASES / entry["fichier"]
+    path.write_text(json.dumps(entry, ensure_ascii=False, indent=2), encoding="utf-8")
+    log.info(f"Suggestion phrase: {phrase_id} | pseudo={pseudo[:20]}")
+    return JSONResponse({"ok": True})
+
+@app.get("/api/prof/suggestions-phrases")
+async def api_suggestions_phrases():
+    suggestions = []
+    for f in sorted(DOSSIER_CORRECTIONS_PHRASES.glob("*.json")):
+        try:
+            suggestions.append(json.loads(f.read_text(encoding="utf-8")))
+        except Exception:
+            pass
+    return JSONResponse(suggestions)
+
+@app.post("/api/prof/appliquer-suggestion-phrase")
+async def api_appliquer_suggestion_phrase(
+    phrase_id:     str = Form(...),
+    pular_corrige: str = Form(...),
+    fr_corrige:    str = Form(""),
+    fichier:       str = Form(...),
+):
+    pular_c = pular_corrige.strip()
+    for charger, sauver in [
+        (charger_phrases_base, sauver_phrases_base),
+        (charger_phrases_custom, sauver_phrases_custom),
+    ]:
+        phrases = charger()
+        for p in phrases:
+            if p.get("id") == phrase_id:
+                p["pular"] = pular_c
+                p["adlam"] = latin_vers_adlam(pular_c)
+                if fr_corrige.strip():
+                    p["fr"] = fr_corrige.strip()
+                p["modifie"] = datetime.now().isoformat()
+                sauver(phrases)
+                (DOSSIER_CORRECTIONS_PHRASES / fichier).unlink(missing_ok=True)
+                invalider_cache_prompt()
+                return JSONResponse({"ok": True})
+    raise HTTPException(404, f"Phrase {phrase_id} introuvable.")
+
+@app.delete("/api/prof/suggestion-phrase/{nom}")
+async def api_ignorer_suggestion_phrase(nom: str):
+    (DOSSIER_CORRECTIONS_PHRASES / nom).unlink(missing_ok=True)
     return JSONResponse({"ok": True})
 
 @app.get("/api/mots-tous")
