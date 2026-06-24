@@ -134,8 +134,9 @@
       padding: 12px;
       font-size: 1rem;
       min-height: 80px;
-      resize: vertical;
-      line-height: 1.5;
+      resize: none;
+      overflow: hidden;
+      line-height: 1.6;
       outline: none;
     }
     #texte-auto:focus { border-color: var(--or); }
@@ -531,7 +532,13 @@
     <!-- Latin -->
     <div style="font-size:.72rem;color:var(--gris);font-weight:600;letter-spacing:.05em;margin-bottom:4px;">🔤 LATIN</div>
     <textarea id="texte-auto" rows="3" placeholder="Transcription en cours..."
-      oninput="document.getElementById('texte-adlam-affiche').textContent = latinVersAdlam(this.value); texteLatinCache = this.value; texteAdlamCache = latinVersAdlam(this.value);"
+      oninput="
+        this.style.height='auto';
+        this.style.height=this.scrollHeight+'px';
+        texteLatinCache = this.value;
+        texteAdlamCache = latinVersAdlam(this.value);
+        document.getElementById('texte-adlam-affiche').textContent = texteAdlamCache;
+      "
     ></textarea>
 
     <!-- Clavier Adlam virtuel -->
@@ -1377,6 +1384,8 @@ async function transcrire() {
       ta.dataset.original  = data.text;
       ta.dir               = 'ltr';
       ta.classList.remove('adlam');
+      ta.style.height      = 'auto';
+      ta.style.height      = ta.scrollHeight + 'px';
       document.getElementById('texte-adlam-affiche').textContent = texteAdlamCache;
       document.getElementById('zone-transcription').style.display = 'block';
       // Afficher la phrase de référence si une phrase est active
