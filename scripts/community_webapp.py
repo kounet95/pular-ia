@@ -137,7 +137,10 @@ def _transcrire_groq(audio_path: str) -> dict:
     """Groq Whisper large-v3-turbo — ~1s, gratuit, scalable."""
     from groq import Groq
     client = Groq(api_key=GROQ_API_KEY)
-    prompt = construire_prompt_vocabulaire()
+    try:
+        prompt = construire_prompt_vocabulaire()
+    except Exception:
+        prompt = "Pular fulfulde Fouta Djallon fulani langue africaine."
     with open(audio_path, "rb") as f:
         result = client.audio.transcriptions.create(
             file=(Path(audio_path).name, f),
