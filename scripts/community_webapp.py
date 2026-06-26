@@ -13,8 +13,11 @@ Pour accès public pendant un live:
 """
 
 import os
+import io
 import json
 import uuid
+import wave
+import hashlib
 import asyncio
 import logging
 import subprocess
@@ -24,7 +27,7 @@ from datetime import datetime
 
 import uvicorn
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
@@ -430,10 +433,12 @@ async def api_stats():
 DOSSIER_TRANSCRIPTIONS = PROJET_ROOT / "corpus-pular" / "processed" / "transcriptions"
 DOSSIER_CORRECTIONS          = PROJET_ROOT / "corpus-pular" / "community" / "corrections"
 DOSSIER_CORRECTIONS_PHRASES  = PROJET_ROOT / "corpus-pular" / "community" / "corrections_phrases"
+DOSSIER_TTS_CACHE            = PROJET_ROOT / "corpus-pular" / "community" / "tts_cache"
 FICHIER_SAUTS                = PROJET_ROOT / "corpus-pular" / "community" / "sauts.json"
 
 DOSSIER_CORRECTIONS.mkdir(parents=True, exist_ok=True)
 DOSSIER_CORRECTIONS_PHRASES.mkdir(parents=True, exist_ok=True)
+DOSSIER_TTS_CACHE.mkdir(parents=True, exist_ok=True)
 
 def charger_sauts() -> set:
     if FICHIER_SAUTS.exists():
@@ -1125,6 +1130,102 @@ async def api_appliquer_suggestion_phrase(
 async def api_ignorer_suggestion_phrase(nom: str):
     (DOSSIER_CORRECTIONS_PHRASES / nom).unlink(missing_ok=True)
     return JSONResponse({"ok": True})
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TTS — Synthèse vocale OmniVoice (k2-fsa, 600+ langues dont fub = Fulfulde)
+# ══════════════════════════════════════════════════════════════════════════════
+
+_ov_client = None
+
+def _get_ov_client():
+    global _ov_client
+    if _ov_client is None:
+        from gradio_client import Client
+        _ov_client = Client("k2-fsa/OmniVoice")
+        log.info("OmniVoice client connecté (k2-fsa/OmniVoice)")
+    return _ov_client
+
+def _numpy_vers_wav(sr: int, data) -> bytes:
+    """Convertit un tableau numpy audio en bytes WAV (16-bit mono)."""
+    import numpy as np
+    pcm = (data * 32767).astype(np.int16)
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(sr)
+        wf.writeframes(pcm.tobytes())
+    return buf.getvalue()
+
+def _tts_generer(texte: str, langue: str) -> bytes:
+    """
+    Appelle OmniVoice via le Space HF (gradio_client).
+    Mode clone sans ref_audio → OmniVoice génère une voix par défaut pour la langue.
+    Retourne les bytes d'un fichier WAV.
+    """
+    client = _get_ov_client()
+
+    # Paramètres mode clone sans audio de référence
+    result = client.predict(
+        texte,   # text
+        langue,  # language (ex: "fub" = Fulfulde Adamawa)
+        None,    # ref_audio  — pas de clonage de voix
+        None,    # ref_text
+        "female, adult, clear, slow",  # instruct — attributs de voix
+        20,      # num_step
+        3.0,     # guidance_scale
+        True,    # denoise
+        1.0,     # speed
+        0.0,     # duration (0 = auto)
+        True,    # preprocess_prompt
+        True,    # postprocess_output
+        api_name="/_clone_fn",
+    )
+
+    # Le résultat est (audio, status_msg) — audio = (sr, np.ndarray) ou fichier path
+    audio_out = result[0] if isinstance(result, (list, tuple)) else result
+
+    if isinstance(audio_out, str):
+        # Chemin vers un fichier WAV temporaire
+        with open(audio_out, "rb") as f:
+            return f.read()
+
+    if isinstance(audio_out, tuple):
+        sr, data = audio_out
+        return _numpy_vers_wav(sr, data)
+
+    raise ValueError(f"Format audio OmniVoice inattendu: {type(audio_out)}")
+
+@app.get("/api/tts")
+async def api_tts(texte: str, langue: str = "fub"):
+    """
+    Synthèse vocale OmniVoice pour une phrase Pular/Fulfulde.
+    Les résultats sont mis en cache sur disque.
+    langue : code ISO 639-3 — fub = Fulfulde Adamawa (Guinée, Cameroun)
+    """
+    texte = texte.strip()
+    if not texte:
+        raise HTTPException(400, "Texte vide.")
+
+    cle = hashlib.md5(f"{langue}:{texte}".encode()).hexdigest()
+    cache_wav = DOSSIER_TTS_CACHE / f"{cle}.wav"
+
+    if cache_wav.exists():
+        return FileResponse(
+            str(cache_wav), media_type="audio/wav",
+            headers={"Cache-Control": "max-age=604800"},
+        )
+
+    try:
+        audio_bytes = await asyncio.to_thread(_tts_generer, texte, langue)
+        cache_wav.write_bytes(audio_bytes)
+        return Response(
+            content=audio_bytes, media_type="audio/wav",
+            headers={"Cache-Control": "max-age=604800"},
+        )
+    except Exception as e:
+        log.error(f"TTS OmniVoice: {e}")
+        raise HTTPException(503, "Synthèse vocale temporairement indisponible.")
 
 @app.get("/api/mots-tous")
 async def api_mots_tous():

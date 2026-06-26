@@ -472,13 +472,17 @@
       font-size: .7rem; padding: 2px 8px; border-radius: 10px;
       background: #1e3d28; color: var(--gris); white-space: nowrap;
     }
-    .btn-corriger {
+    .btn-corriger, .btn-ecouter {
       font-size: .65rem; padding: 3px 7px; border-radius: 6px;
-      border: 1px solid #2d5c3a; background: transparent; color: var(--gris);
+      border: 1px solid #2d5c3a; background: transparent;
       cursor: pointer; white-space: nowrap; margin-top: 4px;
       transition: border-color .15s, color .15s;
     }
+    .btn-corriger { color: var(--gris); }
     .btn-corriger:hover { border-color: var(--or); color: var(--or); }
+    .btn-ecouter  { color: #4caf7a; border-color: #2d5c3a; }
+    .btn-ecouter:hover { border-color: #4caf7a; }
+    .btn-ecouter.chargement { opacity: .6; cursor: wait; }
     .phrase-form {
       display: none; flex-direction: column; gap: 7px;
       padding-top: 8px; border-top: 1px solid #1e3d28;
@@ -1629,6 +1633,7 @@ function filtrerPhrases(cat) {
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
           <span class="cat">${p.cat}</span>
+          <button class="btn-ecouter"  id="btn-tts-${pid}" onclick="event.stopPropagation();ecouterPhrase('${pid}','${pE}')">🔊 Écouter</button>
           <button class="btn-corriger" onclick="event.stopPropagation();toggleFormPhrase('${pid}')">✏️ Corriger</button>
         </div>
       </div>
@@ -1682,6 +1687,55 @@ async function soumettreCorrection(pid, pularOriginal, cat) {
     }
   } catch(e) {
     msg.textContent = 'Erreur réseau.';
+  }
+}
+
+let _ttsAudio = null;
+
+async function ecouterPhrase(pid, texte) {
+  const btn = document.getElementById('btn-tts-' + pid);
+  if (!btn) return;
+
+  // Arrêter l'audio en cours si on reclique sur le même bouton
+  if (btn.dataset.playing === '1') {
+    if (_ttsAudio) { _ttsAudio.pause(); _ttsAudio.currentTime = 0; }
+    btn.textContent = '🔊 Écouter';
+    btn.dataset.playing = '0';
+    btn.classList.remove('chargement');
+    return;
+  }
+
+  // Arrêter tout audio précédent
+  if (_ttsAudio) { _ttsAudio.pause(); _ttsAudio.currentTime = 0; }
+  document.querySelectorAll('.btn-ecouter').forEach(b => {
+    b.textContent = '🔊 Écouter'; b.dataset.playing = '0'; b.classList.remove('chargement');
+  });
+
+  btn.textContent = '⏳ …';
+  btn.classList.add('chargement');
+  btn.dataset.playing = '0';
+
+  try {
+    const url = '/api/tts?texte=' + encodeURIComponent(texte) + '&langue=fub';
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('TTS indisponible (statut ' + r.status + ')');
+    const blob = await r.blob();
+    const src  = URL.createObjectURL(blob);
+    _ttsAudio  = new Audio(src);
+    btn.textContent = '⏹ Stop';
+    btn.classList.remove('chargement');
+    btn.dataset.playing = '1';
+    _ttsAudio.play();
+    _ttsAudio.onended = () => {
+      btn.textContent = '🔊 Écouter';
+      btn.dataset.playing = '0';
+      URL.revokeObjectURL(src);
+    };
+  } catch(e) {
+    btn.textContent = '🔊 Écouter';
+    btn.classList.remove('chargement');
+    btn.dataset.playing = '0';
+    toast('Synthèse vocale indisponible : ' + e.message, true);
   }
 }
 

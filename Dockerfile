@@ -29,7 +29,8 @@ RUN pip install --no-cache-dir --timeout 300 \
     python-docx==1.1.2 \
     tqdm==4.66.4 \
     numpy==1.26.4 \
-    groq>=0.9.0
+    groq>=0.9.0 \
+    gradio-client>=1.3.0
 
 # ── 4. ChromaDB + embeddings (lourd, isolé) ───────────────────────────────────
 # onnxruntime requis par chromadb SentenceTransformerEmbeddingFunction
@@ -53,6 +54,7 @@ RUN mkdir -p \
         corpus-pular/community/audio \
         corpus-pular/community/corrections \
         corpus-pular/community/corrections_phrases \
+        corpus-pular/community/tts_cache \
         corpus-pular/processed/transcriptions \
         corpus-pular/jeu \
         corpus-pular/livres/raw \
