@@ -496,12 +496,31 @@
       padding: 6px 14px; border-radius: 7px; font-size: .78rem;
       cursor: pointer; font-weight: 600; border: none;
     }
+    /* ── Clavier Adlam global (flottant) ────────────────────── */
+    #clavier-adlam-global {
+      display: none; position: fixed; z-index: 10000;
+      background: #0b1d10; border: 1px solid var(--or);
+      border-radius: 12px; padding: 10px 12px;
+      width: 310px; max-height: 280px; overflow-y: auto;
+      box-shadow: 0 10px 32px rgba(0,0,0,.7);
+    }
+    #clavier-adlam-global.visible { display: flex; flex-wrap: wrap; gap: 4px; align-content: flex-start; }
+    #clavier-adlam-backdrop { display:none; position:fixed; inset:0; z-index:9999; }
+    .btn-clavier-adlam {
+      font-size: .72rem; padding: 3px 7px; border-radius: 6px;
+      border: 1px solid #c8a84b55; background: #0a1a0f; color: var(--or);
+      cursor: pointer; white-space: nowrap; font-family: inherit;
+      transition: background .12s, color .12s;
+    }
+    .btn-clavier-adlam:hover, .btn-clavier-adlam.actif { background: var(--or); color: #000; }
+    .champ-adlam-wrap { display:flex; gap:6px; align-items:center; flex:1; }
+    .champ-adlam-wrap input { flex:1; min-width:0; }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>🌙 Pular fouta djallon IA — Corpus communautaire</h1>
+  <h1>🌙 Pular fuuta Jaloo IA — Corpus communautaire</h1>
   <p>Aide-nous à construire le premier modèle d'IA pour la langue pular</p>
 </header>
 
@@ -911,8 +930,13 @@
           <div class="form-row">
             <input id="pf-pular"  type="text" placeholder="Pular *"         maxlength="100"
               oninput="document.getElementById('pf-adlam').value=latinVersAdlam(this.value)">
-            <input id="pf-adlam"  type="text" placeholder="Adlam (auto)"    maxlength="200"
-              class="adlam" style="direction:rtl;font-size:1rem;">
+            <div class="champ-adlam-wrap">
+              <input id="pf-adlam"  type="text" placeholder="Adlam (auto ou saisir)"    maxlength="200"
+                class="adlam" style="direction:rtl;font-size:1rem;"
+                oninput="_adlamVersLatinInput('pf-adlam','pf-pular')">
+              <button class="btn-clavier-adlam" data-cible="pf-adlam" data-latin="pf-pular"
+                onclick="toggleClavierGlobal('pf-adlam','pf-pular')" title="Ouvrir le clavier Adlam">𞤀𞤣𞤤</button>
+            </div>
           </div>
           <div class="form-row">
             <select id="pf-cat">
@@ -964,7 +988,12 @@
             <div class="form-row">
               <input id="pedit-pular" type="text" placeholder="Pular"
                 oninput="document.getElementById('pedit-adlam').value=latinVersAdlam(this.value)">
-              <input id="pedit-adlam" type="text" placeholder="Adlam" class="adlam" style="direction:rtl;">
+              <div class="champ-adlam-wrap">
+                <input id="pedit-adlam" type="text" placeholder="Adlam" class="adlam" style="direction:rtl;"
+                  oninput="_adlamVersLatinInput('pedit-adlam','pedit-pular')">
+                <button class="btn-clavier-adlam" data-cible="pedit-adlam" data-latin="pedit-pular"
+                  onclick="toggleClavierGlobal('pedit-adlam','pedit-pular')" title="Clavier Adlam">𞤀𞤣𞤤</button>
+              </div>
             </div>
             <div class="form-row">
               <input id="pedit-cat"  type="text" placeholder="Catégorie">
@@ -1014,8 +1043,13 @@
           <div class="form-row">
             <input id="pp-pular" type="text" placeholder="Phrase en pular *" maxlength="200"
               oninput="document.getElementById('pp-adlam').value=latinVersAdlam(this.value)">
-            <input id="pp-adlam" type="text" placeholder="Adlam (auto)" class="adlam"
-              style="direction:rtl;font-size:1rem;" maxlength="300">
+            <div class="champ-adlam-wrap">
+              <input id="pp-adlam" type="text" placeholder="Adlam (auto ou saisir)" class="adlam"
+                style="direction:rtl;font-size:1rem;" maxlength="300"
+                oninput="_adlamVersLatinInput('pp-adlam','pp-pular')">
+              <button class="btn-clavier-adlam" data-cible="pp-adlam" data-latin="pp-pular"
+                onclick="toggleClavierGlobal('pp-adlam','pp-pular')" title="Clavier Adlam">𞤀𞤣𞤤</button>
+            </div>
           </div>
           <input id="pp-fr" type="text" placeholder="Traduction française" maxlength="200"
             style="width:100%;padding:9px 12px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;color:var(--texte);font-size:.9rem;outline:none;margin-top:6px;">
@@ -1638,7 +1672,17 @@ function filtrerPhrases(cat) {
         </div>
       </div>
       <div class="phrase-form" id="pform-${pid}">
-        <input id="pinput-pular-${pid}" type="text" placeholder="Texte Pular corrigé" value="${pE}">
+        <div style="font-size:.7rem;color:var(--gris);">Latin</div>
+        <input id="pinput-pular-${pid}" type="text" placeholder="Texte Pular corrigé" value="${pE}"
+          oninput="document.getElementById('pinput-adlam-${pid}').value=latinVersAdlam(this.value)">
+        <div style="font-size:.7rem;color:var(--or);">𞤀𞤣𞤤 Adlam</div>
+        <div class="champ-adlam-wrap">
+          <input id="pinput-adlam-${pid}" type="text" placeholder="Adlam (auto ou saisir)" class="adlam"
+            style="direction:rtl;font-size:1rem;" value="${latinVersAdlam(p.pular)}"
+            oninput="_adlamVersLatinInput('pinput-adlam-${pid}','pinput-pular-${pid}')">
+          <button class="btn-clavier-adlam" data-cible="pinput-adlam-${pid}" data-latin="pinput-pular-${pid}"
+            onclick="event.stopPropagation();toggleClavierGlobal('pinput-adlam-${pid}','pinput-pular-${pid}')" title="Clavier Adlam">𞤀𞤣𞤤</button>
+        </div>
         <input id="pinput-fr-${pid}"    type="text" placeholder="Traduction française (optionnel)" value="${fE}">
         <div class="phrase-form-btns">
           <button onclick="soumettreCorrection('${pid}','${pE}','${p.cat}')"
@@ -1898,6 +1942,7 @@ async function chargerClavierAdlam() {
 
     construire('clavier-adlam',      ch => insererAdlam(ch, 'texte-auto'));
     construire('clavier-adlam-corr', ch => insererAdlam(ch, 'corr-texte'));
+    construire('clavier-adlam-global', ch => insererAdlamGlobal(ch));
   } catch(e) { /* silencieux */ }
 }
 
@@ -1912,6 +1957,82 @@ function insererAdlam(char, taId = 'texte-auto') {
 }
 
 chargerClavierAdlam();
+
+// ── Clavier Adlam global (Espace Créateur + corrections) ──────────────────
+let _clavierGlobalAdlamId = null;
+let _clavierGlobalLatinId = null;
+
+function toggleClavierGlobal(adlamId, latinId) {
+  const clavier  = document.getElementById('clavier-adlam-global');
+  const backdrop = document.getElementById('clavier-adlam-backdrop');
+  if (!clavier) return;
+
+  // Fermer si déjà ouvert sur le même champ
+  if (_clavierGlobalAdlamId === adlamId && clavier.classList.contains('visible')) {
+    fermerClavierGlobal(); return;
+  }
+
+  _clavierGlobalAdlamId = adlamId;
+  _clavierGlobalLatinId = latinId;
+
+  // Positionner près du champ
+  const input = document.getElementById(adlamId);
+  if (input) {
+    const rect = input.getBoundingClientRect();
+    const top  = rect.bottom + 6;
+    const left = Math.max(4, Math.min(rect.left, window.innerWidth - 320));
+    clavier.style.top  = Math.min(top, window.innerHeight - 290) + 'px';
+    clavier.style.left = left + 'px';
+  }
+
+  clavier.classList.add('visible');
+  if (backdrop) backdrop.style.display = 'block';
+
+  document.querySelectorAll('.btn-clavier-adlam').forEach(b => {
+    b.classList.toggle('actif', b.dataset.cible === adlamId);
+  });
+}
+
+function fermerClavierGlobal() {
+  const c = document.getElementById('clavier-adlam-global');
+  const b = document.getElementById('clavier-adlam-backdrop');
+  if (c) c.classList.remove('visible');
+  if (b) b.style.display = 'none';
+  document.querySelectorAll('.btn-clavier-adlam').forEach(b => b.classList.remove('actif'));
+  _clavierGlobalAdlamId = null;
+  _clavierGlobalLatinId = null;
+}
+
+function insererAdlamGlobal(char) {
+  if (!_clavierGlobalAdlamId) return;
+  const ta = document.getElementById(_clavierGlobalAdlamId);
+  if (!ta) return;
+  const pos = ta.selectionStart ?? ta.value.length;
+  ta.value = ta.value.slice(0, pos) + char + ta.value.slice(ta.selectionEnd ?? pos);
+  ta.selectionStart = ta.selectionEnd = pos + char.length;
+  ta.focus();
+  ta.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+async function _adlamVersLatinInput(adlamId, latinId) {
+  const adlamEl = document.getElementById(adlamId);
+  const latinEl = document.getElementById(latinId);
+  if (!adlamEl || !latinEl) return;
+  const texte = adlamEl.value.trim();
+  if (!texte) { latinEl.value = ''; return; }
+  const fd = new FormData();
+  fd.append('texte', texte);
+  fd.append('vers', 'latin');
+  try {
+    const r = await fetch('/api/convertir', { method: 'POST', body: fd });
+    const d = await r.json();
+    if (d.ok) latinEl.value = d.resultat || '';
+  } catch(e) { /* silencieux */ }
+}
+window._adlamVersLatinInput = _adlamVersLatinInput;
+window.toggleClavierGlobal  = toggleClavierGlobal;
+window.fermerClavierGlobal  = fermerClavierGlobal;
+window.insererAdlamGlobal   = insererAdlamGlobal;
 
 // ── Toggle Adlam dans la section correction ────────────────────────────────
 let corrScriptActif = 'latin';
@@ -3066,8 +3187,13 @@ async function profChargerPhrases() {
           <input id="phr-pular-${p.id}" value="${p.pular}" placeholder="Pular"
             style="width:100%;padding:7px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:6px;color:var(--texte);font-size:.88rem;margin-bottom:4px;"
             oninput="document.getElementById('phr-adlam-${p.id}').value=latinVersAdlam(this.value)">
-          <input id="phr-adlam-${p.id}" value="${p.adlam||''}" placeholder="Adlam"
-            class="adlam" style="direction:rtl;width:100%;padding:7px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:6px;color:var(--texte);font-size:.88rem;margin-bottom:4px;">
+          <div class="champ-adlam-wrap" style="margin-bottom:4px;">
+            <input id="phr-adlam-${p.id}" value="${p.adlam||''}" placeholder="Adlam"
+              class="adlam" style="direction:rtl;padding:7px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:6px;color:var(--texte);font-size:.88rem;"
+              oninput="_adlamVersLatinInput('phr-adlam-${p.id}','phr-pular-${p.id}')">
+            <button class="btn-clavier-adlam" data-cible="phr-adlam-${p.id}" data-latin="phr-pular-${p.id}"
+              onclick="toggleClavierGlobal('phr-adlam-${p.id}','phr-pular-${p.id}')" title="Clavier Adlam">𞤀𞤣𞤤</button>
+          </div>
           <input id="phr-fr-${p.id}" value="${p.fr||''}" placeholder="Traduction française"
             style="width:100%;padding:7px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:6px;color:var(--texte);font-size:.88rem;margin-bottom:4px;">
           <div style="display:flex;gap:6px;">
@@ -3885,5 +4011,9 @@ chargerMotsCustom();
   } catch(e) {}
 })();
 </script>
+
+<!-- Clavier Adlam flottant global (partagé par tous les champs Adlam) -->
+<div id="clavier-adlam-backdrop" onclick="fermerClavierGlobal()"></div>
+<div id="clavier-adlam-global"></div>
 </body>
 </html>
