@@ -53,6 +53,9 @@ python-multipart>=0.0.9    # upload fichiers audio
 # ── Communauté — Couche 3 : Capture lives ──────────────────────
 yt-dlp>=2024.1.0           # capture flux Facebook / TikTok / YouTube
 
+# ── Communauté — Couche 4 : Espace Éditorial (vente livre) ──────
+stripe>=9.0.0               # paiement Stripe Checkout
+
 # ─────────────────────────────────────────────────────────────
 # INSTALLATION SYSTÈME REQUISE (hors pip) :
 #

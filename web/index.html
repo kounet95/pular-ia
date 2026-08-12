@@ -267,6 +267,47 @@
     .progress-bar-wrap { background: #0a1a0f; border-radius: 6px; height: 6px; overflow: hidden; margin-top: 8px; display: none; }
     .progress-bar { height: 100%; background: var(--or); border-radius: 6px; transition: width .3s; width: 0%; }
 
+    /* ── Espace Éditorial ── */
+    .ed-livre-card {
+      display: flex; gap: 12px; padding: 12px; background: #0a1a0f;
+      border-radius: 10px; border: 1px solid #1e3d28; margin-bottom: 10px;
+    }
+    .ed-livre-couverture {
+      width: 64px; height: 92px; flex-shrink: 0; border-radius: 6px;
+      background: #142b1c center/cover no-repeat; display: flex;
+      align-items: center; justify-content: center; font-size: 1.6rem;
+      border: 1px solid #2d5c3a;
+    }
+    .ed-livre-info { flex: 1; min-width: 0; }
+    .ed-livre-titre { font-weight: 700; font-size: .95rem; margin-bottom: 3px; }
+    .ed-livre-desc { font-size: .78rem; color: var(--gris); line-height: 1.4; margin-bottom: 8px; }
+    .ed-livre-bas { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+    .ed-livre-prix { font-weight: 800; color: var(--or); font-size: 1rem; }
+    .btn-acheter {
+      padding: 8px 16px; border-radius: 8px; border: none;
+      background: #8b1e5c; color: white; font-weight: 700; cursor: pointer; font-size: .85rem;
+    }
+    .btn-acheter:hover { background: #a3266e; }
+    .ed-edito-card {
+      padding: 12px 14px; background: #0a1a0f; border-radius: 10px;
+      border: 1px solid #1e3d28; margin-bottom: 10px;
+    }
+    .ed-edito-titre { font-weight: 700; font-size: .95rem; color: var(--or); margin-bottom: 2px; }
+    .ed-edito-meta { font-size: .7rem; color: var(--gris); margin-bottom: 8px; }
+    .ed-edito-contenu { font-size: .88rem; line-height: 1.6; white-space: pre-wrap; }
+    .ed-edito-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .ed-edito-actions button {
+      flex: 1; padding: 7px; border-radius: 7px; border: none; font-size: .8rem;
+      font-weight: 600; cursor: pointer;
+    }
+    .ed-btn-publier { background: var(--vert); color: white; }
+    .ed-btn-rejeter { background: #3a1e1e; color: #e8a0a0; border: 1px solid #5c2d2d !important; }
+    .ed-admin-box {
+      background: #0d1f15; border: 1px dashed #2d5c3a; border-radius: 10px;
+      padding: 10px 12px; margin-bottom: 14px;
+    }
+    .ed-admin-box summary { cursor: pointer; font-size: .82rem; color: var(--gris); font-weight: 600; }
+
     /* ── Jeu de mots ── */
     .jeu-score-bar { display:flex; justify-content:space-around; padding:10px 0; border-bottom:1px solid #1e3d28; margin-bottom:14px; }
     .jeu-sc { text-align:center; }
@@ -582,6 +623,7 @@
   <a href="#carte-corriger">✏️ Corriger</a>
   <a href="#carte-livres">📚 Livres</a>
   <a href="#carte-histoire">🏛️ Histoire</a>
+  <a href="#carte-editorial">📰 Éditorial</a>
   <a href="#carte-jeu">🎮 Jeu</a>
   <a href="#carte-prof">🎓 Professeur</a>
   <a href="#carte-aide">📌 Aide</a>
@@ -928,6 +970,78 @@
       ">➕ Enregistrer la famille</button>
       <div id="fam-liste" style="margin-top:14px;"></div>
     </div>
+  </div>
+
+  <!-- ══ ESPACE ÉDITORIAL ══ -->
+  <div class="carte" id="carte-editorial" style="border-color:#8b1e5c88;">
+    <h2>📰 Espace Éditorial</h2>
+    <p style="font-size:.82rem;color:var(--gris);margin-bottom:14px;">
+      Le livre de l'auteur, et des éditos écrits par la communauté sur la langue, la culture et l'histoire peule.
+    </p>
+
+    <!-- Clé admin (pour ajouter un livre en vente / valider les éditos) -->
+    <details class="ed-admin-box">
+      <summary>🔑 Accès admin (gestion du catalogue et validation des éditos)</summary>
+      <div style="margin-top:10px;">
+        <input class="input-livre" id="ed-admin-key" type="password" placeholder="Clé admin" style="margin-bottom:6px;"/>
+        <button onclick="edSauverAdminKey()" style="
+          width:100%;padding:9px;border-radius:8px;border:none;
+          background:#8b1e5c;color:white;font-weight:600;cursor:pointer;font-size:.85rem;
+        ">Enregistrer la clé</button>
+      </div>
+    </details>
+
+    <!-- ── Mon livre ── -->
+    <h3 style="font-size:1rem;margin-bottom:8px;">📖 Mon livre</h3>
+    <div id="ed-livres-liste"></div>
+
+    <!-- Formulaire admin : ajouter un livre au catalogue -->
+    <details class="ed-admin-box" id="ed-form-livre-box">
+      <summary>➕ Ajouter un livre au catalogue (admin)</summary>
+      <div style="margin-top:10px;">
+        <input class="input-livre" id="ed-liv-titre" type="text" placeholder="Titre du livre *" maxlength="150"/>
+        <textarea class="input-livre" id="ed-liv-desc" placeholder="Description / résumé" style="min-height:70px;resize:vertical;" maxlength="1000"></textarea>
+        <div style="display:flex;gap:8px;">
+          <input class="input-livre" id="ed-liv-prix" type="number" min="0" step="0.01" placeholder="Prix *" style="flex:1;"/>
+          <select class="input-livre" id="ed-liv-devise" style="flex:0 0 90px;cursor:pointer;">
+            <option value="eur">EUR €</option>
+            <option value="usd">USD $</option>
+          </select>
+        </div>
+        <select class="input-livre" id="ed-liv-format" style="cursor:pointer;">
+          <option value="numérique">📱 Numérique (PDF/ebook)</option>
+          <option value="papier">📕 Papier</option>
+          <option value="numérique et papier">📱📕 Numérique et papier</option>
+        </select>
+        <input type="file" id="ed-liv-couverture" accept=".jpg,.jpeg,.png,.webp" style="margin-bottom:8px;font-size:.8rem;"/>
+        <button onclick="edAjouterLivre()" style="
+          width:100%;padding:11px;border-radius:8px;border:none;
+          background:#8b1e5c;color:white;font-weight:700;cursor:pointer;font-size:.9rem;
+        ">📤 Publier au catalogue</button>
+      </div>
+    </details>
+
+    <!-- ── Éditos ── -->
+    <h3 style="font-size:1rem;margin:18px 0 8px;border-top:1px solid #2a2a2a;padding-top:16px;">✍️ Éditos de la communauté</h3>
+    <p style="font-size:.8rem;color:var(--gris);margin-bottom:12px;">
+      Écris un article court sur la langue, la culture, l'histoire ou l'actualité peule. Il sera relu avant publication.
+    </p>
+
+    <div id="ed-editos-attente"></div>
+    <div id="ed-editos-liste"></div>
+
+    <details class="ed-admin-box" style="margin-top:12px;">
+      <summary>✍️ Proposer un édito</summary>
+      <div style="margin-top:10px;">
+        <input class="input-livre" id="ed-edito-titre" type="text" placeholder="Titre *" maxlength="150"/>
+        <input class="input-livre" id="ed-edito-auteur" type="text" placeholder="Ton nom / pseudo" maxlength="80"/>
+        <textarea class="input-livre" id="ed-edito-contenu" placeholder="Ton texte *" style="min-height:140px;resize:vertical;" maxlength="8000"></textarea>
+        <button onclick="edProposerEdito()" style="
+          width:100%;padding:11px;border-radius:8px;border:none;
+          background:#8b1e5c;color:white;font-weight:700;cursor:pointer;font-size:.9rem;
+        ">📨 Envoyer pour relecture</button>
+      </div>
+    </details>
   </div>
 
   <!-- ══ JEU DE MOTS ══ -->
@@ -2789,6 +2903,229 @@ histChargerMeta();
 histChargerDocuments();
 histChargerStats();
 famChargerListe();
+
+// ═══════════════════════════════════════════════════════════════
+// ESPACE ÉDITORIAL — vente du livre (Stripe) + éditos communautaires
+// ═══════════════════════════════════════════════════════════════
+function escHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  }[c]));
+}
+
+function edAdminKey() { return localStorage.getItem('edAdminKey') || ''; }
+
+function edSauverAdminKey() {
+  const val = document.getElementById('ed-admin-key').value.trim();
+  localStorage.setItem('edAdminKey', val);
+  toast(val ? '🔑 Clé admin enregistrée' : '🔑 Clé admin effacée');
+  edChargerEditos();
+}
+
+const DEVISE_SYMBOLE = { eur: '€', usd: '$' };
+
+function edFormaterPrix(centimes, devise) {
+  return `${(centimes/100).toFixed(2)} ${DEVISE_SYMBOLE[devise] || devise.toUpperCase()}`;
+}
+
+async function edChargerLivres() {
+  try {
+    const r = await fetch(`${API}/api/editorial/livres`, { headers: H });
+    const livres = await r.json();
+    const div = document.getElementById('ed-livres-liste');
+    const key = edAdminKey();
+    if (!livres.length) {
+      div.innerHTML = '<p style="font-size:.82rem;color:var(--gris);">Aucun livre en vente pour le moment.</p>';
+      return;
+    }
+    div.innerHTML = livres.map(l => `
+      <div class="ed-livre-card">
+        <div class="ed-livre-couverture" ${l.couverture ? `style="background-image:url('${API}/api/editorial/livres/${l.id}/couverture')"` : ''}>
+          ${l.couverture ? '' : '📖'}
+        </div>
+        <div class="ed-livre-info">
+          <div class="ed-livre-titre">${escHtml(l.titre)}</div>
+          <div class="ed-livre-desc">${escHtml(l.description)}</div>
+          <div style="font-size:.7rem;color:var(--gris);margin-bottom:8px;">${escHtml(l.format)}</div>
+          <div class="ed-livre-bas">
+            <span class="ed-livre-prix">${edFormaterPrix(l.prix_centimes, l.devise)}</span>
+            <button class="btn-acheter" onclick="edAcheter('${l.id}')">🛒 Acheter</button>
+          </div>
+          ${key ? `<button onclick="edSupprimerLivre('${l.id}')" style="margin-top:8px;background:none;border:1px solid #5c2d2d;color:#e8a0a0;border-radius:6px;padding:5px 10px;font-size:.72rem;cursor:pointer;">🗑️ Retirer du catalogue</button>` : ''}
+        </div>
+      </div>`).join('');
+  } catch(e) { /* silencieux */ }
+}
+
+async function edAjouterLivre() {
+  const key = edAdminKey();
+  if (!key) { toast('❌ Renseigne la clé admin ci-dessus', true); return; }
+  const titre = document.getElementById('ed-liv-titre').value.trim();
+  const prix  = parseFloat(document.getElementById('ed-liv-prix').value);
+  if (!titre) { toast('❌ Donne un titre au livre', true); return; }
+  if (!prix || prix <= 0) { toast('❌ Indique un prix valide', true); return; }
+
+  try {
+    const fd = new FormData();
+    fd.append('titre', titre);
+    fd.append('description', document.getElementById('ed-liv-desc').value.trim());
+    fd.append('prix', prix);
+    fd.append('devise', document.getElementById('ed-liv-devise').value);
+    fd.append('format_livre', document.getElementById('ed-liv-format').value);
+    fd.append('key', key);
+    const fichier = document.getElementById('ed-liv-couverture').files[0];
+    if (fichier) fd.append('couverture', fichier, fichier.name);
+
+    const r = await fetch(`${API}/api/editorial/livres`, { method:'POST', body:fd, headers:H });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
+
+    toast(`✅ "${titre}" ajouté au catalogue!`);
+    ['ed-liv-titre','ed-liv-desc','ed-liv-prix'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('ed-liv-couverture').value = '';
+    edChargerLivres();
+  } catch(e) {
+    toast('❌ ' + e.message, true);
+  }
+}
+
+async function edSupprimerLivre(id) {
+  const key = edAdminKey();
+  try {
+    const r = await fetch(`${API}/api/editorial/livres/${id}?key=${encodeURIComponent(key)}`, { method:'DELETE', headers:H });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
+    toast('🗑️ Livre retiré du catalogue');
+    edChargerLivres();
+  } catch(e) {
+    toast('❌ ' + e.message, true);
+  }
+}
+
+async function edAcheter(livreId) {
+  try {
+    const fd = new FormData();
+    fd.append('livre_id', livreId);
+    fd.append('origin', window.location.origin);
+    const r = await fetch(`${API}/api/editorial/checkout`, { method:'POST', body:fd, headers:H });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
+    window.location.href = d.url;
+  } catch(e) {
+    toast('❌ ' + e.message, true);
+  }
+}
+
+async function edChargerEditos() {
+  const key = edAdminKey();
+  try {
+    const url = key ? `${API}/api/editorial/editos?key=${encodeURIComponent(key)}` : `${API}/api/editorial/editos`;
+    const r = await fetch(url, { headers: H });
+    const editos = await r.json();
+
+    const attente = editos.filter(e => e.statut === 'en_attente');
+    const publies = editos.filter(e => e.statut === 'publie');
+
+    const divAttente = document.getElementById('ed-editos-attente');
+    if (key && attente.length) {
+      divAttente.innerHTML = `<p style="font-size:.75rem;color:var(--or);font-weight:600;margin-bottom:8px;">⏳ ${attente.length} édito(s) en attente de relecture</p>` +
+        attente.map(e => `
+        <div class="ed-edito-card" style="border-color:#c8a84b55;">
+          <div class="ed-edito-titre">${escHtml(e.titre)}</div>
+          <div class="ed-edito-meta">✍️ ${escHtml(e.auteur)} · ${new Date(e.date_soumission).toLocaleDateString('fr-FR')}</div>
+          <div class="ed-edito-contenu">${escHtml(e.contenu)}</div>
+          <div class="ed-edito-actions">
+            <button class="ed-btn-publier" onclick="edPublierEdito('${e.id}')">✅ Publier</button>
+            <button class="ed-btn-rejeter" onclick="edRejeterEdito('${e.id}')">❌ Rejeter</button>
+          </div>
+        </div>`).join('');
+    } else {
+      divAttente.innerHTML = '';
+    }
+
+    const divListe = document.getElementById('ed-editos-liste');
+    if (!publies.length) {
+      divListe.innerHTML = '<p style="font-size:.82rem;color:var(--gris);">Aucun édito publié pour l\'instant.</p>';
+      return;
+    }
+    divListe.innerHTML = publies.slice().reverse().map(e => `
+      <div class="ed-edito-card">
+        <div class="ed-edito-titre">${escHtml(e.titre)}</div>
+        <div class="ed-edito-meta">✍️ ${escHtml(e.auteur)} · ${new Date(e.date_publication).toLocaleDateString('fr-FR')}</div>
+        <div class="ed-edito-contenu">${escHtml(e.contenu)}</div>
+      </div>`).join('');
+  } catch(e) { /* silencieux */ }
+}
+
+async function edPublierEdito(id) {
+  const key = edAdminKey();
+  try {
+    const r = await fetch(`${API}/api/editorial/editos/${id}/valider?key=${encodeURIComponent(key)}`, { method:'POST', headers:H });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
+    toast('✅ Édito publié');
+    edChargerEditos();
+  } catch(e) {
+    toast('❌ ' + e.message, true);
+  }
+}
+
+async function edRejeterEdito(id) {
+  const key = edAdminKey();
+  try {
+    const r = await fetch(`${API}/api/editorial/editos/${id}?key=${encodeURIComponent(key)}`, { method:'DELETE', headers:H });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
+    toast('🗑️ Édito rejeté');
+    edChargerEditos();
+  } catch(e) {
+    toast('❌ ' + e.message, true);
+  }
+}
+
+async function edProposerEdito() {
+  const titre = document.getElementById('ed-edito-titre').value.trim();
+  const contenu = document.getElementById('ed-edito-contenu').value.trim();
+  if (!titre)   { toast('❌ Donne un titre à ton édito', true); return; }
+  if (!contenu) { toast('❌ Écris le contenu de ton édito', true); return; }
+
+  try {
+    const fd = new FormData();
+    fd.append('titre', titre);
+    fd.append('auteur', document.getElementById('ed-edito-auteur').value.trim() || 'Anonyme');
+    fd.append('contenu', contenu);
+    const r = await fetch(`${API}/api/editorial/editos`, { method:'POST', body:fd, headers:H });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
+
+    toast('📨 Édito envoyé — merci! Il sera publié après relecture.');
+    ['ed-edito-titre','ed-edito-auteur','ed-edito-contenu'].forEach(id => document.getElementById(id).value = '');
+    edChargerEditos();
+  } catch(e) {
+    toast('❌ ' + e.message, true);
+  }
+}
+
+// Message de retour après un paiement Stripe (succès / annulation)
+(function edVerifierRetourPaiement() {
+  const params = new URLSearchParams(window.location.search);
+  const statut = params.get('edito_paiement');
+  if (statut === 'succes') {
+    toast('✅ Paiement reçu — merci pour ton achat! Tu recevras le livre par le contact indiqué.');
+  } else if (statut === 'annule') {
+    toast('Paiement annulé.', true);
+  }
+  if (statut) {
+    params.delete('edito_paiement');
+    params.delete('session_id');
+    const q = params.toString();
+    history.replaceState({}, '', window.location.pathname + (q ? '?' + q : ''));
+  }
+})();
+
+document.getElementById('ed-admin-key').value = edAdminKey();
+edChargerLivres();
+edChargerEditos();
 
 // ═══════════════════════════════════════════════════════════════
 // JEU DE MOTS — QCM · Écrire · Parler · Lire (RAG)

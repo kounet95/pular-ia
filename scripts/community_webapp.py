@@ -26,7 +26,7 @@ from pathlib import Path
 from datetime import datetime
 
 import uvicorn
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -980,6 +980,161 @@ async def api_histoire_supprimer_famille(famille_id: str, key: str = ""):
         raise HTTPException(404, "Famille non trouvée.")
     familles = [f for f in familles if f["id"] != famille_id]
     EH.sauver_familles(familles)
+    return JSONResponse({"ok": True})
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ESPACE ÉDITORIAL — vente du livre (Stripe Checkout) + éditos communautaires
+# ══════════════════════════════════════════════════════════════════════════════
+
+import espace_editorial as EE
+
+# ── Catalogue (livres en vente) ─────────────────────────────────────────────
+
+@app.get("/api/editorial/livres")
+async def api_editorial_livres():
+    return JSONResponse(EE.charger_catalogue())
+
+@app.post("/api/editorial/livres")
+async def api_editorial_ajouter_livre(
+    titre:         str = Form(...),
+    description:   str = Form(""),
+    prix:          float = Form(...),
+    devise:        str = Form("eur"),
+    format_livre:  str = Form("numérique"),
+    key:           str = Form(""),
+    couverture:    UploadFile | None = File(None),
+):
+    """Ajoute un livre au catalogue de vente (admin uniquement)."""
+    _check_admin(key)
+    if not titre.strip():
+        raise HTTPException(400, "Titre requis.")
+    if prix <= 0:
+        raise HTTPException(400, "Le prix doit être positif.")
+    devise = devise.lower()
+    if devise not in EE.DEVISES_ACCEPTEES:
+        raise HTTPException(400, f"Devise non supportée. Acceptées: {EE.DEVISES_ACCEPTEES}")
+
+    couverture_nom = ""
+    if couverture is not None and couverture.filename:
+        ext = Path(couverture.filename).suffix.lower()
+        if ext not in EE.EXTENSIONS_COUVERTURE:
+            raise HTTPException(400, "Image de couverture: jpg, png ou webp uniquement.")
+        contenu = await couverture.read()
+        couverture_nom = f"{uuid.uuid4().hex[:8]}{ext}"
+        (EE.DOSSIER_COUVERTURES / couverture_nom).write_bytes(contenu)
+
+    prix_centimes = round(prix * 100)
+    fiche = await asyncio.to_thread(
+        EE.ajouter_livre, titre.strip(), description.strip(), prix_centimes,
+        devise, format_livre, couverture_nom,
+    )
+    log.info(f"Éditorial — livre ajouté au catalogue: {titre} ({prix}{devise})")
+    return JSONResponse({"ok": True, "livre": fiche})
+
+@app.get("/api/editorial/livres/{livre_id}/couverture")
+async def api_editorial_couverture(livre_id: str):
+    livres = EE.charger_catalogue()
+    livre = next((l for l in livres if l["id"] == livre_id), None)
+    if not livre or not livre.get("couverture"):
+        raise HTTPException(404, "Couverture introuvable.")
+    chemin = EE.DOSSIER_COUVERTURES / livre["couverture"]
+    if not chemin.exists():
+        raise HTTPException(404, "Couverture introuvable.")
+    return FileResponse(chemin)
+
+@app.delete("/api/editorial/livres/{livre_id}")
+async def api_editorial_supprimer_livre(livre_id: str, key: str = ""):
+    _check_admin(key)
+    if not await asyncio.to_thread(EE.supprimer_livre, livre_id):
+        raise HTTPException(404, "Livre non trouvé.")
+    return JSONResponse({"ok": True})
+
+# ── Paiement (Stripe Checkout) ──────────────────────────────────────────────
+
+@app.post("/api/editorial/checkout")
+async def api_editorial_checkout(
+    livre_id: str = Form(...),
+    origin:   str = Form(...),
+    email:    str = Form(""),
+):
+    livres = EE.charger_catalogue()
+    livre = next((l for l in livres if l["id"] == livre_id), None)
+    if not livre:
+        raise HTTPException(404, "Livre non trouvé.")
+    try:
+        session = await asyncio.to_thread(EE.creer_session_paiement, livre, origin, email.strip())
+    except RuntimeError as e:
+        raise HTTPException(503, str(e))
+    except Exception as e:
+        log.error(f"Erreur création session Stripe: {e}")
+        raise HTTPException(500, "Erreur lors de la création du paiement.")
+    await asyncio.to_thread(EE.enregistrer_commande, session, livre)
+    return JSONResponse({"ok": True, "url": session.url})
+
+@app.post("/api/editorial/webhook")
+async def api_editorial_webhook(request: Request):
+    """Webhook Stripe : confirme le paiement une fois la session complétée."""
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature", "")
+    try:
+        event = await asyncio.to_thread(EE.verifier_signature_webhook, payload, sig_header)
+    except RuntimeError as e:
+        raise HTTPException(503, str(e))
+    except Exception as e:
+        log.warning(f"Webhook Stripe rejeté: {e}")
+        raise HTTPException(400, "Signature invalide.")
+
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+        email = (session.get("customer_details") or {}).get("email", "") or session.get("customer_email", "")
+        await asyncio.to_thread(EE.marquer_commande_payee, session["id"], email)
+
+    return JSONResponse({"received": True})
+
+@app.get("/api/editorial/commandes")
+async def api_editorial_commandes(key: str = ""):
+    """Liste des commandes — admin uniquement (contient les emails acheteurs)."""
+    _check_admin(key)
+    return JSONResponse(EE.charger_commandes())
+
+# ── Éditos (articles communautaires) ────────────────────────────────────────
+
+@app.post("/api/editorial/editos")
+async def api_editorial_ajouter_edito(
+    titre:   str = Form(...),
+    auteur:  str = Form("Anonyme"),
+    contenu: str = Form(...),
+):
+    if not titre.strip() or not contenu.strip():
+        raise HTTPException(400, "Titre et contenu requis.")
+    edito = await asyncio.to_thread(EE.ajouter_edito, titre.strip(), auteur.strip(), contenu.strip())
+    log.info(f"Éditorial — édito soumis: '{titre}' par {auteur}")
+    return JSONResponse({"ok": True, "edito": edito})
+
+@app.get("/api/editorial/editos")
+async def api_editorial_editos(key: str = ""):
+    """
+    Par défaut, ne renvoie que les éditos publiés. Avec la clé admin,
+    renvoie aussi ceux en attente de validation.
+    """
+    editos = EE.charger_editos()
+    is_admin = bool(ADMIN_KEY) and key == ADMIN_KEY
+    if is_admin:
+        return JSONResponse(editos)
+    return JSONResponse([e for e in editos if e["statut"] == "publie"])
+
+@app.post("/api/editorial/editos/{edito_id}/valider")
+async def api_editorial_valider_edito(edito_id: str, key: str = ""):
+    _check_admin(key)
+    if not await asyncio.to_thread(EE.publier_edito, edito_id):
+        raise HTTPException(404, "Édito non trouvé.")
+    return JSONResponse({"ok": True})
+
+@app.delete("/api/editorial/editos/{edito_id}")
+async def api_editorial_supprimer_edito(edito_id: str, key: str = ""):
+    _check_admin(key)
+    if not await asyncio.to_thread(EE.supprimer_edito, edito_id):
+        raise HTTPException(404, "Édito non trouvé.")
     return JSONResponse({"ok": True})
 
 def _phrases_jeu_sync(n: int) -> list:
