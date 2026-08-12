@@ -35,6 +35,10 @@ RUN pip install --no-cache-dir --timeout 300 \
     chromadb==0.4.24 \
     sentence-transformers==2.7.0
 
+# ── 5. LLM Claude ─────────────────────────────────────────────────────────────
+RUN pip install --no-cache-dir --timeout 300 \
+    anthropic==0.25.0
+
 # ── Code source ───────────────────────────────────────────────────────────────
 COPY scripts/ ./scripts/
 COPY web/     ./web/
