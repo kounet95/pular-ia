@@ -27,15 +27,30 @@ log = logging.getLogger(__name__)
 PROJET_ROOT       = Path(__file__).resolve().parent.parent
 DOSSIER_EDITORIAL = PROJET_ROOT / "corpus-pular" / "editorial"
 DOSSIER_COUVERTURES = DOSSIER_EDITORIAL / "couvertures"
+DOSSIER_EDITOS_IMAGES = DOSSIER_EDITORIAL / "editos_images"
 FICHIER_CATALOGUE = DOSSIER_EDITORIAL / "catalogue.json"
 FICHIER_COMMANDES = DOSSIER_EDITORIAL / "commandes.json"
 FICHIER_EDITOS    = DOSSIER_EDITORIAL / "editos.json"
 
-for d in [DOSSIER_EDITORIAL, DOSSIER_COUVERTURES]:
+for d in [DOSSIER_EDITORIAL, DOSSIER_COUVERTURES, DOSSIER_EDITOS_IMAGES]:
     d.mkdir(parents=True, exist_ok=True)
 
-DEVISES_ACCEPTEES = ["eur", "usd"]
+DEVISES_ACCEPTEES = ["eur", "usd", "gnf", "xof"]
 EXTENSIONS_COUVERTURE = {".jpg", ".jpeg", ".png", ".webp"}
+
+# Devises "zéro décimale" chez Stripe : `unit_amount` est le montant entier
+# tel quel (pas de centimes) — le GNF (Guinée) et le XOF (Franc CFA — BCEAO,
+# zone ouest-africaine) en font partie.
+DEVISES_ZERO_DECIMALE = {
+    "bif", "clp", "djf", "gnf", "jpy", "kmf", "krw", "mga", "pyg",
+    "rwf", "ugx", "vnd", "vuv", "xaf", "xof", "xpf",
+}
+
+def calculer_montant_stripe(prix: float, devise: str) -> int:
+    """Convertit un prix affiché (ex: 15.5) vers l'unité attendue par Stripe."""
+    if devise in DEVISES_ZERO_DECIMALE:
+        return round(prix)
+    return round(prix * 100)
 
 # ── Stripe ───────────────────────────────────────────────────────────────────
 
@@ -91,6 +106,92 @@ def verifier_signature_webhook(payload: bytes, sig_header: str):
     if not secret:
         raise RuntimeError("STRIPE_WEBHOOK_SECRET_EDITORIAL manquant — impossible de vérifier le webhook.")
     return stripe.Webhook.construct_event(payload, sig_header, secret)
+
+# ── Assistant IA (Claude) — brouillon d'édito ───────────────────────────────
+
+def anthropic_configure():
+    """Configure le client Anthropic si dispo. Retourne le client ou None."""
+    cle = os.getenv("ANTHROPIC_API_KEY", "")
+    if not cle:
+        return None
+    try:
+        import anthropic
+        return anthropic.Anthropic(api_key=cle)
+    except ImportError:
+        log.warning("Le paquet 'anthropic' n'est pas installé — pip install anthropic")
+        return None
+
+def generer_brouillon_edito(sujet: str, angle: str = "") -> str:
+    """
+    Génère un premier brouillon d'édito avec Claude, pour aider les éditeurs
+    communautaires à démarrer vite. Le texte reste à relire et vérifier par
+    l'auteur avant soumission — ce n'est jamais publié tel quel.
+    """
+    client = anthropic_configure()
+    if client is None:
+        raise RuntimeError("Assistant IA non configuré (ANTHROPIC_API_KEY manquante).")
+
+    consigne = f"Sujet: {sujet}"
+    if angle.strip():
+        consigne += f"\nAngle / précisions données par l'auteur: {angle.strip()}"
+
+    message = client.messages.create(
+        model="claude-opus-5",
+        max_tokens=2000,
+        output_config={"effort": "medium"},
+        system=(
+            "Tu es un assistant d'écriture pour l'espace éditorial d'un site communautaire "
+            "consacré à la langue, la culture et l'histoire peules (Fouta Djallon, Macina, "
+            "Fouta Toro et les autres foyers peuls). Rédige un premier brouillon d'édito en "
+            "français, clair et engageant, d'environ 300 à 500 mots. Commence par une première "
+            "ligne au format exact 'TITRE: <titre proposé>', puis une ligne vide, puis le corps "
+            "du texte. Ce brouillon est un point de départ que l'auteur relira et adaptera avant "
+            "publication — ce n'est pas un texte définitif. N'invente pas de faits historiques "
+            "précis (dates, noms, chiffres) dont tu n'es pas certain ; reste général sur ces "
+            "points ou indique explicitement entre crochets ce qui doit être vérifié par l'auteur."
+        ),
+        messages=[{"role": "user", "content": consigne}],
+    )
+    return "".join(b.text for b in message.content if b.type == "text")
+
+# ── Assistant IA (OpenAI) — image d'illustration ────────────────────────────
+# Claude ne génère pas d'images (texte/vision uniquement) : on réutilise la
+# clé OpenAI déjà présente dans l'environnement pour ça, indépendamment de
+# l'assistant de rédaction ci-dessus qui reste sur Claude.
+
+def openai_configure():
+    """Configure le client OpenAI si dispo. Retourne le client ou None."""
+    cle = os.getenv("OPENAI_API_KEY", "")
+    if not cle:
+        return None
+    try:
+        from openai import OpenAI
+        return OpenAI(api_key=cle)
+    except ImportError:
+        log.warning("Le paquet 'openai' n'est pas installé — pip install openai")
+        return None
+
+def generer_image_edito(sujet: str) -> bytes:
+    """Génère une image d'illustration pour un édito avec DALL·E. Retourne les octets PNG."""
+    client = openai_configure()
+    if client is None:
+        raise RuntimeError("Génération d'image non configurée (OPENAI_API_KEY manquante).")
+
+    prompt = (
+        f"Illustration éditoriale sobre et évocatrice pour un article sur : {sujet}. "
+        "Style photographique ou peinture digitale, ambiance culturelle ouest-africaine / "
+        "peule (Fouta Djallon, Sahel), sans texte ni typographie incrustée dans l'image."
+    )
+    reponse = client.images.generate(
+        model="dall-e-3",
+        prompt=prompt,
+        size="1024x1024",
+        quality="standard",
+        n=1,
+        response_format="b64_json",
+    )
+    import base64
+    return base64.b64decode(reponse.data[0].b64_json)
 
 # ── Catalogue (livres en vente) ─────────────────────────────────────────────
 
@@ -192,13 +293,14 @@ def sauver_editos(editos: list[dict]):
     with open(FICHIER_EDITOS, "w", encoding="utf-8") as f:
         json.dump(editos, f, ensure_ascii=False, indent=2)
 
-def ajouter_edito(titre: str, auteur: str, contenu: str) -> dict:
+def ajouter_edito(titre: str, auteur: str, contenu: str, image: str) -> dict:
     editos = charger_editos()
     edito = {
         "id":               str(uuid.uuid4())[:8],
         "titre":            titre,
         "auteur":           auteur or "Anonyme",
         "contenu":          contenu,
+        "image":            image,
         "statut":           "en_attente",
         "date_soumission":  datetime.now().isoformat(),
         "date_publication": None,
@@ -219,8 +321,11 @@ def publier_edito(edito_id: str) -> bool:
 
 def supprimer_edito(edito_id: str) -> bool:
     editos = charger_editos()
-    if not any(e["id"] == edito_id for e in editos):
+    trouve = next((e for e in editos if e["id"] == edito_id), None)
+    if not trouve:
         return False
+    if trouve.get("image"):
+        (DOSSIER_EDITOS_IMAGES / trouve["image"]).unlink(missing_ok=True)
     editos = [e for e in editos if e["id"] != edito_id]
     sauver_editos(editos)
     return True

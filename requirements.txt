@@ -55,6 +55,8 @@ yt-dlp>=2024.1.0           # capture flux Facebook / TikTok / YouTube
 
 # ── Communauté — Couche 4 : Espace Éditorial (vente livre) ──────
 stripe>=9.0.0               # paiement Stripe Checkout
+anthropic>=0.50.0           # assistant IA (brouillon d'édito)
+openai>=1.30.0               # génération d'image d'illustration (DALL·E)
 
 # ─────────────────────────────────────────────────────────────
 # INSTALLATION SYSTÈME REQUISE (hors pip) :

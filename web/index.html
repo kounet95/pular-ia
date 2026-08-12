@@ -1003,11 +1003,14 @@
         <textarea class="input-livre" id="ed-liv-desc" placeholder="Description / résumé" style="min-height:70px;resize:vertical;" maxlength="1000"></textarea>
         <div style="display:flex;gap:8px;">
           <input class="input-livre" id="ed-liv-prix" type="number" min="0" step="0.01" placeholder="Prix *" style="flex:1;"/>
-          <select class="input-livre" id="ed-liv-devise" style="flex:0 0 90px;cursor:pointer;">
+          <select class="input-livre" id="ed-liv-devise" style="flex:0 0 140px;cursor:pointer;" onchange="edMajDevisePas()">
             <option value="eur">EUR €</option>
             <option value="usd">USD $</option>
+            <option value="gnf">GNF (Guinée)</option>
+            <option value="xof">XOF (FCFA)</option>
           </select>
         </div>
+        <p id="ed-liv-devise-hint" style="font-size:.72rem;color:var(--gris);margin:-4px 0 8px;"></p>
         <select class="input-livre" id="ed-liv-format" style="cursor:pointer;">
           <option value="numérique">📱 Numérique (PDF/ebook)</option>
           <option value="papier">📕 Papier</option>
@@ -1033,9 +1036,34 @@
     <details class="ed-admin-box" style="margin-top:12px;">
       <summary>✍️ Proposer un édito</summary>
       <div style="margin-top:10px;">
+        <div style="background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;padding:10px;margin-bottom:12px;">
+          <p style="font-size:.78rem;color:var(--or);font-weight:600;margin-bottom:6px;">✨ Aide à la rédaction (IA)</p>
+          <input class="input-livre" id="ed-ia-sujet" type="text" placeholder="Sujet (ex: Le rôle des griots dans la transmission orale)" maxlength="200"/>
+          <input class="input-livre" id="ed-ia-angle" type="text" placeholder="Angle / précisions (optionnel)" maxlength="200"/>
+          <button onclick="edGenererBrouillon()" id="ed-ia-btn" style="
+            width:100%;padding:9px;border-radius:8px;border:1px solid #c8a84b;
+            background:transparent;color:var(--or);font-weight:600;cursor:pointer;font-size:.85rem;
+          ">✨ Générer un brouillon</button>
+          <p style="font-size:.7rem;color:var(--gris);margin-top:6px;">Un premier jet à relire et corriger — vérifie les faits avant d'envoyer.</p>
+        </div>
         <input class="input-livre" id="ed-edito-titre" type="text" placeholder="Titre *" maxlength="150"/>
         <input class="input-livre" id="ed-edito-auteur" type="text" placeholder="Ton nom / pseudo" maxlength="80"/>
         <textarea class="input-livre" id="ed-edito-contenu" placeholder="Ton texte *" style="min-height:140px;resize:vertical;" maxlength="8000"></textarea>
+
+        <div style="background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;padding:10px;margin:10px 0;">
+          <p style="font-size:.78rem;color:var(--or);font-weight:600;margin-bottom:6px;">🖼️ Image d'illustration * (obligatoire)</p>
+          <div id="ed-edito-image-preview" style="display:none;margin-bottom:8px;">
+            <img id="ed-edito-image-preview-img" style="max-width:100%;border-radius:8px;border:1px solid #2d5c3a;display:block;"/>
+          </div>
+          <input type="file" id="ed-edito-image-input" accept=".jpg,.jpeg,.png,.webp" style="margin-bottom:8px;font-size:.8rem;width:100%;" onchange="edImageSelectionnee(this)"/>
+          <p style="font-size:.72rem;color:var(--gris);margin:0 0 6px;">— ou —</p>
+          <input class="input-livre" id="ed-ia-image-sujet" type="text" placeholder="Décris l'image à générer par IA (ex: un griot jouant de la kora au coucher du soleil)" maxlength="200"/>
+          <button onclick="edGenererImage()" id="ed-ia-image-btn" style="
+            width:100%;padding:9px;border-radius:8px;border:1px solid #c8a84b;
+            background:transparent;color:var(--or);font-weight:600;cursor:pointer;font-size:.85rem;
+          ">🎨 Générer une image (IA)</button>
+        </div>
+
         <button onclick="edProposerEdito()" style="
           width:100%;padding:11px;border-radius:8px;border:none;
           background:#8b1e5c;color:white;font-weight:700;cursor:pointer;font-size:.9rem;
@@ -2922,11 +2950,30 @@ function edSauverAdminKey() {
   edChargerEditos();
 }
 
-const DEVISE_SYMBOLE = { eur: '€', usd: '$' };
+const DEVISE_SYMBOLE = { eur: '€', usd: '$', gnf: 'FG', xof: 'FCFA' };
+const DEVISES_ZERO_DECIMALE = new Set(['gnf', 'xof']);
 
 function edFormaterPrix(centimes, devise) {
-  return `${(centimes/100).toFixed(2)} ${DEVISE_SYMBOLE[devise] || devise.toUpperCase()}`;
+  const symbole = DEVISE_SYMBOLE[devise] || devise.toUpperCase();
+  if (DEVISES_ZERO_DECIMALE.has(devise)) {
+    return `${Math.round(centimes).toLocaleString('fr-FR')} ${symbole}`;
+  }
+  return `${(centimes/100).toFixed(2)} ${symbole}`;
 }
+
+function edMajDevisePas() {
+  const devise = document.getElementById('ed-liv-devise').value;
+  const prixInput = document.getElementById('ed-liv-prix');
+  const hint = document.getElementById('ed-liv-devise-hint');
+  if (DEVISES_ZERO_DECIMALE.has(devise)) {
+    prixInput.step = '1';
+    hint.textContent = 'Nombre entier, sans centimes (ex: 150000).';
+  } else {
+    prixInput.step = '0.01';
+    hint.textContent = '';
+  }
+}
+edMajDevisePas();
 
 async function edChargerLivres() {
   try {
@@ -3031,6 +3078,7 @@ async function edChargerEditos() {
       divAttente.innerHTML = `<p style="font-size:.75rem;color:var(--or);font-weight:600;margin-bottom:8px;">⏳ ${attente.length} édito(s) en attente de relecture</p>` +
         attente.map(e => `
         <div class="ed-edito-card" style="border-color:#c8a84b55;">
+          ${e.image ? `<img src="${API}/api/editorial/editos/${e.id}/image" style="width:100%;max-height:220px;object-fit:cover;border-radius:8px;margin-bottom:8px;" alt=""/>` : ''}
           <div class="ed-edito-titre">${escHtml(e.titre)}</div>
           <div class="ed-edito-meta">✍️ ${escHtml(e.auteur)} · ${new Date(e.date_soumission).toLocaleDateString('fr-FR')}</div>
           <div class="ed-edito-contenu">${escHtml(e.contenu)}</div>
@@ -3050,6 +3098,7 @@ async function edChargerEditos() {
     }
     divListe.innerHTML = publies.slice().reverse().map(e => `
       <div class="ed-edito-card">
+        ${e.image ? `<img src="${API}/api/editorial/editos/${e.id}/image" style="width:100%;max-height:220px;object-fit:cover;border-radius:8px;margin-bottom:8px;" alt=""/>` : ''}
         <div class="ed-edito-titre">${escHtml(e.titre)}</div>
         <div class="ed-edito-meta">✍️ ${escHtml(e.auteur)} · ${new Date(e.date_publication).toLocaleDateString('fr-FR')}</div>
         <div class="ed-edito-contenu">${escHtml(e.contenu)}</div>
@@ -3083,23 +3132,101 @@ async function edRejeterEdito(id) {
   }
 }
 
+async function edGenererBrouillon() {
+  const sujet = document.getElementById('ed-ia-sujet').value.trim();
+  if (!sujet) { toast('❌ Indique un sujet pour générer un brouillon', true); return; }
+
+  const btn = document.getElementById('ed-ia-btn');
+  btn.textContent = '⏳ Génération...';
+  btn.disabled = true;
+  try {
+    const fd = new FormData();
+    fd.append('sujet', sujet);
+    fd.append('angle', document.getElementById('ed-ia-angle').value.trim());
+    const r = await fetch(`${API}/api/editorial/editos/generer`, { method:'POST', body:fd, headers:H });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
+
+    const texte = d.texte.trim();
+    const m = texte.match(/^TITRE\s*:\s*(.+)\n+([\s\S]*)$/i);
+    if (m) {
+      document.getElementById('ed-edito-titre').value = m[1].trim();
+      document.getElementById('ed-edito-contenu').value = m[2].trim();
+    } else {
+      document.getElementById('ed-edito-contenu').value = texte;
+    }
+    toast("✨ Brouillon généré — relis et adapte avant d'envoyer!");
+  } catch(e) {
+    toast('❌ ' + e.message, true);
+  } finally {
+    btn.textContent = '✨ Générer un brouillon';
+    btn.disabled = false;
+  }
+}
+
+let edEditoImageFile = null;
+
+function edAfficherApercuImage(url) {
+  document.getElementById('ed-edito-image-preview').style.display = 'block';
+  document.getElementById('ed-edito-image-preview-img').src = url;
+}
+
+function edImageSelectionnee(input) {
+  const f = input.files[0];
+  if (!f) return;
+  edEditoImageFile = f;
+  edAfficherApercuImage(URL.createObjectURL(f));
+}
+
+async function edGenererImage() {
+  const sujet = document.getElementById('ed-ia-image-sujet').value.trim();
+  if (!sujet) { toast("❌ Décris l'image à générer", true); return; }
+
+  const btn = document.getElementById('ed-ia-image-btn');
+  btn.textContent = '⏳ Génération...';
+  btn.disabled = true;
+  try {
+    const fd = new FormData();
+    fd.append('sujet', sujet);
+    const r = await fetch(`${API}/api/editorial/editos/generer-image`, { method:'POST', body:fd, headers:H });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
+
+    const blob = await (await fetch(d.image_base64)).blob();
+    edEditoImageFile = new File([blob], 'image-generee.png', { type: 'image/png' });
+    document.getElementById('ed-edito-image-input').value = '';
+    edAfficherApercuImage(d.image_base64);
+    toast('🎨 Image générée!');
+  } catch(e) {
+    toast('❌ ' + e.message, true);
+  } finally {
+    btn.textContent = '🎨 Générer une image (IA)';
+    btn.disabled = false;
+  }
+}
+
 async function edProposerEdito() {
   const titre = document.getElementById('ed-edito-titre').value.trim();
   const contenu = document.getElementById('ed-edito-contenu').value.trim();
   if (!titre)   { toast('❌ Donne un titre à ton édito', true); return; }
   if (!contenu) { toast('❌ Écris le contenu de ton édito', true); return; }
+  if (!edEditoImageFile) { toast('❌ Une image est obligatoire — importe-la ou génère-la', true); return; }
 
   try {
     const fd = new FormData();
     fd.append('titre', titre);
     fd.append('auteur', document.getElementById('ed-edito-auteur').value.trim() || 'Anonyme');
     fd.append('contenu', contenu);
+    fd.append('image', edEditoImageFile, edEditoImageFile.name);
     const r = await fetch(`${API}/api/editorial/editos`, { method:'POST', body:fd, headers:H });
     const d = await r.json();
     if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
 
     toast('📨 Édito envoyé — merci! Il sera publié après relecture.');
-    ['ed-edito-titre','ed-edito-auteur','ed-edito-contenu'].forEach(id => document.getElementById(id).value = '');
+    ['ed-edito-titre','ed-edito-auteur','ed-edito-contenu','ed-ia-image-sujet'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('ed-edito-image-input').value = '';
+    document.getElementById('ed-edito-image-preview').style.display = 'none';
+    edEditoImageFile = null;
     edChargerEditos();
   } catch(e) {
     toast('❌ ' + e.message, true);

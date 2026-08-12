@@ -17,6 +17,7 @@ import io
 import json
 import uuid
 import wave
+import base64
 import hashlib
 import asyncio
 import logging
@@ -1023,7 +1024,7 @@ async def api_editorial_ajouter_livre(
         couverture_nom = f"{uuid.uuid4().hex[:8]}{ext}"
         (EE.DOSSIER_COUVERTURES / couverture_nom).write_bytes(contenu)
 
-    prix_centimes = round(prix * 100)
+    prix_centimes = EE.calculer_montant_stripe(prix, devise)
     fiche = await asyncio.to_thread(
         EE.ajouter_livre, titre.strip(), description.strip(), prix_centimes,
         devise, format_livre, couverture_nom,
@@ -1099,17 +1100,75 @@ async def api_editorial_commandes(key: str = ""):
 
 # ── Éditos (articles communautaires) ────────────────────────────────────────
 
+@app.post("/api/editorial/editos/generer")
+async def api_editorial_generer_edito(
+    sujet: str = Form(...),
+    angle: str = Form(""),
+):
+    """Génère un premier brouillon d'édito avec Claude, pour démarrer plus vite."""
+    if not sujet.strip():
+        raise HTTPException(400, "Indique un sujet.")
+    try:
+        texte = await asyncio.to_thread(EE.generer_brouillon_edito, sujet.strip(), angle.strip())
+    except RuntimeError as e:
+        raise HTTPException(503, str(e))
+    except Exception as e:
+        log.error(f"Erreur génération IA édito: {e}")
+        raise HTTPException(500, "Erreur lors de la génération du brouillon.")
+    return JSONResponse({"ok": True, "texte": texte})
+
+@app.post("/api/editorial/editos/generer-image")
+async def api_editorial_generer_image_edito(sujet: str = Form(...)):
+    """Génère une image d'illustration avec DALL·E, pour démarrer plus vite."""
+    if not sujet.strip():
+        raise HTTPException(400, "Décris l'image à générer.")
+    try:
+        image_bytes = await asyncio.to_thread(EE.generer_image_edito, sujet.strip())
+    except RuntimeError as e:
+        raise HTTPException(503, str(e))
+    except Exception as e:
+        log.error(f"Erreur génération image édito: {e}")
+        raise HTTPException(500, "Erreur lors de la génération de l'image.")
+    image_b64 = base64.b64encode(image_bytes).decode("ascii")
+    return JSONResponse({"ok": True, "image_base64": f"data:image/png;base64,{image_b64}"})
+
 @app.post("/api/editorial/editos")
 async def api_editorial_ajouter_edito(
     titre:   str = Form(...),
     auteur:  str = Form("Anonyme"),
     contenu: str = Form(...),
+    image:   UploadFile = File(...),
 ):
     if not titre.strip() or not contenu.strip():
         raise HTTPException(400, "Titre et contenu requis.")
-    edito = await asyncio.to_thread(EE.ajouter_edito, titre.strip(), auteur.strip(), contenu.strip())
+    if not image.filename:
+        raise HTTPException(400, "Une image est obligatoire pour illustrer l'édito.")
+    ext = Path(image.filename).suffix.lower()
+    if ext not in EE.EXTENSIONS_COUVERTURE:
+        raise HTTPException(400, "Image: jpg, png ou webp uniquement.")
+    contenu_image = await image.read()
+    if len(contenu_image) < 10:
+        raise HTTPException(400, "Image invalide.")
+
+    image_nom = f"{uuid.uuid4().hex[:8]}{ext}"
+    (EE.DOSSIER_EDITOS_IMAGES / image_nom).write_bytes(contenu_image)
+
+    edito = await asyncio.to_thread(
+        EE.ajouter_edito, titre.strip(), auteur.strip(), contenu.strip(), image_nom,
+    )
     log.info(f"Éditorial — édito soumis: '{titre}' par {auteur}")
     return JSONResponse({"ok": True, "edito": edito})
+
+@app.get("/api/editorial/editos/{edito_id}/image")
+async def api_editorial_edito_image(edito_id: str):
+    editos = EE.charger_editos()
+    edito = next((e for e in editos if e["id"] == edito_id), None)
+    if not edito or not edito.get("image"):
+        raise HTTPException(404, "Image introuvable.")
+    chemin = EE.DOSSIER_EDITOS_IMAGES / edito["image"]
+    if not chemin.exists():
+        raise HTTPException(404, "Image introuvable.")
+    return FileResponse(chemin)
 
 @app.get("/api/editorial/editos")
 async def api_editorial_editos(key: str = ""):
