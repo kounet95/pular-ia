@@ -732,6 +732,256 @@ async def api_rag_stats():
     """Statistiques du corpus RAG."""
     return JSONResponse(await asyncio.to_thread(stats_rag))
 
+# ══════════════════════════════════════════════════════════════════════════════
+# ESPACE HISTOIRE & PATRIMOINE — manuscrits familiaux, thèses, poèmes, familles
+# ══════════════════════════════════════════════════════════════════════════════
+
+import espace_histoire as EH
+
+@app.post("/api/histoire/upload")
+async def api_histoire_upload(
+    fichier:          UploadFile = File(...),
+    titre:             str        = Form(...),
+    auteur_detenteur:  str        = Form("Anonyme"),
+    royaume:           str        = Form("Autre / Général"),
+    type_source:       str        = Form("autre"),
+    confidentialite:   str        = Form("public"),
+    note:              str        = Form(""),
+):
+    """Reçoit un document historique (manuscrit, thèse, poème...) et l'indexe."""
+    ext = Path(fichier.filename).suffix.lower()
+    if ext not in EXTENSIONS_ACCEPTEES:
+        raise HTTPException(400, f"Format non supporté: {ext}. Acceptés: PDF, TXT, DOCX, HTML, MD")
+    if type_source not in EH.TYPES_SOURCE:
+        raise HTTPException(400, "Type de source invalide.")
+    if confidentialite not in EH.NIVEAUX_CONFIDENTIALITE:
+        raise HTTPException(400, "Niveau de confidentialité invalide.")
+
+    contenu = await fichier.read()
+    if len(contenu) < 10:
+        raise HTTPException(400, "Fichier vide.")
+
+    doc_id    = str(uuid.uuid4())[:8]
+    nom_sauve = f"{doc_id}_{fichier.filename}"
+    chemin    = EH.DOSSIER_RAW / nom_sauve
+    chemin.write_bytes(contenu)
+    log.info(f"Histoire — document reçu: {fichier.filename} ({len(contenu)} octets)")
+
+    try:
+        texte = await asyncio.to_thread(extraire_texte, chemin)
+        if not texte.strip():
+            chemin.unlink(missing_ok=True)
+            raise HTTPException(422, "Impossible d'extraire du texte de ce fichier.")
+
+        nb_chunks = await asyncio.to_thread(
+            EH.indexer_document, titre, auteur_detenteur, royaume, type_source,
+            confidentialite, texte, doc_id,
+        )
+
+        docs = EH.charger_documents()
+        docs.append({
+            "id":                doc_id,
+            "titre":             titre,
+            "auteur_detenteur":  auteur_detenteur,
+            "royaume":           royaume,
+            "type_source":       type_source,
+            "confidentialite":   confidentialite,
+            "note":              note,
+            "fichier":           nom_sauve,
+            "nb_chunks":         nb_chunks,
+            "nb_chars":          len(texte),
+            "date":              datetime.now().isoformat(),
+        })
+        EH.sauver_documents(docs)
+
+        log.info(f"Histoire — indexé: '{titre}' — {nb_chunks} chunks")
+        return JSONResponse({
+            "ok": True, "id": doc_id, "nb_chunks": nb_chunks, "nb_chars": len(texte),
+            "message": f"'{titre}' ajouté à l'espace Histoire ({nb_chunks} passages)",
+        })
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error(f"Erreur indexation document histoire: {e}")
+        raise HTTPException(500, f"Erreur: {str(e)}")
+
+
+@app.get("/api/histoire/documents")
+async def api_histoire_documents(key: str = ""):
+    """
+    Liste les documents. Les documents 'prive' n'exposent que leur fiche
+    (titre/royaume/type/note) — jamais le fichier ni les passages — sauf
+    à fournir la clé admin.
+    """
+    docs = EH.charger_documents()
+    is_admin = bool(ADMIN_KEY) and key == ADMIN_KEY
+    if is_admin:
+        return JSONResponse(docs)
+
+    allegee = []
+    for d in docs:
+        if d.get("confidentialite") == "prive":
+            allegee.append({
+                "id": d["id"], "titre": d["titre"], "royaume": d["royaume"],
+                "type_source": d["type_source"], "confidentialite": "prive",
+                "note": d.get("note", ""), "date": d["date"],
+            })
+        else:
+            allegee.append(d)
+    return JSONResponse(allegee)
+
+
+@app.get("/api/histoire/documents/{doc_id}/passages")
+async def api_histoire_passages(doc_id: str, n: int = 8, key: str = ""):
+    """Retourne des passages d'un document (bloqué si privé, sauf admin)."""
+    docs = EH.charger_documents()
+    doc = next((d for d in docs if d["id"] == doc_id), None)
+    if not doc:
+        raise HTTPException(404, "Document non trouvé.")
+    is_admin = bool(ADMIN_KEY) and key == ADMIN_KEY
+    if doc.get("confidentialite") == "prive" and not is_admin:
+        raise HTTPException(403, "Document privé — accès réservé.")
+
+    def _get():
+        try:
+            col = EH.get_collection()
+            if col.count() == 0:
+                return []
+            res = col.get(where={"doc_id": doc_id}, limit=n, include=["documents", "metadatas"])
+            docs_ = res.get("documents") or []
+            metas = res.get("metadatas") or []
+            tronquer = doc.get("confidentialite") == "sur_demande" and not is_admin
+            out = []
+            for i, (t, m) in enumerate(zip(docs_, metas)):
+                texte = (t[:300] + "…") if tronquer and len(t) > 300 else t
+                out.append({"texte": texte, "chunk_no": m.get("chunk_no", i)})
+            return out
+        except Exception as e:
+            log.warning(f"Passages histoire {doc_id}: {e}")
+            return []
+    passages = await asyncio.to_thread(_get)
+    return JSONResponse({"passages": passages})
+
+
+@app.get("/api/histoire/documents/{doc_id}/fichier")
+async def api_histoire_fichier(doc_id: str, key: str = ""):
+    """Télécharge le fichier original — uniquement si public, ou admin."""
+    docs = EH.charger_documents()
+    doc = next((d for d in docs if d["id"] == doc_id), None)
+    if not doc:
+        raise HTTPException(404, "Document non trouvé.")
+    is_admin = bool(ADMIN_KEY) and key == ADMIN_KEY
+    if doc.get("confidentialite") != "public" and not is_admin:
+        raise HTTPException(403, "Ce document n'est pas téléchargeable publiquement.")
+    chemin = EH.DOSSIER_RAW / doc.get("fichier", "")
+    if not chemin.exists():
+        raise HTTPException(404, "Fichier original introuvable.")
+    return FileResponse(chemin, filename=chemin.name)
+
+
+@app.delete("/api/histoire/documents/{doc_id}")
+async def api_histoire_supprimer(doc_id: str, key: str = ""):
+    """Supprime un document (admin uniquement)."""
+    _check_admin(key)
+    docs = EH.charger_documents()
+    doc = next((d for d in docs if d["id"] == doc_id), None)
+    if not doc:
+        raise HTTPException(404, "Document non trouvé.")
+
+    fichier = doc.get("fichier", "")
+    if fichier:
+        chemin = EH.DOSSIER_RAW / fichier
+        if chemin.exists():
+            chemin.unlink()
+
+    def _suppr_chroma():
+        try:
+            col = EH.get_collection()
+            col.delete(where={"doc_id": doc_id})
+        except Exception as e:
+            log.warning(f"Suppression chunks histoire: {e}")
+    await asyncio.to_thread(_suppr_chroma)
+
+    docs = [d for d in docs if d["id"] != doc_id]
+    EH.sauver_documents(docs)
+    log.info(f"Histoire — document supprimé: {doc_id} — {doc.get('titre','?')}")
+    return JSONResponse({"ok": True})
+
+
+@app.get("/api/histoire/rechercher")
+async def api_histoire_rechercher(q: str, n: int = 5, royaume: str = None, type_source: str = None):
+    """Recherche sémantique dans le corpus Histoire (jamais de contenu privé)."""
+    if not q or len(q.strip()) < 2:
+        raise HTTPException(400, "Requête trop courte.")
+    try:
+        resultats = await asyncio.to_thread(EH.rechercher, q, n, royaume, type_source)
+        return JSONResponse({"ok": True, "resultats": resultats, "query": q})
+    except Exception as e:
+        log.error(f"Erreur recherche histoire: {e}")
+        raise HTTPException(500, str(e))
+
+
+@app.get("/api/histoire/stats")
+async def api_histoire_stats():
+    return JSONResponse(await asyncio.to_thread(EH.stats_histoire))
+
+
+@app.get("/api/histoire/meta")
+async def api_histoire_meta():
+    """Retourne les listes de royaumes / types de source / niveaux — pour peupler les <select>."""
+    return JSONResponse({
+        "royaumes": EH.ROYAUMES,
+        "types_source": EH.TYPES_SOURCE,
+        "niveaux_confidentialite": EH.NIVEAUX_CONFIDENTIALITE,
+    })
+
+# ── Annuaire des familles détentrices ───────────────────────────────────────
+
+@app.post("/api/histoire/familles")
+async def api_histoire_ajouter_famille(
+    nom_famille:     str = Form(...),
+    royaume:         str = Form("Autre / Général"),
+    lignage:         str = Form(""),
+    localisation:    str = Form(""),
+    description:     str = Form(...),
+    contact:         str = Form(""),
+    contact_visible: bool = Form(False),
+):
+    """Enregistre une famille/lignage détentrice de sources historiques."""
+    if not nom_famille.strip() or not description.strip():
+        raise HTTPException(400, "Nom de famille et description requis.")
+    fiche = await asyncio.to_thread(
+        EH.ajouter_famille, nom_famille.strip(), royaume, lignage.strip(),
+        localisation.strip(), description.strip(), contact.strip(), contact_visible,
+    )
+    log.info(f"Histoire — famille ajoutée: {nom_famille} ({royaume})")
+    return JSONResponse({"ok": True, "famille": {**fiche, "contact": ("***" if not contact_visible else fiche["contact"])}})
+
+
+@app.get("/api/histoire/familles")
+async def api_histoire_familles(key: str = ""):
+    """Liste les familles. Le contact n'est visible que si contact_visible=true ou admin."""
+    familles = EH.charger_familles()
+    is_admin = bool(ADMIN_KEY) and key == ADMIN_KEY
+    out = []
+    for f in familles:
+        f2 = dict(f)
+        if not f2.get("contact_visible") and not is_admin:
+            f2["contact"] = ""
+        out.append(f2)
+    return JSONResponse(out)
+
+
+@app.delete("/api/histoire/familles/{famille_id}")
+async def api_histoire_supprimer_famille(famille_id: str, key: str = ""):
+    _check_admin(key)
+    familles = EH.charger_familles()
+    if not any(f["id"] == famille_id for f in familles):
+        raise HTTPException(404, "Famille non trouvée.")
+    familles = [f for f in familles if f["id"] != famille_id]
+    EH.sauver_familles(familles)
+    return JSONResponse({"ok": True})
+
 def _phrases_jeu_sync(n: int) -> list:
     """Récupère n phrases courtes depuis ChromaDB (appelé dans un thread)."""
     import re, random

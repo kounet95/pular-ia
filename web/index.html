@@ -506,6 +506,21 @@
     }
     #clavier-adlam-global.visible { display: flex; flex-wrap: wrap; gap: 4px; align-content: flex-start; }
     #clavier-adlam-backdrop { display:none; position:fixed; inset:0; z-index:9999; }
+    /* ── Mode toggle Latin / Adlam ─ */
+    .mode-script-bar { display:flex; align-items:center; gap:8px; margin:6px 0 10px; padding:6px 10px; background:#0a1a0f; border-radius:8px; border:1px solid #1e3d28; }
+    .mode-script {
+      padding: 4px 12px; border-radius: 6px; font-size: .78rem; font-weight: 600;
+      border: 1px solid #2d5c3a; background: transparent; color: var(--gris); cursor: pointer;
+      transition: background .15s, color .15s, border-color .15s;
+    }
+    .mode-script.actif { background: var(--vert); color: white; border-color: var(--vert); }
+    /* ── Clavier inline (dans formulaire en mode Adlam) ─ */
+    .clavier-inline {
+      display: none; flex-wrap: wrap; gap: 4px; align-content: flex-start;
+      background: #0b1d10; border: 1px solid #c8a84b44; border-radius: 10px;
+      padding: 10px; margin: 4px 0;
+    }
+    .clavier-inline .sep-clavier { width:100%; }
     .btn-clavier-adlam {
       font-size: .72rem; padding: 3px 7px; border-radius: 6px;
       border: 1px solid #c8a84b55; background: #0a1a0f; color: var(--or);
@@ -784,6 +799,95 @@
     </div>
   </div>
 
+  <!-- ══ ESPACE HISTOIRE & PATRIMOINE PEUL ══ -->
+  <div class="carte" style="border-color:#8b5a2b88;">
+    <h2>🏛️ Espace Histoire & Patrimoine peul</h2>
+    <p style="font-size:.82rem;color:var(--gris);margin-bottom:14px;">
+      Manuscrits familiaux, traditions orales, chroniques, thèses, articles, poèmes — sur Macina, Fouta Djallon, Fouta Toro et les autres foyers peuls.
+      Tu choisis le niveau de confidentialité : ce n'est pas obligé d'être public.
+    </p>
+
+    <!-- Zone de dépôt -->
+    <div class="drop-zone" id="hist-drop-zone" onclick="document.getElementById('hist-fichier-input').click()">
+      <span class="drop-icon">📜</span>
+      Glisse un document ici ou clique pour choisir<br>
+      <small style="font-size:.75rem;opacity:.7">PDF · TXT · DOCX · HTML · MD</small>
+    </div>
+    <input type="file" id="hist-fichier-input" accept=".pdf,.txt,.docx,.doc,.html,.htm,.md" style="display:none" onchange="histFichierSelectionne(this)">
+
+    <!-- Métadonnées -->
+    <div id="hist-form" style="display:none;margin-top:12px;">
+      <input class="input-livre" id="hist-titre" type="text" placeholder="Titre du document *" maxlength="200"/>
+      <input class="input-livre" id="hist-auteur" type="text" placeholder="Auteur / famille détentrice (optionnel)" maxlength="150"/>
+      <select class="input-livre" id="hist-royaume" style="cursor:pointer;"></select>
+      <select class="input-livre" id="hist-type" style="cursor:pointer;"></select>
+      <select class="input-livre" id="hist-confidentialite" style="cursor:pointer;">
+        <option value="public">🌐 Public — visible et téléchargeable par tous</option>
+        <option value="sur_demande">🔎 Sur demande — extraits visibles, fichier non téléchargeable</option>
+        <option value="prive">🔒 Privé — seule la fiche (titre/type) est visible</option>
+      </select>
+      <input class="input-livre" id="hist-note" type="text" placeholder="Note (contexte, provenance...)" maxlength="300"/>
+      <div id="hist-nom-fichier" style="font-size:.8rem;color:var(--gris);margin-bottom:8px;"></div>
+      <div class="progress-bar-wrap" id="hist-progress-wrap">
+        <div class="progress-bar" id="hist-progress"></div>
+      </div>
+      <button onclick="histUpload()" style="
+        width:100%;padding:12px;border-radius:10px;border:none;
+        background:#8b5a2b;color:white;font-weight:700;cursor:pointer;font-size:.95rem;
+      " id="hist-btn-upload">📤 Ajouter à l'espace Histoire</button>
+    </div>
+
+    <!-- Stats -->
+    <div id="hist-stats" style="display:flex;gap:16px;margin:14px 0 10px;flex-wrap:wrap;display:none;">
+      <div style="text-align:center;">
+        <div style="font-size:1.3rem;font-weight:800;color:#c8935a;" id="hist-nb-docs">0</div>
+        <div style="font-size:.65rem;color:var(--gris);text-transform:uppercase;">Documents</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:1.3rem;font-weight:800;color:#c8935a;" id="hist-nb-chunks">0</div>
+        <div style="font-size:.65rem;color:var(--gris);text-transform:uppercase;">Passages indexés</div>
+      </div>
+    </div>
+
+    <!-- Liste des documents -->
+    <div id="hist-liste"></div>
+
+    <!-- Recherche -->
+    <div style="margin-top:14px;">
+      <p style="font-size:.78rem;color:var(--gris);margin-bottom:6px;">🔍 Chercher dans l'espace Histoire :</p>
+      <div style="display:flex;gap:8px;">
+        <input class="input-livre" id="hist-query" type="text" placeholder="Ex: Sékou Amadou, Alfa Yaya, jihad..." style="margin:0;flex:1;" onkeydown="if(event.key==='Enter')histRechercher()">
+        <button onclick="histRechercher()" style="
+          padding:9px 14px;border-radius:8px;border:none;
+          background:#8b5a2b;color:white;cursor:pointer;font-size:.9rem;
+        ">🔍</button>
+      </div>
+      <div id="hist-resultats" style="margin-top:10px;"></div>
+    </div>
+
+    <!-- Familles détentrices -->
+    <div style="margin-top:22px;border-top:1px solid #2a2a2a;padding-top:16px;">
+      <h3 style="font-size:1rem;margin-bottom:6px;">👪 Familles détentrices de sources</h3>
+      <p style="font-size:.8rem;color:var(--gris);margin-bottom:12px;">
+        Tu détiens des manuscrits ou tu sais qui en détient ? Enregistre la famille, même sans déposer les documents tout de suite — ça aide les chercheurs à savoir où chercher.
+      </p>
+      <input class="input-livre" id="fam-nom" type="text" placeholder="Nom de la famille / du lignage *" maxlength="150"/>
+      <select class="input-livre" id="fam-royaume" style="cursor:pointer;"></select>
+      <input class="input-livre" id="fam-lignage" type="text" placeholder="Lignage / fonction (ex: Alfaya, Soriya, chef religieux...)" maxlength="150"/>
+      <input class="input-livre" id="fam-localisation" type="text" placeholder="Localisation actuelle (ville, pays)" maxlength="150"/>
+      <textarea class="input-livre" id="fam-description" placeholder="Ce que la famille détient (manuscrits, généalogie, tradition orale...) *" style="min-height:70px;resize:vertical;" maxlength="600"></textarea>
+      <input class="input-livre" id="fam-contact" type="text" placeholder="Contact (téléphone, email — optionnel)" maxlength="150"/>
+      <label style="display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--gris);margin:6px 0 10px;cursor:pointer;">
+        <input type="checkbox" id="fam-contact-visible"/> Rendre le contact visible publiquement (sinon, seuls les admins le voient)
+      </label>
+      <button onclick="famAjouter()" style="
+        width:100%;padding:12px;border-radius:10px;border:none;
+        background:#8b5a2b;color:white;font-weight:700;cursor:pointer;font-size:.95rem;
+      ">➕ Enregistrer la famille</button>
+      <div id="fam-liste" style="margin-top:14px;"></div>
+    </div>
+  </div>
+
   <!-- ══ JEU DE MOTS ══ -->
   <div class="carte" style="border-color:#c8a84b88;">
     <h2 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -923,6 +1027,12 @@
           Ajoute un mot ou une expression qui sera disponible dans tous les modes du jeu.
         </p>
         <div class="form-prof">
+          <!-- Mode saisie : Latin ou Adlam -->
+          <div class="mode-script-bar">
+            <span style="font-size:.72rem;color:var(--gris);flex-shrink:0;">Saisir en :</span>
+            <button id="pf-mode-latin" class="mode-script actif" onclick="setModeCreation('pf','latin')">📝 Latin</button>
+            <button id="pf-mode-adlam" class="mode-script"       onclick="setModeCreation('pf','adlam')">𞤀𞤣𞤤 Adlam</button>
+          </div>
           <div class="form-row">
             <input id="pf-emoji"  type="text" placeholder="Emoji 🐘"       maxlength="4">
             <input id="pf-fr"     type="text" placeholder="Français *"      maxlength="80">
@@ -938,6 +1048,8 @@
                 onclick="toggleClavierGlobal('pf-adlam','pf-pular')" title="Ouvrir le clavier Adlam">𞤀𞤣𞤤</button>
             </div>
           </div>
+          <!-- Clavier intégré (visible en mode Adlam) -->
+          <div id="pf-clavier-inline" class="clavier-inline"></div>
           <div class="form-row">
             <select id="pf-cat">
               <option value="">-- Catégorie --</option>
@@ -981,6 +1093,11 @@
           <p style="font-size:.82rem;color:var(--or);margin-bottom:10px;">✏️ Modifier le mot :</p>
           <input type="hidden" id="pedit-id">
           <div class="form-prof">
+            <div class="mode-script-bar">
+              <span style="font-size:.72rem;color:var(--gris);flex-shrink:0;">Saisir en :</span>
+              <button id="pedit-mode-latin" class="mode-script actif" onclick="setModeCreation('pedit','latin')">📝 Latin</button>
+              <button id="pedit-mode-adlam" class="mode-script"       onclick="setModeCreation('pedit','adlam')">𞤀𞤣𞤤 Adlam</button>
+            </div>
             <div class="form-row">
               <input id="pedit-emoji" type="text" placeholder="Emoji" maxlength="4">
               <input id="pedit-fr"    type="text" placeholder="Français" maxlength="80">
@@ -995,6 +1112,7 @@
                   onclick="toggleClavierGlobal('pedit-adlam','pedit-pular')" title="Clavier Adlam">𞤀𞤣𞤤</button>
               </div>
             </div>
+            <div id="pedit-clavier-inline" class="clavier-inline"></div>
             <div class="form-row">
               <input id="pedit-cat"  type="text" placeholder="Catégorie">
               <input id="pedit-note" type="text" placeholder="Note">
@@ -1040,6 +1158,11 @@
           <div style="font-size:.78rem;color:var(--or);font-weight:600;margin-bottom:8px;" id="pp-form-titre">➕ Nouvelle phrase</div>
           <input id="pp-id"   type="hidden" value="">
           <input id="pp-type" type="hidden" value="custom">
+          <div class="mode-script-bar">
+            <span style="font-size:.72rem;color:var(--gris);flex-shrink:0;">Saisir en :</span>
+            <button id="pp-mode-latin" class="mode-script actif" onclick="setModeCreation('pp','latin')">📝 Latin</button>
+            <button id="pp-mode-adlam" class="mode-script"       onclick="setModeCreation('pp','adlam')">𞤀𞤣𞤤 Adlam</button>
+          </div>
           <div class="form-row">
             <input id="pp-pular" type="text" placeholder="Phrase en pular *" maxlength="200"
               oninput="document.getElementById('pp-adlam').value=latinVersAdlam(this.value)">
@@ -1051,6 +1174,7 @@
                 onclick="toggleClavierGlobal('pp-adlam','pp-pular')" title="Clavier Adlam">𞤀𞤣𞤤</button>
             </div>
           </div>
+          <div id="pp-clavier-inline" class="clavier-inline"></div>
           <input id="pp-fr" type="text" placeholder="Traduction française" maxlength="200"
             style="width:100%;padding:9px 12px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;color:var(--texte);font-size:.9rem;outline:none;margin-top:6px;">
           <div class="form-row" style="margin-top:6px;">
@@ -1943,6 +2067,17 @@ async function chargerClavierAdlam() {
     construire('clavier-adlam',      ch => insererAdlam(ch, 'texte-auto'));
     construire('clavier-adlam-corr', ch => insererAdlam(ch, 'corr-texte'));
     construire('clavier-adlam-global', ch => insererAdlamGlobal(ch));
+    // Claviers inline des formulaires de création
+    [
+      ['pf-clavier-inline',    'pf-adlam',    'pf-pular'],
+      ['pedit-clavier-inline', 'pedit-adlam', 'pedit-pular'],
+      ['pp-clavier-inline',    'pp-adlam',    'pp-pular'],
+    ].forEach(([cid, aid, lid]) => {
+      construire(cid, ch => {
+        insererAdlam(ch, aid);
+        _adlamVersLatinInput(aid, lid);
+      });
+    });
   } catch(e) { /* silencieux */ }
 }
 
@@ -2033,6 +2168,80 @@ window._adlamVersLatinInput = _adlamVersLatinInput;
 window.toggleClavierGlobal  = toggleClavierGlobal;
 window.fermerClavierGlobal  = fermerClavierGlobal;
 window.insererAdlamGlobal   = insererAdlamGlobal;
+
+// ── Conversion Adlam → Latin côté JS (sans appel API) ─────────────────────
+const _ADLAM_LATIN_JS = {
+  '𞤢':'a','𞤫':'e','𞤭':'i','𞤮':'o','𞤵':'u',
+  '𞤦':'b','𞤷':'c','𞤣':'d','𞤬':'f','𞤺':'g',
+  '𞤸':'h','𞤶':'j','𞤳':'k','𞤤':'l','𞤥':'m',
+  '𞤲':'n','𞤨':'p','𞤹':'q','𞤪':'r','𞤧':'s',
+  '𞤼':'t','𞤾':'v','𞤱':'w','𞤿':'x','𞤴':'y','𞥁':'z',
+  '𞤩':'ɓ','𞤯':'ɗ','𞤰':'ƴ','𞤻':'ɲ','𞤽':'ŋ',
+  '𞤀':'A','𞤄':'B','𞤕':'C','𞤁':'D','𞤉':'E',
+  '𞤊':'F','𞤘':'G','𞤖':'H','𞤋':'I','𞤔':'J',
+  '𞤑':'K','𞤂':'L','𞤃':'M','𞤐':'N','𞤌':'O',
+  '𞤆':'P','𞤗':'Q','𞤈':'R','𞤅':'S','𞤚':'T',
+  '𞤓':'U','𞤜':'V','𞤏':'W','𞤝':'X','𞤒':'Y','𞤟':'Z',
+  '𞤇':'Ɓ','𞤍':'Ɗ','𞤎':'Ƴ','𞤙':'Ɲ','𞤛':'Ŋ',
+};
+function adlamVersLatinJS(texte) {
+  if (!texte) return '';
+  return [...texte].map(c => _ADLAM_LATIN_JS[c] ?? c).join('');
+}
+window.adlamVersLatinJS = adlamVersLatinJS;
+
+// ── Mode Adlam / Latin pour les formulaires de création ───────────────────
+const _modesForms = {}; // prefix → 'latin' | 'adlam'
+
+function setModeCreation(prefix, mode) {
+  _modesForms[prefix] = mode;
+  const isAdlam = mode === 'adlam';
+
+  // Boutons toggle
+  document.getElementById(prefix + '-mode-latin')?.classList.toggle('actif', !isAdlam);
+  document.getElementById(prefix + '-mode-adlam')?.classList.toggle('actif',  isAdlam);
+
+  // Clavier inline
+  const clavier = document.getElementById(prefix + '-clavier-inline');
+  if (clavier) clavier.style.display = isAdlam ? 'flex' : 'none';
+
+  const latinEl = document.getElementById(prefix + '-pular');
+  const adlamEl = document.getElementById(prefix + '-adlam');
+
+  if (isAdlam) {
+    // Latin → en lecture seule, discret
+    if (latinEl) {
+      latinEl.readOnly = true;
+      latinEl.style.opacity = '.45';
+      latinEl.style.fontSize = '.78rem';
+      latinEl.placeholder = '(converti auto depuis Adlam)';
+    }
+    // Adlam → mis en avant
+    if (adlamEl) {
+      adlamEl.readOnly = false;
+      adlamEl.style.borderColor = 'var(--or)';
+      adlamEl.style.fontSize = '1.05rem';
+      adlamEl.placeholder = 'Écrire en Adlam 𞤀𞤣𞤤…';
+      setTimeout(() => adlamEl.focus(), 60);
+    }
+  } else {
+    // Latin → principal
+    if (latinEl) {
+      latinEl.readOnly = false;
+      latinEl.style.opacity = '1';
+      latinEl.style.fontSize = '';
+      latinEl.placeholder = prefix === 'pp' ? 'Phrase en pular *' : 'Pular *';
+    }
+    // Adlam → secondaire
+    if (adlamEl) {
+      adlamEl.style.borderColor = '';
+      adlamEl.style.fontSize = '1rem';
+      adlamEl.placeholder = 'Adlam (auto)';
+      setTimeout(() => latinEl?.focus(), 60);
+    }
+  }
+}
+window.setModeCreation = setModeCreation;
 
 // ── Toggle Adlam dans la section correction ────────────────────────────────
 let corrScriptActif = 'latin';
@@ -2331,6 +2540,213 @@ async function exporterDataset() {
 // Charger au démarrage
 chargerLivres();
 chargerRagStats();
+
+// ═══════════════════════════════════════════════════════════════
+// ESPACE HISTOIRE & PATRIMOINE PEUL
+// ═══════════════════════════════════════════════════════════════
+let histFichierEnAttente = null;
+const CONF_ICONS = { public:'🌐', sur_demande:'🔎', prive:'🔒' };
+
+async function histChargerMeta() {
+  try {
+    const r = await fetch(`${API}/api/histoire/meta`, { headers: H });
+    const d = await r.json();
+
+    const selRoyaumeDoc = document.getElementById('hist-royaume');
+    const selRoyaumeFam = document.getElementById('fam-royaume');
+    const optsRoyaume = d.royaumes.map(r => `<option value="${r}">${r}</option>`).join('');
+    selRoyaumeDoc.innerHTML = optsRoyaume;
+    selRoyaumeFam.innerHTML = optsRoyaume;
+
+    const selType = document.getElementById('hist-type');
+    selType.innerHTML = Object.entries(d.types_source).map(([k,v]) => `<option value="${k}">${v}</option>`).join('');
+  } catch(e) { /* silencieux */ }
+}
+
+function histFichierSelectionne(input) {
+  if (!input.files[0]) return;
+  histFichierEnAttente = input.files[0];
+  const f = histFichierEnAttente;
+  document.getElementById('hist-nom-fichier').textContent = `📎 ${f.name} (${(f.size/1024).toFixed(0)} KB)`;
+  document.getElementById('hist-titre').value = f.name.replace(/\.[^.]+$/, '').replace(/[_-]/g, ' ');
+  document.getElementById('hist-form').style.display = 'block';
+}
+
+async function histUpload() {
+  const titre = document.getElementById('hist-titre').value.trim();
+  if (!titre)             { toast('❌ Donne un titre au document', true); return; }
+  if (!histFichierEnAttente){ toast('❌ Choisis un fichier', true); return; }
+
+  const btn = document.getElementById('hist-btn-upload');
+  btn.textContent = '⏳ Ajout en cours...';
+  btn.disabled = true;
+  document.getElementById('hist-progress-wrap').style.display = 'block';
+
+  let prog = 0;
+  const progBar = document.getElementById('hist-progress');
+  const progTimer = setInterval(() => {
+    prog = Math.min(prog + Math.random() * 8, 85);
+    progBar.style.width = prog + '%';
+  }, 300);
+
+  try {
+    const fd = new FormData();
+    fd.append('fichier', histFichierEnAttente, histFichierEnAttente.name);
+    fd.append('titre', titre);
+    fd.append('auteur_detenteur', document.getElementById('hist-auteur').value.trim() || 'Anonyme');
+    fd.append('royaume', document.getElementById('hist-royaume').value);
+    fd.append('type_source', document.getElementById('hist-type').value);
+    fd.append('confidentialite', document.getElementById('hist-confidentialite').value);
+    fd.append('note', document.getElementById('hist-note').value.trim());
+
+    const r = await fetch(`${API}/api/histoire/upload`, { method:'POST', body:fd, headers:H });
+    const d = await r.json();
+    clearInterval(progTimer);
+    if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
+
+    progBar.style.width = '100%';
+    toast(`✅ "${titre}" ajouté à l'espace Histoire!`);
+
+    setTimeout(() => {
+      document.getElementById('hist-form').style.display = 'none';
+      document.getElementById('hist-progress-wrap').style.display = 'none';
+      progBar.style.width = '0%';
+      histFichierEnAttente = null;
+      document.getElementById('hist-fichier-input').value = '';
+      document.getElementById('hist-note').value = '';
+    }, 1500);
+
+    histChargerDocuments();
+    histChargerStats();
+  } catch(e) {
+    clearInterval(progTimer);
+    toast('❌ ' + e.message, true);
+  } finally {
+    btn.textContent = "📤 Ajouter à l'espace Histoire";
+    btn.disabled = false;
+  }
+}
+
+async function histChargerDocuments() {
+  try {
+    const r = await fetch(`${API}/api/histoire/documents`, { headers: H });
+    const docs = await r.json();
+    const div = document.getElementById('hist-liste');
+    if (!docs.length) { div.innerHTML = ''; return; }
+
+    div.innerHTML = docs.slice().reverse().map(d => {
+      const conf = CONF_ICONS[d.confidentialite] || '🌐';
+      if (d.confidentialite === 'prive') {
+        return `
+        <div class="livre-card">
+          <div class="livre-icon">${conf}</div>
+          <div class="livre-info">
+            <div class="livre-titre">${d.titre}</div>
+            <div class="livre-meta">${d.royaume} · document privé — accès sur demande</div>
+          </div>
+        </div>`;
+      }
+      const icon = EXT_ICONS[(d.fichier||'').split('.').pop().toLowerCase()] || '📄';
+      return `
+        <div class="livre-card">
+          <div class="livre-icon">${icon}</div>
+          <div class="livre-info">
+            <div class="livre-titre">${d.titre}</div>
+            <div class="livre-meta">${conf} ${d.royaume} · ${d.auteur_detenteur} · ${d.nb_chunks} passages</div>
+          </div>
+          <div class="livre-badge">${(d.nb_chars/1000).toFixed(0)}k car.</div>
+        </div>`;
+    }).join('');
+  } catch(e) { /* silencieux */ }
+}
+
+async function histChargerStats() {
+  try {
+    const r = await fetch(`${API}/api/histoire/stats`, { headers: H });
+    const d = await r.json();
+    document.getElementById('hist-nb-docs').textContent = d.total_documents;
+    document.getElementById('hist-nb-chunks').textContent = d.total_chunks.toLocaleString();
+    if (d.total_documents > 0) document.getElementById('hist-stats').style.display = 'flex';
+  } catch(e) { /* silencieux */ }
+}
+
+async function histRechercher() {
+  const q = document.getElementById('hist-query').value.trim();
+  if (!q) return;
+  const div = document.getElementById('hist-resultats');
+  div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;">🔍 Recherche...</div>';
+  try {
+    const r = await fetch(`${API}/api/histoire/rechercher?q=${encodeURIComponent(q)}&n=4`, { headers: H });
+    const d = await r.json();
+    if (!d.resultats?.length) {
+      div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;">Aucun résultat — ajoute des documents d\'abord.</div>';
+      return;
+    }
+    div.innerHTML = d.resultats.map(res => `
+      <div class="rag-result">
+        <div>${res.texte}</div>
+        <div class="rag-meta">
+          ${CONF_ICONS[res.confidentialite]||'🌐'} ${res.titre} · ${res.royaume} · ${res.auteur_detenteur}
+          <span class="rag-score" style="float:right">⭐ ${(res.score*100).toFixed(0)}%</span>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    div.innerHTML = `<div style="color:var(--rouge);font-size:.85rem;">❌ ${e.message}</div>`;
+  }
+}
+
+async function famAjouter() {
+  const nom = document.getElementById('fam-nom').value.trim();
+  const description = document.getElementById('fam-description').value.trim();
+  if (!nom)         { toast('❌ Donne le nom de la famille', true); return; }
+  if (!description) { toast('❌ Décris ce que la famille détient', true); return; }
+
+  try {
+    const fd = new FormData();
+    fd.append('nom_famille', nom);
+    fd.append('royaume', document.getElementById('fam-royaume').value);
+    fd.append('lignage', document.getElementById('fam-lignage').value.trim());
+    fd.append('localisation', document.getElementById('fam-localisation').value.trim());
+    fd.append('description', description);
+    fd.append('contact', document.getElementById('fam-contact').value.trim());
+    fd.append('contact_visible', document.getElementById('fam-contact-visible').checked);
+
+    const r = await fetch(`${API}/api/histoire/familles`, { method:'POST', body:fd, headers:H });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
+
+    toast(`✅ Famille "${nom}" enregistrée!`);
+    ['fam-nom','fam-lignage','fam-localisation','fam-description','fam-contact'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fam-contact-visible').checked = false;
+    famChargerListe();
+  } catch(e) {
+    toast('❌ ' + e.message, true);
+  }
+}
+
+async function famChargerListe() {
+  try {
+    const r = await fetch(`${API}/api/histoire/familles`, { headers: H });
+    const familles = await r.json();
+    const div = document.getElementById('fam-liste');
+    if (!familles.length) { div.innerHTML = ''; return; }
+    div.innerHTML = familles.slice().reverse().map(f => `
+      <div class="livre-card">
+        <div class="livre-icon">👪</div>
+        <div class="livre-info">
+          <div class="livre-titre">${f.nom_famille}</div>
+          <div class="livre-meta">${f.royaume}${f.lignage ? ' · '+f.lignage : ''}${f.localisation ? ' · '+f.localisation : ''}</div>
+          <div style="font-size:.78rem;color:var(--gris);margin-top:3px;">${f.description}</div>
+          ${f.contact ? `<div style="font-size:.78rem;color:#8b5a2b;margin-top:3px;">📞 ${f.contact}</div>` : ''}
+        </div>
+      </div>`).join('');
+  } catch(e) { /* silencieux */ }
+}
+
+histChargerMeta();
+histChargerDocuments();
+histChargerStats();
+famChargerListe();
 
 // ═══════════════════════════════════════════════════════════════
 // JEU DE MOTS — QCM · Écrire · Parler · Lire (RAG)
@@ -2912,15 +3328,18 @@ async function profAjouterMot() {
   const editBase = emojiEl.dataset.editBase || '';
   const emoji  = emojiEl.value.trim() || '📝';
   const fr     = document.getElementById('pf-fr').value.trim();
-  const pular  = document.getElementById('pf-pular').value.trim();
-  const adlam  = document.getElementById('pf-adlam').value.trim() || latinVersAdlam(pular);
+  let   pular  = document.getElementById('pf-pular').value.trim();
+  let   adlam  = document.getElementById('pf-adlam').value.trim();
+  // Si mode Adlam : convertir Adlam → Latin si Latin absent
+  if (!pular && adlam) pular = adlamVersLatinJS(adlam);
+  if (!adlam && pular) adlam = latinVersAdlam(pular);
   const catSel = document.getElementById('pf-cat').value;
   const catNew = document.getElementById('pf-cat-custom').value.trim();
   const cat    = catNew || catSel;
   const note   = document.getElementById('pf-note').value.trim();
   const pseudo = document.getElementById('pf-pseudo').value.trim() || 'prof_anonyme';
 
-  if (!fr || !pular) { toast('❌ Français et Pular sont obligatoires', true); return; }
+  if (!fr || !pular) { toast('❌ Français et Pular (ou Adlam) sont obligatoires', true); return; }
   if (!cat) { toast('❌ Choisis ou écris une catégorie', true); return; }
 
   try {
@@ -3027,14 +3446,17 @@ window.profOuvrirEdit = profOuvrirEdit;
 
 async function profSauverEdit() {
   const id    = document.getElementById('pedit-id').value;
-  const pular = document.getElementById('pedit-pular').value.trim();
+  let   pular = document.getElementById('pedit-pular').value.trim();
+  let   adlam = document.getElementById('pedit-adlam').value.trim();
+  if (!pular && adlam) pular = adlamVersLatinJS(adlam);
+  if (!adlam && pular) adlam = latinVersAdlam(pular);
   const fr    = document.getElementById('pedit-fr').value.trim();
-  if (!pular||!fr) { toast('❌ Pular et Français obligatoires', true); return; }
+  if (!pular||!fr) { toast('❌ Pular (ou Adlam) et Français obligatoires', true); return; }
   try {
     const fd = new FormData();
     fd.append('emoji', document.getElementById('pedit-emoji').value.trim()||'📝');
-    fd.append('fr',    fr); fd.append('pular', pular);
-    fd.append('adlam', document.getElementById('pedit-adlam').value.trim()||latinVersAdlam(pular));
+    fd.append('fr', fr); fd.append('pular', pular);
+    fd.append('adlam', adlam||latinVersAdlam(pular));
     fd.append('cat',   document.getElementById('pedit-cat').value.trim());
     fd.append('note',  document.getElementById('pedit-note').value.trim());
     const r = await fetch(`${API}/api/prof/mot/${id}`, { method:'PUT', body:fd, headers:H });
@@ -3814,12 +4236,15 @@ function ppAnnuler() {
 window.ppAnnuler = ppAnnuler;
 
 async function profSauverPhrasePanel() {
-  const id    = document.getElementById('pp-id').value.trim();
-  const type  = document.getElementById('pp-type').value;
-  const pular = document.getElementById('pp-pular').value.trim();
-  const fr    = document.getElementById('pp-fr').value.trim();
-  const cat   = document.getElementById('pp-cat').value;
-  if (!pular) { toast('❌ Le texte pular est obligatoire', true); return; }
+  const id   = document.getElementById('pp-id').value.trim();
+  const type = document.getElementById('pp-type').value;
+  let   pular = document.getElementById('pp-pular').value.trim();
+  let   adlam = document.getElementById('pp-adlam').value.trim();
+  if (!pular && adlam) pular = adlamVersLatinJS(adlam);
+  if (!adlam && pular) adlam = latinVersAdlam(pular);
+  const fr  = document.getElementById('pp-fr').value.trim();
+  const cat = document.getElementById('pp-cat').value;
+  if (!pular) { toast('❌ Le texte pular (ou Adlam) est obligatoire', true); return; }
 
   try {
     const fd = new FormData();
@@ -3830,7 +4255,7 @@ async function profSauverPhrasePanel() {
       const url = type === 'base' ? `/api/prof/phrase-base/${id}` : `/api/prof/phrase/${id}`;
       r = await fetch(`${API}${url}`, {method:'PUT', body:fd, headers:H});
     } else {
-      fd.append('adlam', latinVersAdlam(pular));
+      fd.append('adlam', adlam || latinVersAdlam(pular));
       r = await fetch(`${API}/api/prof/phrase`, {method:'POST', body:fd, headers:H});
     }
     const d = await r.json();
