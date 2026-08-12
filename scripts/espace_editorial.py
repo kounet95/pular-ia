@@ -28,15 +28,17 @@ PROJET_ROOT       = Path(__file__).resolve().parent.parent
 DOSSIER_EDITORIAL = PROJET_ROOT / "corpus-pular" / "editorial"
 DOSSIER_COUVERTURES = DOSSIER_EDITORIAL / "couvertures"
 DOSSIER_EDITOS_IMAGES = DOSSIER_EDITORIAL / "editos_images"
+DOSSIER_EDITOS_SOURCES = DOSSIER_EDITORIAL / "editos_sources"
 FICHIER_CATALOGUE = DOSSIER_EDITORIAL / "catalogue.json"
 FICHIER_COMMANDES = DOSSIER_EDITORIAL / "commandes.json"
 FICHIER_EDITOS    = DOSSIER_EDITORIAL / "editos.json"
 
-for d in [DOSSIER_EDITORIAL, DOSSIER_COUVERTURES, DOSSIER_EDITOS_IMAGES]:
+for d in [DOSSIER_EDITORIAL, DOSSIER_COUVERTURES, DOSSIER_EDITOS_IMAGES, DOSSIER_EDITOS_SOURCES]:
     d.mkdir(parents=True, exist_ok=True)
 
 DEVISES_ACCEPTEES = ["eur", "usd", "gnf", "xof"]
 EXTENSIONS_COUVERTURE = {".jpg", ".jpeg", ".png", ".webp"}
+EXTENSIONS_SOURCE = {".pdf", ".txt", ".docx", ".doc", ".html", ".htm", ".md"}
 
 # Devises "zéro décimale" chez Stripe : `unit_amount` est le montant entier
 # tel quel (pas de centimes) — le GNF (Guinée) et le XOF (Franc CFA — BCEAO,
@@ -121,11 +123,58 @@ def anthropic_configure():
         log.warning("Le paquet 'anthropic' n'est pas installé — pip install anthropic")
         return None
 
-def generer_brouillon_edito(sujet: str, angle: str = "") -> str:
+def extraire_extrait_source(chemin: Path, max_chars: int = 3000) -> str:
+    """
+    Extrait le texte d'un document source déposé par l'auteur (réutilise
+    l'extraction du RAG livres), tronqué pour tenir dans le contexte du
+    brouillon généré.
+    """
+    from rag_livres import extraire_texte
+    texte = extraire_texte(chemin).strip()
+    if len(texte) > max_chars:
+        texte = texte[:max_chars] + "…"
+    return texte
+
+def rechercher_sources_existantes(sujet: str, n: int = 3) -> list[dict]:
+    """
+    Réutilise les corpus RAG déjà indexés (Livres + Histoire) pour trouver
+    des passages pertinents au sujet — des suggestions de sources déjà
+    présentes dans le corpus communautaire, jamais de contenu privé (le RAG
+    Histoire exclut déjà les documents marqués 'prive').
+    """
+    resultats = []
+    try:
+        from rag_livres import rechercher as rag_rechercher
+        for r in rag_rechercher(sujet, n):
+            resultats.append({
+                "origine": "livres",
+                "titre":   r.get("titre", "?"),
+                "texte":   r.get("texte", ""),
+            })
+    except Exception as e:
+        log.warning(f"Recherche corpus livres pour édito: {e}")
+    try:
+        import espace_histoire as EH
+        for r in EH.rechercher(sujet, n):
+            resultats.append({
+                "origine": "histoire",
+                "titre":   r.get("titre", "?"),
+                "texte":   r.get("texte", ""),
+            })
+    except Exception as e:
+        log.warning(f"Recherche corpus histoire pour édito: {e}")
+    return resultats
+
+def generer_brouillon_edito(sujet: str, angle: str = "", sources: list[dict] | None = None) -> str:
     """
     Génère un premier brouillon d'édito avec Claude, pour aider les éditeurs
     communautaires à démarrer vite. Le texte reste à relire et vérifier par
     l'auteur avant soumission — ce n'est jamais publié tel quel.
+
+    `sources` (optionnel) : passages issus de documents déposés par l'auteur
+    et/ou trouvés dans les corpus RAG Livres/Histoire — chaque entrée porte
+    `origine`, `titre`, `texte`. Quand fourni, le brouillon doit s'appuyer
+    dessus plutôt que d'inventer.
     """
     client = anthropic_configure()
     if client is None:
@@ -135,21 +184,40 @@ def generer_brouillon_edito(sujet: str, angle: str = "") -> str:
     if angle.strip():
         consigne += f"\nAngle / précisions données par l'auteur: {angle.strip()}"
 
+    if sources:
+        consigne += "\n\nSOURCES fournies (documents déposés par l'auteur ou passages du corpus communautaire) :"
+        for i, s in enumerate(sources, 1):
+            consigne += f"\n\n[Source {i} — {s['origine']} — {s['titre']}]\n{s['texte']}"
+
+    system = (
+        "Tu es un assistant d'écriture pour l'espace éditorial d'un site communautaire "
+        "consacré à la langue, la culture et l'histoire peules (Fouta Djallon, Macina, "
+        "Fouta Toro et les autres foyers peuls). Rédige un premier brouillon d'édito en "
+        "français, clair et engageant, d'environ 300 à 500 mots. Commence par une première "
+        "ligne au format exact 'TITRE: <titre proposé>', puis une ligne vide, puis le corps "
+        "du texte. Ce brouillon est un point de départ que l'auteur relira et adaptera avant "
+        "publication — ce n'est pas un texte définitif."
+    )
+    if sources:
+        system += (
+            " Des SOURCES sont fournies dans le message : appuie-toi dessus en priorité pour "
+            "les faits, dates, noms et détails concrets — reformule avec tes propres mots plutôt "
+            "que de copier de longs passages tels quels, et indique entre crochets [Source N] "
+            "d'où vient chaque information factuelle reprise. Pour tout ce qui n'est pas couvert "
+            "par les sources, reste général et n'invente pas de détails précis non vérifiables."
+        )
+    else:
+        system += (
+            " N'invente pas de faits historiques précis (dates, noms, chiffres) dont tu n'es "
+            "pas certain ; reste général sur ces points ou indique explicitement entre crochets "
+            "ce qui doit être vérifié par l'auteur."
+        )
+
     message = client.messages.create(
         model="claude-opus-5",
         max_tokens=2000,
         output_config={"effort": "medium"},
-        system=(
-            "Tu es un assistant d'écriture pour l'espace éditorial d'un site communautaire "
-            "consacré à la langue, la culture et l'histoire peules (Fouta Djallon, Macina, "
-            "Fouta Toro et les autres foyers peuls). Rédige un premier brouillon d'édito en "
-            "français, clair et engageant, d'environ 300 à 500 mots. Commence par une première "
-            "ligne au format exact 'TITRE: <titre proposé>', puis une ligne vide, puis le corps "
-            "du texte. Ce brouillon est un point de départ que l'auteur relira et adaptera avant "
-            "publication — ce n'est pas un texte définitif. N'invente pas de faits historiques "
-            "précis (dates, noms, chiffres) dont tu n'es pas certain ; reste général sur ces "
-            "points ou indique explicitement entre crochets ce qui doit être vérifié par l'auteur."
-        ),
+        system=system,
         messages=[{"role": "user", "content": consigne}],
     )
     return "".join(b.text for b in message.content if b.type == "text")

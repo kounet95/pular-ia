@@ -1102,20 +1102,61 @@ async def api_editorial_commandes(key: str = ""):
 
 @app.post("/api/editorial/editos/generer")
 async def api_editorial_generer_edito(
-    sujet: str = Form(...),
-    angle: str = Form(""),
+    sujet:           str = Form(...),
+    angle:           str = Form(""),
+    chercher_corpus: bool = Form(True),
+    documents:       list[UploadFile] = File(default=[]),
 ):
-    """Génère un premier brouillon d'édito avec Claude, pour démarrer plus vite."""
+    """
+    Génère un premier brouillon d'édito avec Claude — à partir du sujet,
+    de documents déposés par l'auteur (réutilise l'extraction du RAG livres)
+    et/ou de passages trouvés dans les corpus RAG Livres/Histoire déjà
+    indexés, utilisés comme sources plutôt que de laisser le modèle inventer.
+    """
     if not sujet.strip():
         raise HTTPException(400, "Indique un sujet.")
+
+    sources: list[dict] = []
+    for doc in documents:
+        if not doc or not doc.filename:
+            continue
+        ext = Path(doc.filename).suffix.lower()
+        if ext not in EE.EXTENSIONS_SOURCE:
+            raise HTTPException(400, f"Format non supporté pour '{doc.filename}'. Acceptés: PDF, TXT, DOCX, HTML, MD")
+        contenu = await doc.read()
+        if len(contenu) < 10:
+            continue
+        # Nom de fichier temporaire construit à partir d'un UUID uniquement
+        # (jamais du nom fourni par le client) pour éviter tout traversal.
+        chemin_tmp = EE.DOSSIER_EDITOS_SOURCES / f"{uuid.uuid4().hex[:8]}{ext}"
+        chemin_tmp.write_bytes(contenu)
+        try:
+            extrait = await asyncio.to_thread(EE.extraire_extrait_source, chemin_tmp)
+            if extrait.strip():
+                sources.append({"origine": "document déposé", "titre": doc.filename, "texte": extrait})
+        except Exception as e:
+            log.warning(f"Extraction document source édito '{doc.filename}': {e}")
+        finally:
+            chemin_tmp.unlink(missing_ok=True)
+
+    if chercher_corpus:
+        try:
+            sources.extend(await asyncio.to_thread(EE.rechercher_sources_existantes, sujet.strip()))
+        except Exception as e:
+            log.warning(f"Recherche corpus pour édito: {e}")
+
     try:
-        texte = await asyncio.to_thread(EE.generer_brouillon_edito, sujet.strip(), angle.strip())
+        texte = await asyncio.to_thread(
+            EE.generer_brouillon_edito, sujet.strip(), angle.strip(), sources or None,
+        )
     except RuntimeError as e:
         raise HTTPException(503, str(e))
     except Exception as e:
         log.error(f"Erreur génération IA édito: {e}")
         raise HTTPException(500, "Erreur lors de la génération du brouillon.")
-    return JSONResponse({"ok": True, "texte": texte})
+
+    sources_info = [{"origine": s["origine"], "titre": s["titre"]} for s in sources]
+    return JSONResponse({"ok": True, "texte": texte, "sources": sources_info})
 
 @app.post("/api/editorial/editos/generer-image")
 async def api_editorial_generer_image_edito(sujet: str = Form(...)):

@@ -1040,11 +1040,19 @@
           <p style="font-size:.78rem;color:var(--or);font-weight:600;margin-bottom:6px;">✨ Aide à la rédaction (IA)</p>
           <input class="input-livre" id="ed-ia-sujet" type="text" placeholder="Sujet (ex: Le rôle des griots dans la transmission orale)" maxlength="200"/>
           <input class="input-livre" id="ed-ia-angle" type="text" placeholder="Angle / précisions (optionnel)" maxlength="200"/>
+
+          <p style="font-size:.72rem;color:var(--gris);margin:6px 0 4px;">📎 Documents source (optionnel — PDF, TXT, DOCX, HTML, MD)</p>
+          <input type="file" id="ed-ia-documents" accept=".pdf,.txt,.docx,.doc,.html,.htm,.md" multiple style="margin-bottom:6px;font-size:.8rem;width:100%;"/>
+          <label style="display:flex;align-items:center;gap:6px;font-size:.75rem;color:var(--gris);margin-bottom:8px;cursor:pointer;">
+            <input type="checkbox" id="ed-ia-chercher-corpus" checked/> Chercher aussi dans les corpus Livres & Histoire déjà indexés
+          </label>
+
           <button onclick="edGenererBrouillon()" id="ed-ia-btn" style="
             width:100%;padding:9px;border-radius:8px;border:1px solid #c8a84b;
             background:transparent;color:var(--or);font-weight:600;cursor:pointer;font-size:.85rem;
           ">✨ Générer un brouillon</button>
           <p style="font-size:.7rem;color:var(--gris);margin-top:6px;">Un premier jet à relire et corriger — vérifie les faits avant d'envoyer.</p>
+          <div id="ed-ia-sources" style="font-size:.72rem;color:var(--gris);margin-top:6px;"></div>
         </div>
         <input class="input-livre" id="ed-edito-titre" type="text" placeholder="Titre *" maxlength="150"/>
         <input class="input-livre" id="ed-edito-auteur" type="text" placeholder="Ton nom / pseudo" maxlength="80"/>
@@ -3139,10 +3147,16 @@ async function edGenererBrouillon() {
   const btn = document.getElementById('ed-ia-btn');
   btn.textContent = '⏳ Génération...';
   btn.disabled = true;
+  const divSources = document.getElementById('ed-ia-sources');
+  divSources.textContent = '';
   try {
     const fd = new FormData();
     fd.append('sujet', sujet);
     fd.append('angle', document.getElementById('ed-ia-angle').value.trim());
+    fd.append('chercher_corpus', document.getElementById('ed-ia-chercher-corpus').checked ? 'true' : 'false');
+    const fichiers = document.getElementById('ed-ia-documents').files;
+    for (const f of fichiers) fd.append('documents', f, f.name);
+
     const r = await fetch(`${API}/api/editorial/editos/generer`, { method:'POST', body:fd, headers:H });
     const d = await r.json();
     if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
@@ -3154,6 +3168,11 @@ async function edGenererBrouillon() {
       document.getElementById('ed-edito-contenu').value = m[2].trim();
     } else {
       document.getElementById('ed-edito-contenu').value = texte;
+    }
+
+    if (d.sources && d.sources.length) {
+      const liste = d.sources.map(s => `${escHtml(s.titre)} (${escHtml(s.origine)})`).join(', ');
+      divSources.innerHTML = `📚 Sources utilisées : ${liste}`;
     }
     toast("✨ Brouillon généré — relis et adapte avant d'envoyer!");
   } catch(e) {
@@ -3223,9 +3242,11 @@ async function edProposerEdito() {
     if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
 
     toast('📨 Édito envoyé — merci! Il sera publié après relecture.');
-    ['ed-edito-titre','ed-edito-auteur','ed-edito-contenu','ed-ia-image-sujet'].forEach(id => document.getElementById(id).value = '');
+    ['ed-edito-titre','ed-edito-auteur','ed-edito-contenu','ed-ia-image-sujet','ed-ia-sujet','ed-ia-angle'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('ed-edito-image-input').value = '';
     document.getElementById('ed-edito-image-preview').style.display = 'none';
+    document.getElementById('ed-ia-documents').value = '';
+    document.getElementById('ed-ia-sources').textContent = '';
     edEditoImageFile = null;
     edChargerEditos();
   } catch(e) {
