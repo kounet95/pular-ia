@@ -57,23 +57,26 @@ def calculer_montant_stripe(prix: float, devise: str) -> int:
 # ── Stripe ───────────────────────────────────────────────────────────────────
 
 def stripe_configure():
-    """Configure la clé Stripe si dispo. Retourne le module stripe ou None."""
+    """
+    Configure la clé Stripe. Retourne le module stripe prêt à l'emploi, ou
+    lève RuntimeError avec un message qui distingue clé manquante et paquet
+    non installé — les deux se traduisaient avant en la même erreur, ce qui
+    rendait le diagnostic impossible à distance (clé ajoutée mais Dockerfile
+    n'installant pas réellement le paquet, par exemple).
+    """
     cle = os.getenv("STRIPE_SECRET_KEY", "")
     if not cle:
-        return None
+        raise RuntimeError("Paiement non configuré (STRIPE_SECRET_KEY manquante).")
     try:
         import stripe
-        stripe.api_key = cle
-        return stripe
     except ImportError:
-        log.warning("Le paquet 'stripe' n'est pas installé — pip install stripe")
-        return None
+        raise RuntimeError("Paiement non disponible sur le serveur (paquet 'stripe' non installé).")
+    stripe.api_key = cle
+    return stripe
 
 def creer_session_paiement(livre: dict, origin: str, email: str = "") -> "stripe.checkout.Session":
     """Crée une session de paiement Stripe Checkout pour un livre du catalogue."""
     stripe = stripe_configure()
-    if stripe is None:
-        raise RuntimeError("Paiement non configuré (STRIPE_SECRET_KEY manquante).")
 
     origin = origin.rstrip("/")
     params = dict(
@@ -100,8 +103,6 @@ def creer_session_paiement(livre: dict, origin: str, email: str = "") -> "stripe
 def verifier_signature_webhook(payload: bytes, sig_header: str):
     """Vérifie la signature d'un événement webhook Stripe. Lève une exception si invalide."""
     stripe = stripe_configure()
-    if stripe is None:
-        raise RuntimeError("Stripe non configuré.")
     # Nom dédié pour ne pas entrer en conflit avec un STRIPE_WEBHOOK_SECRET
     # utilisé par un autre projet partageant le même compte Stripe.
     secret = os.getenv("STRIPE_WEBHOOK_SECRET_EDITORIAL", "")
@@ -112,16 +113,16 @@ def verifier_signature_webhook(payload: bytes, sig_header: str):
 # ── Assistant IA (Claude) — brouillon d'édito ───────────────────────────────
 
 def anthropic_configure():
-    """Configure le client Anthropic si dispo. Retourne le client ou None."""
+    """Configure le client Anthropic. Retourne le client, ou lève RuntimeError
+    avec un message qui distingue clé manquante et paquet non installé."""
     cle = os.getenv("ANTHROPIC_API_KEY", "")
     if not cle:
-        return None
+        raise RuntimeError("Assistant IA non configuré (ANTHROPIC_API_KEY manquante).")
     try:
         import anthropic
-        return anthropic.Anthropic(api_key=cle)
     except ImportError:
-        log.warning("Le paquet 'anthropic' n'est pas installé — pip install anthropic")
-        return None
+        raise RuntimeError("Assistant IA non disponible sur le serveur (paquet 'anthropic' non installé).")
+    return anthropic.Anthropic(api_key=cle)
 
 def extraire_extrait_source(chemin: Path, max_chars: int = 3000) -> str:
     """
@@ -177,8 +178,6 @@ def generer_brouillon_edito(sujet: str, angle: str = "", sources: list[dict] | N
     dessus plutôt que d'inventer.
     """
     client = anthropic_configure()
-    if client is None:
-        raise RuntimeError("Assistant IA non configuré (ANTHROPIC_API_KEY manquante).")
 
     consigne = f"Sujet: {sujet}"
     if angle.strip():
@@ -228,22 +227,20 @@ def generer_brouillon_edito(sujet: str, angle: str = "", sources: list[dict] | N
 # l'assistant de rédaction ci-dessus qui reste sur Claude.
 
 def openai_configure():
-    """Configure le client OpenAI si dispo. Retourne le client ou None."""
+    """Configure le client OpenAI. Retourne le client, ou lève RuntimeError
+    avec un message qui distingue clé manquante et paquet non installé."""
     cle = os.getenv("OPENAI_API_KEY", "")
     if not cle:
-        return None
+        raise RuntimeError("Génération d'image non configurée (OPENAI_API_KEY manquante).")
     try:
         from openai import OpenAI
-        return OpenAI(api_key=cle)
     except ImportError:
-        log.warning("Le paquet 'openai' n'est pas installé — pip install openai")
-        return None
+        raise RuntimeError("Génération d'image non disponible sur le serveur (paquet 'openai' non installé).")
+    return OpenAI(api_key=cle)
 
 def generer_image_edito(sujet: str) -> bytes:
     """Génère une image d'illustration pour un édito avec DALL·E. Retourne les octets PNG."""
     client = openai_configure()
-    if client is None:
-        raise RuntimeError("Génération d'image non configurée (OPENAI_API_KEY manquante).")
 
     prompt = (
         f"Illustration éditoriale sobre et évocatrice pour un article sur : {sujet}. "

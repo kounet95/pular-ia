@@ -39,9 +39,16 @@ RUN pip install --no-cache-dir --timeout 300 \
     sentence-transformers==2.7.0 \
     onnxruntime==1.17.3
 
-# ── 5. Forcer numpy 1.26.4 + numba 0.59 compatibles ─────────────────────────
+# ── 5. Espace Éditorial — Stripe / Claude / DALL·E ────────────────────────────
+RUN pip install --no-cache-dir --timeout 300 \
+    stripe>=9.0.0 \
+    anthropic>=0.90.0 \
+    openai>=2.0.0
+
+# ── 6. Forcer numpy 1.26.4 + numba 0.59 compatibles ─────────────────────────
 # chromadb/sentence-transformers tirent numpy 2.x ET numba compilé pour numpy 2.x.
 # numba 0.59 = dernière version supportant numpy 1.x (obligatoire pour torch 2.2).
+# Placé après toutes les installs (dont l'étape 5 ci-dessus) pour avoir le dernier mot.
 RUN pip install --no-cache-dir "numpy==1.26.4" "numba==0.59.1"
 
 # ── Code source ───────────────────────────────────────────────────────────────
