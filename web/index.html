@@ -53,6 +53,37 @@
     .stat .val { font-size: 1.4rem; font-weight: 700; color: var(--or); }
     .stat .lbl { font-size: 0.75rem; color: var(--gris); text-transform: uppercase; letter-spacing: .5px; }
 
+    /* ── Menu rapide ── */
+    #quick-nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 10px 14px;
+      background: #0a1710ee;
+      backdrop-filter: blur(6px);
+      width: 100%;
+      border-bottom: 1px solid #1e3d28;
+      scrollbar-width: none;
+    }
+    #quick-nav::-webkit-scrollbar { display: none; }
+    #quick-nav a {
+      flex-shrink: 0;
+      padding: 7px 14px;
+      border-radius: 999px;
+      border: 1px solid #2d5c3a;
+      background: #0f2318;
+      color: var(--texte);
+      font-size: .82rem;
+      font-weight: 600;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background .15s, border-color .15s;
+    }
+    #quick-nav a:hover, #quick-nav a:active { background: var(--vert); border-color: var(--vert); }
+
     /* ── Conteneur principal ── */
     main {
       width: 100%;
@@ -69,6 +100,7 @@
       border: 1px solid #1e3d28;
       border-radius: var(--radius);
       padding: 20px;
+      scroll-margin-top: 56px;
     }
     .carte h2 { font-size: 1rem; color: var(--or); margin-bottom: 12px; }
 
@@ -545,6 +577,16 @@
   <div class="stat"><div class="val" id="s-contrib2">—</div><div class="lbl">Contributeurs</div></div>
 </div>
 
+<nav id="quick-nav">
+  <a href="#carte-enregistrer">🎙️ Enregistrer</a>
+  <a href="#carte-corriger">✏️ Corriger</a>
+  <a href="#carte-livres">📚 Livres</a>
+  <a href="#carte-histoire">🏛️ Histoire</a>
+  <a href="#carte-jeu">🎮 Jeu</a>
+  <a href="#carte-prof">🎓 Professeur</a>
+  <a href="#carte-aide">📌 Aide</a>
+</nav>
+
 <main>
 
   <!-- Pseudo -->
@@ -554,7 +596,7 @@
   </div>
 
   <!-- Enregistrement -->
-  <div class="carte">
+  <div class="carte" id="carte-enregistrer">
     <h2>🎙️ Enregistre un message en pular</h2>
     <canvas id="canvas"></canvas>
     <button id="btn-record" onclick="toggleRecord()">
@@ -655,7 +697,7 @@
   </div>
 
   <!-- ══ SECTION CORRECTION ══ -->
-  <div class="carte" style="border-color:#c8a84b55;">
+  <div class="carte" id="carte-corriger" style="border-color:#c8a84b55;">
     <h2 style="display:flex;justify-content:space-between;align-items:center;">
       <span>✏️ Corriger les transcriptions</span>
       <span id="corr-progress" style="font-size:.75rem;color:var(--gris);font-weight:400;"></span>
@@ -730,7 +772,7 @@
   </div>
 
   <!-- ══ LIVRES & RAG ══ -->
-  <div class="carte" style="border-color:#1e5c8888;">
+  <div class="carte" id="carte-livres" style="border-color:#1e5c8888;">
     <h2>📚 Ajouter des livres / poèmes / articles</h2>
     <p style="font-size:.82rem;color:var(--gris);margin-bottom:14px;">
       Dépose un fichier PDF, TXT, DOCX ou HTML en pular → le texte est extrait et indexé automatiquement dans le corpus IA.
@@ -800,7 +842,7 @@
   </div>
 
   <!-- ══ ESPACE HISTOIRE & PATRIMOINE PEUL ══ -->
-  <div class="carte" style="border-color:#8b5a2b88;">
+  <div class="carte" id="carte-histoire" style="border-color:#8b5a2b88;">
     <h2>🏛️ Espace Histoire & Patrimoine peul</h2>
     <p style="font-size:.82rem;color:var(--gris);margin-bottom:14px;">
       Manuscrits familiaux, traditions orales, chroniques, thèses, articles, poèmes — sur Macina, Fouta Djallon, Fouta Toro et les autres foyers peuls.
@@ -889,7 +931,7 @@
   </div>
 
   <!-- ══ JEU DE MOTS ══ -->
-  <div class="carte" style="border-color:#c8a84b88;">
+  <div class="carte" id="carte-jeu" style="border-color:#c8a84b88;">
     <h2 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
       <span>🎮 Apprends en jouant!</span>
       <span id="jeu-niveau" class="niveau-badge">Débutant 🌱</span>
@@ -990,7 +1032,7 @@
   </div>
 
   <!-- ══ ESPACE CRÉATEUR / PROFESSEUR ══ -->
-  <div class="carte" style="border-color:#c8a84b44;">
+  <div class="carte" id="carte-prof" style="border-color:#c8a84b44;">
 
     <!-- Header cliquable pour ouvrir/fermer -->
     <div class="prof-header" onclick="profTogglePanel()">
@@ -1452,7 +1494,7 @@
   </div><!-- /carte prof -->
 
   <!-- Instructions -->
-  <div class="carte">
+  <div class="carte" id="carte-aide">
     <h2>📌 Comment contribuer</h2>
     <ul class="steps">
       <li><span>1️⃣</span> Choisis une phrase ci-dessus ou parle librement</li>
