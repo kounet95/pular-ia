@@ -239,7 +239,7 @@ def openai_configure():
     return OpenAI(api_key=cle)
 
 def generer_image_edito(sujet: str) -> bytes:
-    """Génère une image d'illustration pour un édito avec DALL·E. Retourne les octets PNG."""
+    """Génère une image d'illustration pour un édito avec gpt-image-1. Retourne les octets PNG."""
     client = openai_configure()
 
     prompt = (
@@ -247,13 +247,14 @@ def generer_image_edito(sujet: str) -> bytes:
         "Style photographique ou peinture digitale, ambiance culturelle ouest-africaine / "
         "peule (Fouta Djallon, Sahel), sans texte ni typographie incrustée dans l'image."
     )
+    # gpt-image-1 (pas dall-e-3 : indisponible sur certains projets/clés OpenAI
+    # restreints par modèle) renvoie directement du b64_json, sans response_format.
     reponse = client.images.generate(
-        model="dall-e-3",
+        model="gpt-image-1",
         prompt=prompt,
         size="1024x1024",
-        quality="standard",
+        quality="medium",
         n=1,
-        response_format="b64_json",
     )
     import base64
     return base64.b64decode(reponse.data[0].b64_json)
