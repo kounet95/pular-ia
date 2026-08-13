@@ -15,6 +15,7 @@ Pour accès public pendant un live:
 import os
 import io
 import json
+import html
 import uuid
 import wave
 import base64
@@ -1222,6 +1223,124 @@ async def api_editorial_editos(key: str = ""):
     if is_admin:
         return JSONResponse(editos)
     return JSONResponse([e for e in editos if e["statut"] == "publie"])
+
+@app.get("/api/editorial/editos/{edito_id}")
+async def api_editorial_edito_unique(edito_id: str, key: str = ""):
+    """Un édito précis — public uniquement s'il est publié (sinon 404, même s'il existe)."""
+    editos = EE.charger_editos()
+    edito = next((e for e in editos if e["id"] == edito_id), None)
+    is_admin = bool(ADMIN_KEY) and key == ADMIN_KEY
+    if not edito or (edito["statut"] != "publie" and not is_admin):
+        raise HTTPException(404, "Édito non trouvé.")
+    return JSONResponse(edito)
+
+MOIS_FR = ["janvier", "février", "mars", "avril", "mai", "juin",
+           "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
+
+def _date_fr(iso: str) -> str:
+    try:
+        d = datetime.fromisoformat(iso)
+        return f"{d.day} {MOIS_FR[d.month - 1]} {d.year}"
+    except Exception:
+        return ""
+
+def _contenu_vers_html(texte: str) -> str:
+    paragraphes = [p.strip() for p in texte.split("\n\n") if p.strip()]
+    return "\n".join(
+        f"<p>{html.escape(p).replace(chr(10), '<br>')}</p>" for p in paragraphes
+    )
+
+def _base_url(request: Request) -> str:
+    scheme = request.headers.get("x-forwarded-proto", request.url.scheme)
+    base = f"{scheme}://{request.url.hostname}"
+    if request.url.port and request.url.port not in (80, 443):
+        base += f":{request.url.port}"
+    return base
+
+@app.get("/lire/{edito_id}", response_class=HTMLResponse)
+async def page_lire_edito(edito_id: str, request: Request):
+    """Page de lecture d'un édito publié — rendue côté serveur (balises Open
+    Graph correctes) pour un partage propre sur les réseaux sociaux."""
+    editos = EE.charger_editos()
+    edito = next((e for e in editos if e["id"] == edito_id and e["statut"] == "publie"), None)
+    base = _base_url(request)
+
+    if not edito:
+        return HTMLResponse(f"""<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<title>Édito introuvable — Pular IA</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="background:#0d1f15;color:#e8f5e9;font-family:system-ui,sans-serif;
+text-align:center;padding:60px 20px;">
+<h1 style="color:#c8a84b;">Édito introuvable</h1>
+<p>Ce texte n'existe pas ou n'est pas encore publié.</p>
+<a href="{base}/#carte-editorial" style="color:#c8a84b;">← Retour à l'espace Éditorial</a>
+</body></html>""", status_code=404)
+
+    titre       = html.escape(edito["titre"])
+    auteur      = html.escape(edito.get("auteur", "Anonyme"))
+    date_pub    = _date_fr(edito.get("date_publication") or edito.get("date_soumission", ""))
+    contenu_html = _contenu_vers_html(edito["contenu"])
+    extrait     = html.escape(edito["contenu"].strip().replace("\n", " ")[:180])
+    image_url   = f"{base}/api/editorial/editos/{edito_id}/image" if edito.get("image") else ""
+    page_url    = f"{base}/lire/{edito_id}"
+
+    return HTMLResponse(f"""<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{titre} — Espace Éditorial Pular IA</title>
+<meta name="description" content="{extrait}">
+<meta property="og:type" content="article">
+<meta property="og:title" content="{titre}">
+<meta property="og:description" content="{extrait}">
+<meta property="og:url" content="{page_url}">
+{f'<meta property="og:image" content="{image_url}">' if image_url else ''}
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{titre}">
+<meta name="twitter:description" content="{extrait}">
+{f'<meta name="twitter:image" content="{image_url}">' if image_url else ''}
+<style>
+  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  body {{
+    background: #0d1f15; color: #e8f5e9; font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+  }}
+  header {{
+    width: 100%; background: linear-gradient(135deg, #0a3d20 0%, #1a6b3c 100%);
+    border-bottom: 2px solid #c8a84b; padding: 14px 20px;
+  }}
+  header a {{ color: #c8a84b; text-decoration: none; font-size: .85rem; font-weight: 600; }}
+  header a:hover {{ text-decoration: underline; }}
+  main {{ width: 100%; max-width: 720px; padding: 28px 18px 60px; }}
+  .edito-image {{
+    width: 100%; max-height: 420px; object-fit: cover; border-radius: 12px;
+    border: 1px solid #2d5c3a; margin-bottom: 22px; display: block;
+  }}
+  h1 {{ font-size: 1.7rem; color: #c8a84b; line-height: 1.3; margin-bottom: 10px; }}
+  .meta {{ font-size: .85rem; color: #8fac97; margin-bottom: 26px; }}
+  .contenu p {{ font-size: 1.05rem; line-height: 1.8; margin-bottom: 18px; color: #e8f5e9; }}
+  footer {{ margin-top: 40px; padding-top: 20px; border-top: 1px solid #1e3d28; width: 100%; }}
+  footer a {{
+    display: inline-block; padding: 10px 18px; border-radius: 8px; border: 1px solid #8b1e5c;
+    color: #e8f5e9; text-decoration: none; font-size: .88rem; font-weight: 600;
+  }}
+  footer a:hover {{ background: #8b1e5c; }}
+</style>
+</head>
+<body>
+  <header><a href="{base}/#carte-editorial">← Espace Éditorial Pular IA</a></header>
+  <main>
+    {f'<img class="edito-image" src="{image_url}" alt="">' if image_url else ''}
+    <h1>{titre}</h1>
+    <div class="meta">✍️ {auteur} · {date_pub}</div>
+    <div class="contenu">{contenu_html}</div>
+    <footer>
+      <a href="{base}/#carte-editorial">📰 Voir tous les éditos</a>
+    </footer>
+  </main>
+</body>
+</html>""")
 
 @app.post("/api/editorial/editos/{edito_id}/valider")
 async def api_editorial_valider_edito(edito_id: str, key: str = ""):
