@@ -986,6 +986,153 @@ async def api_histoire_supprimer_famille(famille_id: str, key: str = ""):
     return JSONResponse({"ok": True})
 
 # ══════════════════════════════════════════════════════════════════════════════
+# COMPTES UTILISATEURS — inscription email/mot de passe + connexion Telegram
+# ══════════════════════════════════════════════════════════════════════════════
+
+import comptes as CP
+
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+COOKIE_SESSION      = "pular_session"
+_bot_username_cache = {"valeur": ""}
+
+async def _bot_username() -> str:
+    """Récupère (et met en cache) le @username du bot Telegram via getMe —
+    le processus web n'a pas d'instance python-telegram-bot vivante (le bot
+    tourne dans un processus séparé, voir start.sh), donc un simple appel
+    HTTP à l'API Telegram suffit et évite d'ajouter une dépendance ici."""
+    if _bot_username_cache["valeur"]:
+        return _bot_username_cache["valeur"]
+    if not TELEGRAM_BOT_TOKEN:
+        return ""
+    def _appel():
+        import urllib.request
+        with urllib.request.urlopen(
+            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getMe", timeout=8
+        ) as r:
+            return json.loads(r.read())
+    try:
+        data = await asyncio.to_thread(_appel)
+        if data.get("ok"):
+            _bot_username_cache["valeur"] = data["result"]["username"]
+    except Exception as e:
+        log.warning(f"Impossible de récupérer le username du bot Telegram: {e}")
+    return _bot_username_cache["valeur"]
+
+def _poser_cookie_session(request: Request, resp: JSONResponse, token: str):
+    https = request.headers.get("x-forwarded-proto", request.url.scheme) == "https"
+    resp.set_cookie(
+        COOKIE_SESSION, token, max_age=int(CP.DUREE_SESSION.total_seconds()),
+        httponly=True, samesite="lax", secure=https, path="/",
+    )
+
+async def _compte_courant(request: Request) -> dict | None:
+    token = request.cookies.get(COOKIE_SESSION, "")
+    if not token:
+        return None
+    return await asyncio.to_thread(CP.compte_depuis_session, token)
+
+@app.post("/api/comptes/inscription")
+async def api_comptes_inscription(
+    request: Request,
+    pseudo:       str = Form(...),
+    email:        str = Form(...),
+    mot_de_passe: str = Form(...),
+):
+    try:
+        compte = await asyncio.to_thread(CP.creer_compte, pseudo, email, mot_de_passe)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    token = await asyncio.to_thread(CP.creer_session, compte["id"])
+    resp = JSONResponse({"ok": True, "compte": CP.compte_public(compte)})
+    _poser_cookie_session(request, resp, token)
+    return resp
+
+@app.post("/api/comptes/connexion")
+async def api_comptes_connexion(
+    request: Request,
+    email:        str = Form(...),
+    mot_de_passe: str = Form(...),
+):
+    compte = await asyncio.to_thread(CP.verifier_connexion, email, mot_de_passe)
+    if not compte:
+        raise HTTPException(401, "Email ou mot de passe incorrect.")
+    token = await asyncio.to_thread(CP.creer_session, compte["id"])
+    resp = JSONResponse({"ok": True, "compte": CP.compte_public(compte)})
+    _poser_cookie_session(request, resp, token)
+    return resp
+
+@app.post("/api/comptes/deconnexion")
+async def api_comptes_deconnexion(request: Request):
+    token = request.cookies.get(COOKIE_SESSION, "")
+    if token:
+        await asyncio.to_thread(CP.supprimer_session, token)
+    resp = JSONResponse({"ok": True})
+    resp.delete_cookie(COOKIE_SESSION, path="/")
+    return resp
+
+@app.get("/api/comptes/moi")
+async def api_comptes_moi(request: Request):
+    compte = await _compte_courant(request)
+    if not compte:
+        raise HTTPException(401, "Non connecté.")
+    return JSONResponse(CP.compte_public(compte))
+
+@app.post("/api/comptes/telegram/code")
+async def api_comptes_telegram_code():
+    """Génère un code court + lien d'invitation vers le bot pour se
+    connecter (ou créer un compte) sans mot de passe."""
+    username = await _bot_username()
+    if not username:
+        raise HTTPException(503, "Connexion Telegram indisponible (bot non configuré).")
+    code = await asyncio.to_thread(CP.generer_code_telegram)
+    return JSONResponse({
+        "code": code,
+        "lien": f"https://t.me/{username}?start=connexion_{code}",
+        "expire_dans_secondes": int(CP.DUREE_CODE_TELEGRAM.total_seconds()),
+    })
+
+@app.get("/api/comptes/telegram/statut/{code}")
+async def api_comptes_telegram_statut(code: str, request: Request):
+    """Interrogé en boucle courte par le web pendant que l'utilisateur va
+    confirmer le code sur Telegram. Si une session est déjà active, lie ce
+    Telegram au compte connecté plutôt que d'en créer un nouveau."""
+    resultat = await asyncio.to_thread(CP.resultat_code_telegram, code)
+    if resultat is None:
+        raise HTTPException(404, "Code invalide ou expiré.")
+    if resultat["statut"] != "confirme":
+        return JSONResponse({"statut": resultat["statut"]})
+
+    tg_id = resultat["telegram_id"]
+    compte_actuel = await _compte_courant(request)
+    resp_cookie_token = None
+
+    if compte_actuel:
+        existant = await asyncio.to_thread(CP.compte_par_telegram, tg_id)
+        if existant and existant["id"] != compte_actuel["id"]:
+            raise HTTPException(409, "Ce compte Telegram est déjà lié à un autre compte.")
+        if not existant:
+            await asyncio.to_thread(
+                CP.lier_telegram, compte_actuel["id"], tg_id, resultat.get("telegram_username"),
+            )
+        compte = await asyncio.to_thread(CP.compte_par_id, compte_actuel["id"])
+    else:
+        compte = await asyncio.to_thread(CP.compte_par_telegram, tg_id)
+        if not compte:
+            pseudo_base = (
+                resultat.get("telegram_prenom") or resultat.get("telegram_username") or f"Ami{tg_id}"
+            ).strip()[:40]
+            compte = await asyncio.to_thread(
+                CP.creer_compte_telegram, pseudo_base, tg_id, resultat.get("telegram_username"),
+            )
+        resp_cookie_token = await asyncio.to_thread(CP.creer_session, compte["id"])
+
+    await asyncio.to_thread(CP.consommer_code_telegram, code)
+    resp = JSONResponse({"statut": "confirme", "compte": CP.compte_public(compte)})
+    if resp_cookie_token:
+        _poser_cookie_session(request, resp, resp_cookie_token)
+    return resp
+
+# ══════════════════════════════════════════════════════════════════════════════
 # ESPACE ÉDITORIAL — vente du livre (Stripe Checkout) + éditos communautaires
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -1177,6 +1324,7 @@ async def api_editorial_generer_image_edito(sujet: str = Form(...)):
 
 @app.post("/api/editorial/editos")
 async def api_editorial_ajouter_edito(
+    request: Request,
     titre:   str = Form(...),
     auteur:  str = Form("Anonyme"),
     contenu: str = Form(...),
@@ -1196,10 +1344,16 @@ async def api_editorial_ajouter_edito(
     image_nom = f"{uuid.uuid4().hex[:8]}{ext}"
     (EE.DOSSIER_EDITOS_IMAGES / image_nom).write_bytes(contenu_image)
 
+    # Connecté : le pseudo du compte fait foi (l'auteur libre saisi dans le
+    # formulaire est ignoré) — anonyme : pseudo libre comme avant.
+    compte = await _compte_courant(request)
+    auteur_final = compte["pseudo"] if compte else (auteur.strip() or "Anonyme")
+
     edito = await asyncio.to_thread(
-        EE.ajouter_edito, titre.strip(), auteur.strip(), contenu.strip(), image_nom,
+        EE.ajouter_edito, titre.strip(), auteur_final, contenu.strip(), image_nom,
+        compte["id"] if compte else None,
     )
-    log.info(f"Éditorial — édito soumis: '{titre}' par {auteur}")
+    log.info(f"Éditorial — édito soumis: '{titre}' par {auteur_final}")
     return JSONResponse({"ok": True, "edito": edito})
 
 @app.get("/api/editorial/editos/{edito_id}/image")
@@ -1226,8 +1380,20 @@ def _edito_pour_client(e: dict, visiteur_id: str = "") -> dict:
     d["commentaires"] = d.get("commentaires", [])
     return d
 
+async def _identite_visiteur(request: Request, visiteur_id: str) -> str:
+    """Un compte connecté fait toujours foi ; sinon on retombe sur
+    l'identifiant anonyme fourni par le client (localStorage). Le préfixe
+    'compte:' est réservé aux identités authentifiées — un visiteur anonyme
+    qui le fournirait explicitement dans `visiteur_id` (pour usurper le
+    like d'un compte) est ignoré, jamais transmis tel quel."""
+    compte = await _compte_courant(request)
+    if compte:
+        return f"compte:{compte['id']}"
+    visiteur_id = visiteur_id.strip()[:80]
+    return "" if visiteur_id.startswith("compte:") else visiteur_id
+
 @app.get("/api/editorial/editos")
-async def api_editorial_editos(key: str = "", visiteur_id: str = ""):
+async def api_editorial_editos(request: Request, key: str = "", visiteur_id: str = ""):
     """
     Par défaut, ne renvoie que les éditos publiés. Avec la clé admin,
     renvoie aussi ceux en attente de validation.
@@ -1236,24 +1402,26 @@ async def api_editorial_editos(key: str = "", visiteur_id: str = ""):
     is_admin = bool(ADMIN_KEY) and key == ADMIN_KEY
     if not is_admin:
         editos = [e for e in editos if e["statut"] == "publie"]
-    return JSONResponse([_edito_pour_client(e, visiteur_id) for e in editos])
+    identite = await _identite_visiteur(request, visiteur_id)
+    return JSONResponse([_edito_pour_client(e, identite) for e in editos])
 
 @app.get("/api/editorial/editos/{edito_id}")
-async def api_editorial_edito_unique(edito_id: str, key: str = "", visiteur_id: str = ""):
+async def api_editorial_edito_unique(edito_id: str, request: Request, key: str = "", visiteur_id: str = ""):
     """Un édito précis — public uniquement s'il est publié (sinon 404, même s'il existe)."""
     editos = EE.charger_editos()
     edito = next((e for e in editos if e["id"] == edito_id), None)
     is_admin = bool(ADMIN_KEY) and key == ADMIN_KEY
     if not edito or (edito["statut"] != "publie" and not is_admin):
         raise HTTPException(404, "Édito non trouvé.")
-    return JSONResponse(_edito_pour_client(edito, visiteur_id))
+    identite = await _identite_visiteur(request, visiteur_id)
+    return JSONResponse(_edito_pour_client(edito, identite))
 
 @app.post("/api/editorial/editos/{edito_id}/like")
-async def api_editorial_like_edito(edito_id: str, visiteur_id: str = Form(...)):
-    visiteur_id = visiteur_id.strip()[:80]
-    if not visiteur_id:
+async def api_editorial_like_edito(edito_id: str, request: Request, visiteur_id: str = Form("")):
+    identite = await _identite_visiteur(request, visiteur_id)
+    if not identite:
         raise HTTPException(400, "Identifiant visiteur manquant.")
-    resultat = await asyncio.to_thread(EE.basculer_like, edito_id, visiteur_id)
+    resultat = await asyncio.to_thread(EE.basculer_like, edito_id, identite)
     if resultat is None:
         raise HTTPException(404, "Édito non trouvé.")
     return JSONResponse({"ok": True, **resultat})
@@ -1261,6 +1429,7 @@ async def api_editorial_like_edito(edito_id: str, visiteur_id: str = Form(...)):
 @app.post("/api/editorial/editos/{edito_id}/commentaires")
 async def api_editorial_ajouter_commentaire(
     edito_id: str,
+    request: Request,
     auteur: str = Form(""),
     texte:  str = Form(...),
 ):
@@ -1269,7 +1438,11 @@ async def api_editorial_ajouter_commentaire(
         raise HTTPException(400, "Commentaire vide.")
     if len(texte) > 1000:
         raise HTTPException(400, "Commentaire trop long (max 1000 caractères).")
-    commentaire = await asyncio.to_thread(EE.ajouter_commentaire, edito_id, auteur.strip(), texte)
+    compte = await _compte_courant(request)
+    auteur_final = compte["pseudo"] if compte else (auteur.strip() or "Anonyme")
+    commentaire = await asyncio.to_thread(
+        EE.ajouter_commentaire, edito_id, auteur_final, texte, compte["id"] if compte else None,
+    )
     if commentaire is None:
         raise HTTPException(404, "Édito non trouvé.")
     return JSONResponse({"ok": True, "commentaire": commentaire})
@@ -1599,6 +1772,19 @@ text-align:center;padding:60px 20px;">
     }}
     chargerEtatLike();
 
+    async function chargerCompte() {{
+      try {{
+        const r = await fetch(`${{API}}/api/comptes/moi`);
+        if (!r.ok) return;
+        const compte = await r.json();
+        const auteurEl = document.getElementById('com-auteur');
+        auteurEl.value = compte.pseudo;
+        auteurEl.disabled = true;
+        auteurEl.placeholder = 'Connecté en tant que ' + compte.pseudo;
+      }} catch (err) {{}}
+    }}
+    chargerCompte();
+
     async function basculerLike() {{
       const btn = document.getElementById('btn-like');
       btn.disabled = true;
@@ -1733,11 +1919,13 @@ async def _duel_diffuser(code: str, payload: dict):
 
 @app.post("/api/duel/creer")
 async def api_duel_creer(
+    request: Request,
     pseudo:       str = Form(...),
     theme:        str = Form("Tout"),
     nb_questions: int = Form(DU.NB_QUESTIONS),
 ):
-    pseudo = pseudo.strip()[:40]
+    compte = await _compte_courant(request)
+    pseudo = compte["pseudo"] if compte else pseudo.strip()[:40]
     if not pseudo:
         raise HTTPException(400, "Choisis un pseudo.")
     mots = _mots_jeu_pour_duel()

@@ -25,6 +25,7 @@ from datetime import datetime
 
 from dotenv import load_dotenv
 import duels as DU
+import comptes as CP
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application, CommandHandler, MessageHandler,
@@ -129,6 +130,11 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     # Lien d'invitation à un duel : https://t.me/<bot>?start=duel_<code>
     if ctx.args and ctx.args[0].startswith("duel_"):
         await _duel_rejoindre(update, ctx, ctx.args[0][5:].upper())
+        return
+
+    # Lien de connexion au compte web : https://t.me/<bot>?start=connexion_<code>
+    if ctx.args and ctx.args[0].startswith("connexion_"):
+        await _connexion_confirmer(update, ctx, ctx.args[0][len("connexion_"):].upper())
         return
 
     nom = update.effective_user.first_name
@@ -325,6 +331,23 @@ async def handle_text(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 def _pseudo_telegram(user) -> str:
     return (user.first_name or user.username or f"Joueur{user.id}").strip()[:40]
+
+# ── Connexion au compte web via Telegram ─────────────────────────────────
+
+async def _connexion_confirmer(update: Update, ctx: ContextTypes.DEFAULT_TYPE, code: str):
+    user = update.effective_user
+    ok = await asyncio.to_thread(
+        CP.confirmer_code_telegram, code, user.id, user.username, user.first_name,
+    )
+    if not ok:
+        await update.effective_message.reply_text(
+            "⚠️ Ce lien de connexion a expiré ou n'est plus valide. "
+            "Retourne sur le site et clique à nouveau sur \"Se connecter avec Telegram\"."
+        )
+        return
+    await update.effective_message.reply_text(
+        "✅ Connexion confirmée ! Reviens sur le site, la page se met à jour automatiquement."
+    )
 
 async def cmd_duel(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if ctx.args:

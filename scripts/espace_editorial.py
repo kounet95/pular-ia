@@ -359,14 +359,17 @@ def sauver_editos(editos: list[dict]):
     with open(FICHIER_EDITOS, "w", encoding="utf-8") as f:
         json.dump(editos, f, ensure_ascii=False, indent=2)
 
-def ajouter_edito(titre: str, auteur: str, contenu: str, image: str) -> dict:
-    """Publie l'édito immédiatement — pas de file d'attente de relecture."""
+def ajouter_edito(titre: str, auteur: str, contenu: str, image: str, compte_id: str | None = None) -> dict:
+    """Publie l'édito immédiatement — pas de file d'attente de relecture.
+    `compte_id` : rempli si l'auteur est connecté (voir comptes.py), sinon
+    None pour une soumission anonyme (pseudo libre)."""
     maintenant = datetime.now().isoformat()
     editos = charger_editos()
     edito = {
         "id":               str(uuid.uuid4())[:8],
         "titre":            titre,
         "auteur":           auteur or "Anonyme",
+        "compte_id":        compte_id,
         "contenu":          contenu,
         "image":            image,
         "statut":           "publie",
@@ -401,17 +404,18 @@ def basculer_like(edito_id: str, visiteur_id: str) -> dict | None:
             return {"likes": len(likes), "aime": aime}
     return None
 
-def ajouter_commentaire(edito_id: str, auteur: str, texte: str) -> dict | None:
+def ajouter_commentaire(edito_id: str, auteur: str, texte: str, compte_id: str | None = None) -> dict | None:
     """Ajoute un commentaire, publié immédiatement (même logique que les
     éditos eux-mêmes : pas de file de modération a priori)."""
     editos = charger_editos()
     for e in editos:
         if e["id"] == edito_id:
             commentaire = {
-                "id":     str(uuid.uuid4())[:8],
-                "auteur": (auteur or "Anonyme").strip()[:60] or "Anonyme",
-                "texte":  texte.strip()[:1000],
-                "date":   datetime.now().isoformat(),
+                "id":        str(uuid.uuid4())[:8],
+                "auteur":    (auteur or "Anonyme").strip()[:60] or "Anonyme",
+                "compte_id": compte_id,
+                "texte":     texte.strip()[:1000],
+                "date":      datetime.now().isoformat(),
             }
             e.setdefault("commentaires", []).append(commentaire)
             sauver_editos(editos)

@@ -623,6 +623,7 @@
   <a href="#carte-corriger">✏️ Corriger</a>
   <a href="#carte-livres">📚 Livres</a>
   <a href="#carte-histoire">🏛️ Histoire</a>
+  <a href="#carte-compte">👤 Mon compte</a>
   <a href="#carte-editorial">📰 Éditorial</a>
   <a href="/editos">✍️ Éditos</a>
   <a href="#carte-jeu">🎮 Jeu</a>
@@ -631,6 +632,79 @@
 </nav>
 
 <main>
+
+  <!-- Compte -->
+  <div class="carte" id="carte-compte" style="scroll-margin-top:56px;">
+    <h2>👤 Mon compte</h2>
+    <p style="font-size:.78rem;color:var(--gris);margin-bottom:10px;">
+      Facultatif — sers-toi juste du prénom ci-dessous si tu préfères rester anonyme.
+      Un compte garde ton pseudo pour tes éditos, likes, commentaires et duels.
+    </p>
+
+    <div id="cpte-deconnecte">
+      <div id="cpte-onglets" style="display:flex;gap:6px;margin-bottom:10px;">
+        <button type="button" class="filtre actif" data-onglet="connexion" onclick="cpteOnglet('connexion')" style="flex:1;">Connexion</button>
+        <button type="button" class="filtre" data-onglet="inscription" onclick="cpteOnglet('inscription')" style="flex:1;">Créer un compte</button>
+      </div>
+
+      <div id="cpte-form-connexion">
+        <input class="input-livre" id="cpte-co-email" type="email" placeholder="Email" maxlength="120"/>
+        <input class="input-livre" id="cpte-co-mdp" type="password" placeholder="Mot de passe" maxlength="200"/>
+        <button onclick="cpteConnexion()" style="
+          width:100%;padding:10px;border-radius:8px;border:none;margin-top:4px;
+          background:#8b1e5c;color:white;font-weight:700;cursor:pointer;font-size:.88rem;
+        ">Se connecter</button>
+      </div>
+
+      <div id="cpte-form-inscription" style="display:none;">
+        <input class="input-livre" id="cpte-in-pseudo" type="text" placeholder="Pseudo" maxlength="40"/>
+        <input class="input-livre" id="cpte-in-email" type="email" placeholder="Email" maxlength="120"/>
+        <input class="input-livre" id="cpte-in-mdp" type="password" placeholder="Mot de passe (6 caractères min.)" maxlength="200"/>
+        <button onclick="cpteInscription()" style="
+          width:100%;padding:10px;border-radius:8px;border:none;margin-top:4px;
+          background:#8b1e5c;color:white;font-weight:700;cursor:pointer;font-size:.88rem;
+        ">Créer mon compte</button>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;margin:14px 0;">
+        <div style="flex:1;height:1px;background:#2d5c3a;"></div>
+        <span style="font-size:.72rem;color:var(--gris);">ou</span>
+        <div style="flex:1;height:1px;background:#2d5c3a;"></div>
+      </div>
+
+      <button onclick="cpteTelegramDemarrer()" id="cpte-tg-btn" style="
+        width:100%;padding:10px;border-radius:8px;border:1px solid #2AABEE;
+        background:transparent;color:#2AABEE;font-weight:700;cursor:pointer;font-size:.88rem;
+      ">✈️ Se connecter avec Telegram</button>
+      <div id="cpte-tg-attente" style="display:none;margin-top:10px;font-size:.8rem;color:var(--gris);text-align:center;">
+        <p>1. <a id="cpte-tg-lien" href="#" target="_blank" style="color:#2AABEE;font-weight:600;">Ouvre le bot Telegram</a></p>
+        <p>2. Envoie le message pré-rempli (juste appuyer sur "Envoyer")</p>
+        <p style="margin-top:6px;color:var(--or);">⏳ En attente de confirmation...</p>
+      </div>
+
+      <p id="cpte-erreur" style="display:none;color:#e05a5a;font-size:.78rem;margin-top:8px;"></p>
+    </div>
+
+    <div id="cpte-connecte" style="display:none;">
+      <p style="font-size:.95rem;">Connecté en tant que <strong id="cpte-mon-pseudo" style="color:var(--or);"></strong></p>
+      <p id="cpte-mon-email" style="font-size:.75rem;color:var(--gris);margin-top:2px;"></p>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button id="cpte-lier-tg-btn" onclick="cpteTelegramDemarrer()" style="
+          flex:1;padding:9px;border-radius:8px;border:1px solid #2AABEE;
+          background:transparent;color:#2AABEE;font-weight:600;cursor:pointer;font-size:.8rem;
+        ">✈️ Lier Telegram</button>
+        <button onclick="cpteDeconnexion()" style="
+          flex:1;padding:9px;border-radius:8px;border:1px solid var(--gris);
+          background:transparent;color:var(--gris);font-weight:600;cursor:pointer;font-size:.8rem;
+        ">Se déconnecter</button>
+      </div>
+      <div id="cpte-tg-attente-2" style="display:none;margin-top:10px;font-size:.8rem;color:var(--gris);text-align:center;">
+        <p>1. <a id="cpte-tg-lien-2" href="#" target="_blank" style="color:#2AABEE;font-weight:600;">Ouvre le bot Telegram</a></p>
+        <p>2. Envoie le message pré-rempli</p>
+        <p style="margin-top:6px;color:var(--or);">⏳ En attente de confirmation...</p>
+      </div>
+    </div>
+  </div>
 
   <!-- Pseudo -->
   <div class="carte">
@@ -3883,8 +3957,120 @@ let duelLongueurChoisie = 10;
 const DUEL_DUREE_MS = 15000;
 
 function duelPseudoActuel() {
+  if (window.compteActuel) return window.compteActuel.pseudo;
   const p = (document.getElementById('pseudo-input')?.value || '').trim();
   return p || 'Joueur' + Math.floor(Math.random() * 1000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMPTE — inscription / connexion email+mdp, connexion Telegram
+// ═══════════════════════════════════════════════════════════════
+window.compteActuel = null;
+let cpteTelegramPoll = null;
+
+function cpteOnglet(nom) {
+  document.querySelectorAll('#cpte-onglets .filtre').forEach(b => b.classList.toggle('actif', b.dataset.onglet === nom));
+  document.getElementById('cpte-form-connexion').style.display = nom === 'connexion' ? 'block' : 'none';
+  document.getElementById('cpte-form-inscription').style.display = nom === 'inscription' ? 'block' : 'none';
+}
+
+function cpteErreur(msg) {
+  const el = document.getElementById('cpte-erreur');
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
+}
+
+function cpteAfficherEtat() {
+  const connecte = !!window.compteActuel;
+  document.getElementById('cpte-deconnecte').style.display = connecte ? 'none' : 'block';
+  document.getElementById('cpte-connecte').style.display = connecte ? 'block' : 'none';
+  if (connecte) {
+    document.getElementById('cpte-mon-pseudo').textContent = window.compteActuel.pseudo;
+    document.getElementById('cpte-mon-email').textContent = window.compteActuel.email || '(compte lié à Telegram)';
+    document.getElementById('cpte-lier-tg-btn').style.display = window.compteActuel.telegram_lie ? 'none' : 'block';
+  }
+}
+
+async function cpteChargerMoi() {
+  try {
+    const r = await fetch(`${API}/api/comptes/moi`, { headers: H });
+    if (!r.ok) { window.compteActuel = null; cpteAfficherEtat(); return; }
+    window.compteActuel = await r.json();
+  } catch(e) { window.compteActuel = null; }
+  cpteAfficherEtat();
+}
+
+async function cpteInscription() {
+  cpteErreur('');
+  const pseudo = document.getElementById('cpte-in-pseudo').value.trim();
+  const email = document.getElementById('cpte-in-email').value.trim();
+  const mdp = document.getElementById('cpte-in-mdp').value;
+  if (!pseudo || !email || !mdp) { cpteErreur('Remplis tous les champs.'); return; }
+  try {
+    const fd = new FormData();
+    fd.append('pseudo', pseudo); fd.append('email', email); fd.append('mot_de_passe', mdp);
+    const r = await fetch(`${API}/api/comptes/inscription`, { method: 'POST', body: fd, headers: H });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Erreur');
+    window.compteActuel = d.compte;
+    cpteAfficherEtat();
+    toast('✅ Compte créé — bienvenue ' + d.compte.pseudo + ' !');
+  } catch(e) { cpteErreur(e.message); }
+}
+
+async function cpteConnexion() {
+  cpteErreur('');
+  const email = document.getElementById('cpte-co-email').value.trim();
+  const mdp = document.getElementById('cpte-co-mdp').value;
+  if (!email || !mdp) { cpteErreur('Remplis tous les champs.'); return; }
+  try {
+    const fd = new FormData();
+    fd.append('email', email); fd.append('mot_de_passe', mdp);
+    const r = await fetch(`${API}/api/comptes/connexion`, { method: 'POST', body: fd, headers: H });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Erreur');
+    window.compteActuel = d.compte;
+    cpteAfficherEtat();
+    toast('✅ Connecté — bienvenue ' + d.compte.pseudo + ' !');
+  } catch(e) { cpteErreur(e.message); }
+}
+
+async function cpteDeconnexion() {
+  try { await fetch(`${API}/api/comptes/deconnexion`, { method: 'POST', headers: H }); } catch(e) {}
+  window.compteActuel = null;
+  cpteAfficherEtat();
+  toast('👋 Déconnecté');
+}
+
+async function cpteTelegramDemarrer() {
+  if (cpteTelegramPoll) clearInterval(cpteTelegramPoll);
+  try {
+    const r = await fetch(`${API}/api/comptes/telegram/code`, { method: 'POST', headers: H });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Erreur');
+
+    const connecte = !!window.compteActuel;
+    const zoneAttente = document.getElementById(connecte ? 'cpte-tg-attente-2' : 'cpte-tg-attente');
+    const lien = document.getElementById(connecte ? 'cpte-tg-lien-2' : 'cpte-tg-lien');
+    lien.href = d.lien;
+    zoneAttente.style.display = 'block';
+
+    const finAvant = Date.now() + (d.expire_dans_secondes * 1000);
+    cpteTelegramPoll = setInterval(async () => {
+      if (Date.now() > finAvant) { clearInterval(cpteTelegramPoll); zoneAttente.style.display = 'none'; return; }
+      try {
+        const rs = await fetch(`${API}/api/comptes/telegram/statut/${d.code}`, { headers: H });
+        const ds = await rs.json();
+        if (ds.statut === 'confirme') {
+          clearInterval(cpteTelegramPoll);
+          zoneAttente.style.display = 'none';
+          window.compteActuel = ds.compte;
+          cpteAfficherEtat();
+          toast('✅ Telegram connecté — ' + ds.compte.pseudo);
+        }
+      } catch(e) {}
+    }, 2500);
+  } catch(e) { cpteErreur(e.message); }
 }
 
 function duelAfficherPanneau(id) {
@@ -4134,6 +4320,7 @@ function duelPartagerResultat() {
 window.duelPartagerResultat = duelPartagerResultat;
 
 duelChargerMeta();
+cpteChargerMoi();
 
 // Auto-rejoindre si ?duel=CODE dans l'URL
 (function duelAutoRejoindre() {
