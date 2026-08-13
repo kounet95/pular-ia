@@ -1101,6 +1101,7 @@
       <button class="mode-btn"       id="mode-ecrire" onclick="jSetMode('ecrire')">✏️ Écrire</button>
       <button class="mode-btn"       id="mode-parler" onclick="jSetMode('parler')">🎙️ Parler</button>
       <button class="mode-btn"       id="mode-lire"   onclick="jSetMode('lire')">📖 Lire (livres)</button>
+      <button class="mode-btn"       id="mode-duel"   onclick="jSetMode('duel')">⚔️ Duel</button>
     </div>
 
     <!-- Catégories (cachées en mode Lire) -->
@@ -1168,6 +1169,78 @@
           background:transparent;color:var(--gris);cursor:pointer;font-size:1rem;
         ">🔄</button>
       </div>
+    </div>
+
+    <!-- ── Zone Duel ── -->
+    <div id="zone-duel" style="display:none;margin-top:10px;">
+
+      <!-- Accueil duel -->
+      <div id="duel-accueil">
+        <p style="font-size:.85rem;color:var(--gris);margin-bottom:12px;">
+          Défie un ami en direct : mêmes questions, celui qui répond juste et vite marque le plus de points!
+        </p>
+        <button onclick="duelCreer()" style="width:100%;padding:12px;border-radius:10px;border:none;background:var(--or);color:#0d1f15;font-weight:800;cursor:pointer;font-size:.95rem;margin-bottom:8px;">⚔️ Défier un ami</button>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <input class="input-livre" id="duel-code-input" type="text" placeholder="Code reçu (ex: K6XSCG)" maxlength="6" style="margin:0;flex:1;text-transform:uppercase;">
+          <button onclick="duelRejoindre()" style="padding:0 16px;border-radius:8px;border:1px solid var(--or);background:transparent;color:var(--or);cursor:pointer;font-weight:700;">Rejoindre</button>
+        </div>
+        <button onclick="duelAfficherClassement()" style="width:100%;padding:9px;border-radius:8px;border:1px solid #2d5c3a;background:transparent;color:var(--gris);cursor:pointer;font-size:.85rem;">🏆 Voir le classement</button>
+      </div>
+
+      <!-- Salle d'attente -->
+      <div id="duel-attente" style="display:none;text-align:center;">
+        <div style="font-size:2rem;margin-bottom:8px;">⏳</div>
+        <p style="color:var(--gris);font-size:.85rem;margin-bottom:10px;">En attente d'un adversaire...</p>
+        <div style="background:#0a1a0f;border:1px dashed var(--or);border-radius:10px;padding:14px;margin-bottom:12px;">
+          <div style="font-size:1.6rem;font-weight:800;color:var(--or);letter-spacing:3px;" id="duel-code-affiche"></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+          <a id="duel-lien-whatsapp" target="_blank" rel="noopener" style="padding:8px 14px;border-radius:8px;border:1px solid #2d5c3a;color:var(--texte);text-decoration:none;font-size:.8rem;">🟢 WhatsApp</a>
+          <button onclick="duelCopierLien()" style="padding:8px 14px;border-radius:8px;border:1px solid #2d5c3a;background:transparent;color:var(--texte);cursor:pointer;font-size:.8rem;">🔗 Copier le lien</button>
+        </div>
+      </div>
+
+      <!-- Duel en cours -->
+      <div id="duel-jeu" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:.8rem;color:var(--gris);">
+          <span id="duel-vs">Toi vs ...</span>
+          <span id="duel-q-numero">Q1/5</span>
+        </div>
+        <div class="jeu-score-bar" style="margin-bottom:10px;">
+          <div class="jeu-sc"><div class="v" id="duel-mon-score">0</div><div class="l">Toi</div></div>
+          <div class="jeu-sc"><div class="v" id="duel-son-score">0</div><div class="l" id="duel-adversaire-nom">Adversaire</div></div>
+        </div>
+        <div style="background:#0a1a0f;border-radius:8px;height:6px;overflow:hidden;margin-bottom:14px;">
+          <div id="duel-barre-temps" style="height:100%;background:var(--or);width:100%;transition:width .1s linear;"></div>
+        </div>
+        <div style="text-align:center;margin-bottom:14px;">
+          <div style="font-size:3rem;" id="duel-emoji">🎯</div>
+          <div style="font-size:1.1rem;color:var(--texte);font-weight:600;" id="duel-fr"></div>
+        </div>
+        <div id="duel-options" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+        <p id="duel-statut-adversaire" style="text-align:center;font-size:.78rem;color:var(--gris);margin-top:10px;"></p>
+      </div>
+
+      <!-- Résultats -->
+      <div id="duel-resultats" style="display:none;text-align:center;">
+        <div style="font-size:2.4rem;margin-bottom:6px;" id="duel-resultat-emoji"></div>
+        <h3 style="color:var(--or);margin-bottom:10px;" id="duel-resultat-titre"></h3>
+        <div class="jeu-score-bar" style="margin-bottom:16px;">
+          <div class="jeu-sc"><div class="v" id="duel-final-mon-score">0</div><div class="l">Toi</div></div>
+          <div class="jeu-sc"><div class="v" id="duel-final-son-score">0</div><div class="l" id="duel-final-adversaire-nom">Adversaire</div></div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="duelRejouer()" style="flex:1;padding:11px;border-radius:10px;border:none;background:var(--or);color:#0d1f15;font-weight:700;cursor:pointer;">🔁 Rejouer</button>
+          <button onclick="duelPartagerResultat()" style="flex:1;padding:11px;border-radius:10px;border:1px solid #8b1e5c;background:transparent;color:var(--texte);font-weight:700;cursor:pointer;">📤 Partager</button>
+        </div>
+      </div>
+
+      <!-- Classement -->
+      <div id="duel-classement" style="display:none;">
+        <button onclick="duelRetourAccueil()" style="background:none;border:none;color:var(--gris);cursor:pointer;font-size:.8rem;margin-bottom:10px;padding:0;">← Retour</button>
+        <div id="duel-classement-liste"></div>
+      </div>
+
     </div>
 
     <!-- Résultat (commun à tous les modes) -->
@@ -3387,15 +3460,21 @@ async function initJeu() {
 // ── Changer de mode ────────────────────────────────────────────
 function jSetMode(mode) {
   jMode = mode;
-  ['qcm','ecrire','parler','lire'].forEach(m => {
+  ['qcm','ecrire','parler','lire','duel'].forEach(m => {
     document.getElementById('mode-'+m).classList.toggle('actif', m === mode);
     document.getElementById('zone-'+m).style.display = m === mode ? 'block' : 'none';
   });
   const motDisplay = document.getElementById('jeu-mot-display');
   const ragDisplay = document.getElementById('jeu-rag-display');
   const cats       = document.getElementById('jeu-cats');
+  document.getElementById('jeu-result').style.display = 'none';
+  document.getElementById('jeu-share').style.display = 'none';
 
-  if (mode === 'lire') {
+  if (mode === 'duel') {
+    motDisplay.style.display = 'none';
+    ragDisplay.style.display = 'none';
+    cats.style.display = 'none';
+  } else if (mode === 'lire') {
     motDisplay.style.display = 'none';
     ragDisplay.style.display = 'block';
     cats.style.display = 'none';
@@ -3749,6 +3828,243 @@ function jeuPartager() {
 window.jeuPartager = jeuPartager;
 
 initJeu();
+
+// ═══════════════════════════════════════════════════════════════
+// DUEL EN TEMPS RÉEL — QCM à deux, invitation, classement
+// ═══════════════════════════════════════════════════════════════
+let duelWS = null;
+let duelCode = null;
+let duelMonPseudo = null;
+let duelEtatActuel = null;
+let duelQuestionDebut = 0;
+let duelTimerInterval = null;
+let duelQuestionRepondue = false;
+let duelDernierQAffiche = -1;
+const DUEL_DUREE_MS = 15000;
+
+function duelPseudoActuel() {
+  const p = (document.getElementById('pseudo-input')?.value || '').trim();
+  return p || 'Joueur' + Math.floor(Math.random() * 1000);
+}
+
+function duelAfficherPanneau(id) {
+  ['duel-accueil','duel-attente','duel-jeu','duel-resultats','duel-classement'].forEach(pid => {
+    document.getElementById(pid).style.display = pid === id ? 'block' : 'none';
+  });
+}
+
+async function duelCreer() {
+  duelMonPseudo = duelPseudoActuel();
+  duelDernierQAffiche = -1;
+  try {
+    const fd = new FormData();
+    fd.append('pseudo', duelMonPseudo);
+    const r = await fetch(`${API}/api/duel/creer`, { method:'POST', body:fd, headers:H });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
+    duelCode = d.duel.code;
+    duelAfficherSalleAttente();
+    duelConnecter(duelCode, duelMonPseudo);
+  } catch(e) {
+    toast('❌ ' + e.message, true);
+  }
+}
+window.duelCreer = duelCreer;
+
+function duelAfficherSalleAttente() {
+  document.getElementById('duel-code-affiche').textContent = duelCode;
+  const lien = `${API}/?duel=${duelCode}`;
+  document.getElementById('duel-lien-whatsapp').href =
+    `https://wa.me/?text=${encodeURIComponent('⚔️ Défie-moi dans un duel Pulaar! ' + lien)}`;
+  duelAfficherPanneau('duel-attente');
+}
+
+function duelCopierLien() {
+  const lien = `${API}/?duel=${duelCode}`;
+  navigator.clipboard.writeText(lien).then(() => toast('🔗 Lien copié!'));
+}
+window.duelCopierLien = duelCopierLien;
+
+function duelRejoindre(codeForce) {
+  const code = (codeForce || document.getElementById('duel-code-input').value || '').trim().toUpperCase();
+  if (!code) { toast('❌ Entre un code de duel', true); return; }
+  duelMonPseudo = duelPseudoActuel();
+  duelCode = code;
+  duelDernierQAffiche = -1;
+  duelConnecter(code, duelMonPseudo);
+}
+window.duelRejoindre = duelRejoindre;
+
+function duelConnecter(code, pseudo) {
+  if (duelWS) { try { duelWS.close(); } catch(e) {} }
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  duelWS = new WebSocket(`${proto}//${location.host}/ws/duel/${code}?pseudo=${encodeURIComponent(pseudo)}`);
+  duelWS.onmessage = (ev) => {
+    const msg = JSON.parse(ev.data);
+    if (msg.type === 'etat') duelRendre(msg.duel);
+    else if (msg.type === 'erreur') {
+      toast('❌ ' + msg.message, true);
+      duelAfficherPanneau('duel-accueil');
+    }
+  };
+  duelWS.onerror = () => toast('❌ Connexion au duel impossible', true);
+}
+
+function duelRendre(duel) {
+  duelEtatActuel = duel;
+  duelCode = duel.code;
+
+  if (duel.statut === 'attente') {
+    duelAfficherSalleAttente();
+    return;
+  }
+
+  const moi        = duel.joueurs.find(j => j.pseudo === duelMonPseudo);
+  const adversaire = duel.joueurs.find(j => j.pseudo !== duelMonPseudo);
+
+  if (duel.statut === 'termine') {
+    clearInterval(duelTimerInterval);
+    duelAfficherPanneau('duel-resultats');
+    const monScore = moi ? moi.score : 0;
+    const sonScore = adversaire ? adversaire.score : 0;
+    document.getElementById('duel-final-mon-score').textContent = monScore;
+    document.getElementById('duel-final-son-score').textContent = sonScore;
+    document.getElementById('duel-final-adversaire-nom').textContent = adversaire ? escHtml(adversaire.pseudo) : 'Adversaire';
+    let titre, emoji;
+    if (monScore > sonScore)      { titre = '🏆 Tu as gagné!';                  emoji = '🎉'; }
+    else if (monScore < sonScore) { titre = "Perdu — la revanche t'attend!";    emoji = '😅'; }
+    else                          { titre = 'Égalité!';                        emoji = '🤝'; }
+    document.getElementById('duel-resultat-titre').textContent = titre;
+    document.getElementById('duel-resultat-emoji').textContent = emoji;
+    return;
+  }
+
+  // en_cours
+  duelAfficherPanneau('duel-jeu');
+  document.getElementById('duel-vs').textContent = `Toi vs ${adversaire ? adversaire.pseudo : '...'}`;
+  document.getElementById('duel-adversaire-nom').textContent = adversaire ? adversaire.pseudo : 'Adversaire';
+  document.getElementById('duel-mon-score').textContent = moi ? moi.score : 0;
+  document.getElementById('duel-son-score').textContent = adversaire ? adversaire.score : 0;
+
+  const qIdx = duel.question_actuelle;
+  document.getElementById('duel-q-numero').textContent = `Q${qIdx+1}/${duel.questions.length}`;
+  const q = duel.questions[qIdx];
+  document.getElementById('duel-emoji').textContent = q.emoji;
+  document.getElementById('duel-fr').textContent = q.fr;
+
+  const monReponseActuelle = moi ? moi.reponses.find(r => r.q === qIdx) : null;
+  const adversaireAReponduActuel = adversaire ? adversaire.reponses.some(r => r.q === qIdx) : false;
+
+  if (qIdx !== duelDernierQAffiche) {
+    duelDernierQAffiche  = qIdx;
+    duelQuestionDebut    = Date.now();
+    duelQuestionRepondue = !!monReponseActuelle;
+    duelDemarrerMinuteur();
+  }
+
+  const optsDiv = document.getElementById('duel-options');
+  optsDiv.innerHTML = q.options.map(opt => {
+    let bordure = '#2d5c3a', fond = '#0a1a0f';
+    if (monReponseActuelle && opt === monReponseActuelle.reponse) {
+      bordure = monReponseActuelle.correct ? '#1a6b3c' : '#e53935';
+      fond    = monReponseActuelle.correct ? '#1a6b3c33' : '#e5393533';
+    }
+    return `<button onclick='duelRepondre(${JSON.stringify(opt)})' ${monReponseActuelle ? 'disabled' : ''} style="
+      padding:12px 8px;border-radius:10px;border:1px solid ${bordure};background:${fond};
+      color:var(--texte);cursor:${monReponseActuelle ? 'default' : 'pointer'};font-size:.95rem;font-weight:600;
+    ">${escHtml(opt)}</button>`;
+  }).join('');
+
+  document.getElementById('duel-statut-adversaire').textContent = monReponseActuelle
+    ? (adversaireAReponduActuel ? '✅ Les deux ont répondu — question suivante...' : `⏳ En attente de ${adversaire ? adversaire.pseudo : "l'adversaire"}...`)
+    : '';
+}
+
+function duelDemarrerMinuteur() {
+  clearInterval(duelTimerInterval);
+  const barre = document.getElementById('duel-barre-temps');
+  barre.style.width = '100%';
+  duelTimerInterval = setInterval(() => {
+    const ecoule = Date.now() - duelQuestionDebut;
+    const pct = Math.max(0, 100 - (ecoule / DUEL_DUREE_MS) * 100);
+    barre.style.width = pct + '%';
+    if (ecoule >= DUEL_DUREE_MS) {
+      clearInterval(duelTimerInterval);
+      if (!duelQuestionRepondue) duelRepondre(null);
+    }
+  }, 100);
+}
+
+function duelRepondre(option) {
+  if (duelQuestionRepondue || !duelWS || duelWS.readyState !== 1) return;
+  duelQuestionRepondue = true;
+  const temps_ms = Date.now() - duelQuestionDebut;
+  duelWS.send(JSON.stringify({ type:'reponse', q: duelEtatActuel.question_actuelle, reponse: option, temps_ms }));
+}
+window.duelRepondre = duelRepondre;
+
+function duelRejouer() {
+  duelQuestionRepondue = false;
+  duelDernierQAffiche = -1;
+  duelAfficherPanneau('duel-accueil');
+}
+window.duelRejouer = duelRejouer;
+
+function duelRetourAccueil() {
+  duelAfficherPanneau('duel-accueil');
+}
+window.duelRetourAccueil = duelRetourAccueil;
+
+async function duelAfficherClassement() {
+  duelAfficherPanneau('duel-classement');
+  const div = document.getElementById('duel-classement-liste');
+  div.innerHTML = '<p style="color:var(--gris);font-size:.85rem;">Chargement...</p>';
+  try {
+    const r = await fetch(`${API}/api/duel/classement/top`, { headers: H });
+    const liste = await r.json();
+    if (!liste.length) {
+      div.innerHTML = '<p style="color:var(--gris);font-size:.85rem;text-align:center;">Aucun duel terminé pour l\'instant — sois le premier!</p>';
+      return;
+    }
+    div.innerHTML = liste.map((e, i) => `
+      <div class="livre-card">
+        <div class="livre-icon">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'⚔️'}</div>
+        <div class="livre-info">
+          <div class="livre-titre">${escHtml(e.pseudo)}</div>
+          <div class="livre-meta">${e.victoires} victoire(s) · ${e.duels} duel(s) · ${e.points} pts</div>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    div.innerHTML = '<p style="color:var(--rouge);font-size:.85rem;">Erreur de chargement.</p>';
+  }
+}
+window.duelAfficherClassement = duelAfficherClassement;
+
+function duelPartagerResultat() {
+  if (!duelEtatActuel) return;
+  const moi        = duelEtatActuel.joueurs.find(j => j.pseudo === duelMonPseudo);
+  const adversaire = duelEtatActuel.joueurs.find(j => j.pseudo !== duelMonPseudo);
+  const texte = `⚔️ Duel Pulaar : ${moi?.score||0} - ${adversaire?.score||0} contre ${adversaire?.pseudo||'un ami'}! Défie-moi 👉 ${API}/`;
+  if (navigator.share) {
+    navigator.share({ text: texte }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(texte).then(() => toast('🔗 Résultat copié — colle-le où tu veux!'));
+  }
+}
+window.duelPartagerResultat = duelPartagerResultat;
+
+// Auto-rejoindre si ?duel=CODE dans l'URL
+(function duelAutoRejoindre() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('duel');
+  if (code) {
+    setTimeout(() => {
+      jSetMode('duel');
+      document.getElementById('duel-code-input').value = code.toUpperCase();
+      document.getElementById('carte-jeu').scrollIntoView({behavior:'smooth'});
+    }, 300);
+  }
+})();
 
 // ═══════════════════════════════════════════════════════════════
 // ESPACE CRÉATEUR / PROFESSEUR

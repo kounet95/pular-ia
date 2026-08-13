@@ -10,10 +10,13 @@ Commandes disponibles:
     /start  — Accueil et instructions
     /stats  — Statistiques de la communauté
     /top    — Top contributeurs
+    /duel   — Défier un ami en duel de vocabulaire (+ /duel CODE pour rejoindre)
+    /classement — Classement des duels
     /aide   — Aide complète
 """
 
 import os
+import time
 import json
 import asyncio
 import logging
@@ -21,6 +24,7 @@ from pathlib import Path
 from datetime import datetime
 
 from dotenv import load_dotenv
+import duels as DU
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application, CommandHandler, MessageHandler,
@@ -122,6 +126,11 @@ def enregistrer_contribution(user_id: int, username: str, texte_auto: str,
 
 # ── Commandes ─────────────────────────────────────────────────────────────────
 async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    # Lien d'invitation à un duel : https://t.me/<bot>?start=duel_<code>
+    if ctx.args and ctx.args[0].startswith("duel_"):
+        await _duel_rejoindre(update, ctx, ctx.args[0][5:].upper())
+        return
+
     nom = update.effective_user.first_name
     await update.message.reply_text(
         f"Assalaamu alaykum {nom}! 🌙\n\n"
@@ -134,6 +143,8 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "4️⃣ Ta contribution enrichit le corpus!\n\n"
         "📊 /stats — Statistiques communauté\n"
         "🏆 /top — Top contributeurs\n"
+        "⚔️ /duel — Défier un ami en duel de vocabulaire\n"
+        "🏅 /classement — Classement des duels\n"
         "❓ /aide — Aide complète\n\n"
         "_Baŋ-baŋ! 🙏_",
         parse_mode="Markdown",
@@ -178,6 +189,10 @@ async def cmd_aide(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "✅ *Valider:* La transcription est correcte → ✅ Correct\n"
         "✏️ *Corriger:* Des erreurs → ✏️ Corriger, puis envoie le bon texte\n"
         "❌ *Ignorer:* Ne pas sauvegarder ce vocal\n\n"
+        "⚔️ *Défier un ami:*\n"
+        "/duel — crée un duel et partage le lien/code\n"
+        "/duel CODE — rejoins le duel d'un ami\n"
+        "🏅 /classement — voir qui domine\n\n"
         "📌 *Conseils pour une bonne qualité:*\n"
         "• Parle clairement, micro proche\n"
         "• Messages de 5 à 60 secondes idéaux\n"
@@ -299,6 +314,145 @@ async def handle_text(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown",
     )
 
+# ── Duels en temps réel ───────────────────────────────────────────────────────
+# État partagé entre joueurs, gardé dans ctx.bot_data (unique pour toute
+# l'Application, contrairement à user_data/chat_data qui sont par utilisateur) :
+#   duel_chats[code]   = {pseudo: chat_id}   — où envoyer les messages de chacun
+#   duel_q_debut[code] = timestamp           — pour calculer le bonus de vitesse
+
+def _pseudo_telegram(user) -> str:
+    return (user.first_name or user.username or f"Joueur{user.id}").strip()[:40]
+
+async def cmd_duel(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    if ctx.args:
+        await _duel_rejoindre(update, ctx, ctx.args[0].upper())
+    else:
+        await _duel_creer(update, ctx)
+
+async def _duel_creer(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    pseudo = _pseudo_telegram(update.effective_user)
+    mots = DU.charger_mots_pour_duel()
+    if len(mots) < 4:
+        await update.message.reply_text("⚠️ Pas assez de mots dans le jeu pour lancer un duel pour l'instant.")
+        return
+
+    duel = await asyncio.to_thread(DU.creer_duel, pseudo, mots, "telegram")
+    code = duel["code"]
+    ctx.bot_data.setdefault("duel_chats", {})[code] = {pseudo: update.effective_chat.id}
+
+    moi = await ctx.bot.get_me()
+    lien = f"https://t.me/{moi.username}?start=duel_{code}"
+    await update.message.reply_text(
+        f"⚔️ *Duel créé!*\n\nCode : `{code}`\n\n"
+        f"Envoie ce lien à un ami :\n{lien}\n\n"
+        f"Ou il tape `/duel {code}` pour te rejoindre directement.\n\n"
+        "_En attente d'un adversaire..._",
+        parse_mode="Markdown",
+    )
+
+async def _duel_rejoindre(update: Update, ctx: ContextTypes.DEFAULT_TYPE, code: str):
+    pseudo = _pseudo_telegram(update.effective_user)
+    duel = await asyncio.to_thread(DU.rejoindre_duel, code, pseudo)
+    if not duel:
+        await update.effective_message.reply_text(
+            "❌ Code invalide, duel déjà complet, ou pseudo déjà pris par l'autre joueur."
+        )
+        return
+
+    chats = ctx.bot_data.setdefault("duel_chats", {})
+    chats.setdefault(code, {})[pseudo] = update.effective_chat.id
+    adversaire = duel["joueurs"][0]["pseudo"]
+    await update.effective_message.reply_text(
+        f"⚔️ Tu affrontes *{adversaire}*! Que le meilleur gagne 🔥", parse_mode="Markdown",
+    )
+
+    ctx.bot_data.setdefault("duel_q_debut", {})[code] = time.time()
+    await _duel_envoyer_question(ctx, duel, code)
+
+async def _duel_envoyer_question(ctx: ContextTypes.DEFAULT_TYPE, duel: dict, code: str):
+    chats = ctx.bot_data.get("duel_chats", {}).get(code, {})
+    qidx = duel["question_actuelle"]
+    q = duel["questions"][qidx]
+    clavier = InlineKeyboardMarkup([
+        [InlineKeyboardButton(opt, callback_data=f"duel:{code}:{qidx}:{i}")]
+        for i, opt in enumerate(q["options"])
+    ])
+    texte = f"⚔️ *Question {qidx+1}/{len(duel['questions'])}*\n\n{q['emoji']} Comment dit-on *{q['fr']}* en pular?"
+    for pseudo, chat_id in list(chats.items()):
+        try:
+            await ctx.bot.send_message(chat_id, texte, reply_markup=clavier, parse_mode="Markdown")
+        except Exception as e:
+            log.warning(f"Envoi question duel {code} à {pseudo}: {e}")
+
+async def handle_duel_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    _, code, qidx_str, opt_idx_str = query.data.split(":")
+    qidx = int(qidx_str)
+
+    duel_avant = await asyncio.to_thread(DU.obtenir_duel, code)
+    if not duel_avant or duel_avant["statut"] != "en_cours" or duel_avant["question_actuelle"] != qidx:
+        await query.answer("⏱️ Cette question n'est plus active.", show_alert=True)
+        return
+    await query.answer()
+
+    pseudo = _pseudo_telegram(update.effective_user)
+    option = duel_avant["questions"][qidx]["options"][int(opt_idx_str)]
+    debut = ctx.bot_data.get("duel_q_debut", {}).get(code, time.time())
+    temps_ms = int((time.time() - debut) * 1000)
+
+    duel = await asyncio.to_thread(DU.enregistrer_reponse, code, pseudo, qidx, option, temps_ms)
+    if not duel:
+        return
+
+    moi = next((j for j in duel["joueurs"] if j["pseudo"] == pseudo), None)
+    ma_reponse = next((r for r in moi["reponses"] if r["q"] == qidx), None) if moi else None
+    if ma_reponse and ma_reponse["correct"]:
+        resultat = f"✅ Bonne réponse! +{ma_reponse['points']} points"
+    else:
+        resultat = f"❌ Raté — c'était *{duel_avant['questions'][qidx]['reponse']}*"
+    await query.edit_message_text(f"{resultat}\n\n_En attente de la question suivante..._", parse_mode="Markdown")
+
+    if duel["statut"] == "termine":
+        await _duel_terminer(ctx, duel, code)
+    elif duel["question_actuelle"] != qidx:
+        ctx.bot_data.setdefault("duel_q_debut", {})[code] = time.time()
+        await _duel_envoyer_question(ctx, duel, code)
+
+async def _duel_terminer(ctx: ContextTypes.DEFAULT_TYPE, duel: dict, code: str):
+    chats = ctx.bot_data.get("duel_chats", {}).get(code, {})
+    j1, j2 = duel["joueurs"][0], duel["joueurs"][1]
+    for pseudo, chat_id in chats.items():
+        moi, adversaire = (j1, j2) if j1["pseudo"] == pseudo else (j2, j1)
+        if moi["score"] > adversaire["score"]:
+            titre = "🏆 *Tu as gagné!*"
+        elif moi["score"] < adversaire["score"]:
+            titre = "😅 *Perdu — la revanche t'attend!*"
+        else:
+            titre = "🤝 *Égalité!*"
+        try:
+            await ctx.bot.send_message(
+                chat_id,
+                f"{titre}\n\n*Toi:* {moi['score']} pts\n*{adversaire['pseudo']}:* {adversaire['score']} pts\n\n"
+                "Tape /duel pour relancer un défi, ou /classement pour voir le classement!",
+                parse_mode="Markdown",
+            )
+        except Exception as e:
+            log.warning(f"Envoi résultats duel {code} à {pseudo}: {e}")
+
+    for cle in ("duel_chats", "duel_q_debut"):
+        ctx.bot_data.get(cle, {}).pop(code, None)
+
+async def cmd_classement(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    top = await asyncio.to_thread(DU.classement, 10)
+    if not top:
+        await update.message.reply_text("Aucun duel terminé pour l'instant. Lance-toi avec /duel! ⚔️")
+        return
+    medailles = ["🥇", "🥈", "🥉"] + ["⚔️"] * 7
+    lignes = ["🏆 *Classement des duels Pular IA*\n"]
+    for i, e in enumerate(top):
+        lignes.append(f"{medailles[i]} {e['pseudo']} — {e['victoires']} victoire(s), {e['points']} pts")
+    await update.message.reply_text("\n".join(lignes), parse_mode="Markdown")
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
     if not BOT_TOKEN:
@@ -316,11 +470,16 @@ def main():
 
     app = Application.builder().token(BOT_TOKEN).request(request).build()
 
-    app.add_handler(CommandHandler("start", cmd_start))
-    app.add_handler(CommandHandler("stats", cmd_stats))
-    app.add_handler(CommandHandler("top",   cmd_top))
-    app.add_handler(CommandHandler("aide",  cmd_aide))
+    app.add_handler(CommandHandler("start",      cmd_start))
+    app.add_handler(CommandHandler("stats",      cmd_stats))
+    app.add_handler(CommandHandler("top",        cmd_top))
+    app.add_handler(CommandHandler("duel",       cmd_duel))
+    app.add_handler(CommandHandler("classement", cmd_classement))
+    app.add_handler(CommandHandler("aide",       cmd_aide))
     app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, handle_voice))
+    # Le handler de duel (motif "duel:") doit être enregistré avant le
+    # handler générique ci-dessous, sinon celui-ci intercepterait tout.
+    app.add_handler(CallbackQueryHandler(handle_duel_callback, pattern=r"^duel:"))
     app.add_handler(CallbackQueryHandler(handle_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
 

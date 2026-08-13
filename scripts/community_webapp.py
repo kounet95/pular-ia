@@ -29,7 +29,7 @@ from datetime import datetime
 from urllib.parse import quote
 
 import uvicorn
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -1520,6 +1520,114 @@ async def api_phrases_jeu(n: int = 5):
     except Exception as e:
         log.warning(f"phrases-jeu: {e}")
         return JSONResponse({"ok": True, "phrases": []})
+
+# ══════════════════════════════════════════════════════════════════════════════
+# DUELS EN TEMPS RÉEL — QCM de vocabulaire à deux, invitations, classement
+# ══════════════════════════════════════════════════════════════════════════════
+
+import duels as DU
+
+# Registre des connexions WebSocket actives par duel, gardées par pseudo —
+# en mémoire, process unique (pas de Redis/pubsub : ce projet tourne sur une
+# seule instance). Indexer par pseudo (et pas juste une liste) permet de
+# distinguer un vrai reconnect (l'ancien socket du pseudo n'est plus dans le
+# registre) d'un pseudo actif usurpé par quelqu'un d'autre (encore présent).
+DUEL_CONNEXIONS: dict[str, dict[str, WebSocket]] = {}
+
+def _mots_jeu_pour_duel() -> list[dict]:
+    base   = charger_mots_base()
+    custom = charger_mots_custom()
+    base_pular = {m["pular"] for m in base}
+    return base + [m for m in custom if m.get("pular") not in base_pular]
+
+async def _duel_diffuser(code: str, payload: dict):
+    """Envoie l'état à jour à tous les sockets connectés sur ce duel."""
+    morts = []
+    for pseudo_connecte, ws in DUEL_CONNEXIONS.get(code, {}).items():
+        try:
+            await ws.send_json(payload)
+        except Exception:
+            morts.append(pseudo_connecte)
+    for p in morts:
+        DUEL_CONNEXIONS.get(code, {}).pop(p, None)
+
+@app.post("/api/duel/creer")
+async def api_duel_creer(pseudo: str = Form(...)):
+    pseudo = pseudo.strip()[:40]
+    if not pseudo:
+        raise HTTPException(400, "Choisis un pseudo.")
+    mots = _mots_jeu_pour_duel()
+    if len(mots) < 4:
+        raise HTTPException(503, "Pas assez de mots dans le jeu pour lancer un duel.")
+    duel = await asyncio.to_thread(DU.creer_duel, pseudo, mots, "web")
+    log.info(f"Duel créé: {duel['code']} par {pseudo}")
+    return JSONResponse({"ok": True, "duel": duel})
+
+@app.get("/api/duel/{code}")
+async def api_duel_etat(code: str):
+    duel = await asyncio.to_thread(DU.obtenir_duel, code)
+    if not duel:
+        raise HTTPException(404, "Duel introuvable.")
+    return JSONResponse(duel)
+
+@app.get("/api/duel/classement/top")
+async def api_duel_classement(limite: int = 20):
+    return JSONResponse(await asyncio.to_thread(DU.classement, limite))
+
+@app.websocket("/ws/duel/{code}")
+async def ws_duel(websocket: WebSocket, code: str, pseudo: str = ""):
+    code = code.upper()
+    pseudo = pseudo.strip()[:40]
+    # On accepte d'abord la connexion : fermer avant accept() renvoie un rejet
+    # HTTP brut (403) côté client, sans code exploitable — un message JSON
+    # explicite avant fermeture est bien plus fiable pour le navigateur.
+    await websocket.accept()
+
+    duel = await asyncio.to_thread(DU.obtenir_duel, code)
+    if not duel or not pseudo:
+        await websocket.send_json({"type": "erreur", "message": "Code de duel invalide."})
+        await websocket.close()
+        return
+
+    connexions_duel = DUEL_CONNEXIONS.setdefault(code, {})
+    deja_joueur = any(j["pseudo"] == pseudo for j in duel["joueurs"])
+
+    if deja_joueur and pseudo in connexions_duel:
+        # Un pseudo déjà activement connecté — probablement quelqu'un
+        # d'autre qui a tapé le même nom, pas un reconnect légitime.
+        await websocket.send_json({"type": "erreur", "message": "Ce pseudo est déjà utilisé dans ce duel — choisis-en un autre."})
+        await websocket.close()
+        return
+
+    if not deja_joueur:
+        duel = await asyncio.to_thread(DU.rejoindre_duel, code, pseudo)
+        if not duel:
+            await websocket.send_json({"type": "erreur", "message": "Duel complet, ou pseudo déjà pris par l'autre joueur."})
+            await websocket.close()
+            return
+
+    connexions_duel[pseudo] = websocket
+
+    # Un joueur qui vient de rejoindre (ou qui se reconnecte) fait avancer
+    # l'état pour tout le monde (l'adversaire déjà connecté doit voir
+    # "en_cours" apparaître, ou récupérer l'état courant après une coupure).
+    await _duel_diffuser(code, {"type": "etat", "duel": duel})
+
+    try:
+        while True:
+            msg = await websocket.receive_json()
+            if msg.get("type") == "reponse":
+                duel = await asyncio.to_thread(
+                    DU.enregistrer_reponse, code, pseudo,
+                    int(msg.get("q", -1)), msg.get("reponse"), int(msg.get("temps_ms", 0)),
+                )
+                if duel:
+                    await _duel_diffuser(code, {"type": "etat", "duel": duel})
+    except WebSocketDisconnect:
+        pass
+    finally:
+        if connexions_duel.get(pseudo) is websocket:
+            connexions_duel.pop(pseudo, None)
 
 @app.post("/api/exporter-dataset")
 async def api_exporter_dataset():
