@@ -579,6 +579,29 @@
     }
     #clavier-adlam-global.visible { display: flex; flex-wrap: wrap; gap: 4px; align-content: flex-start; }
     #clavier-adlam-backdrop { display:none; position:fixed; inset:0; z-index:9999; }
+    /* ── Clavier arabe/ajami global (flottant) ────────────────── */
+    #clavier-arabe-global {
+      display: none; position: fixed; z-index: 10000; direction: rtl;
+      background: #0b1d10; border: 1px solid #2AABEE;
+      border-radius: 12px; padding: 10px 12px;
+      width: 310px; max-height: 280px; overflow-y: auto;
+      box-shadow: 0 10px 32px rgba(0,0,0,.7);
+    }
+    #clavier-arabe-global.visible { display: flex; flex-wrap: wrap; gap: 4px; align-content: flex-start; }
+    #clavier-arabe-backdrop { display:none; position:fixed; inset:0; z-index:9999; }
+    .btn-clavier-arabe {
+      font-size: .95rem; padding: 5px 9px; border-radius: 6px;
+      border: 1px solid #2AABEE55; background: #0a1a0f; color: #2AABEE;
+      cursor: pointer; white-space: nowrap; font-family: inherit;
+      transition: background .12s, color .12s;
+    }
+    .btn-clavier-arabe:hover, .btn-clavier-arabe.actif { background: #2AABEE; color: #000; }
+    .btn-ouvrir-arabe {
+      font-size: .78rem; padding: 4px 10px; border-radius: 6px;
+      border: 1px solid #2AABEE55; background: transparent; color: #2AABEE;
+      cursor: pointer; font-weight: 600; font-family: inherit;
+    }
+    .btn-ouvrir-arabe:hover, .btn-ouvrir-arabe.actif { background: #2AABEE; color: #000; }
     /* ── Mode toggle Latin / Adlam ─ */
     .mode-script-bar { display:flex; align-items:center; gap:8px; margin:6px 0 10px; padding:6px 10px; background:#0a1a0f; border-radius:8px; border:1px solid #1e3d28; }
     .mode-script {
@@ -854,6 +877,7 @@
           <div class="script-toggle">
             <button id="corr-btn-latin" class="actif" onclick="basculerScriptCorr('latin')">Latin</button>
             <button id="corr-btn-adlam" onclick="basculerScriptCorr('adlam')">𞤀𞤣𞤤𞤢𞤥</button>
+            <button type="button" class="btn-ouvrir-arabe" data-cible="corr-texte" onclick="toggleClavierArabe('corr-texte')">🕌 Ajami</button>
           </div>
         </div>
         <textarea id="corr-texte" rows="4" style="
@@ -1159,6 +1183,18 @@
         </div>
         <input class="input-livre" id="ed-edito-titre" type="text" placeholder="Titre *" maxlength="150"/>
         <input class="input-livre" id="ed-edito-auteur" type="text" placeholder="Ton nom / pseudo" maxlength="80"/>
+
+        <div class="mode-script-bar" style="flex-wrap:wrap;">
+          <span style="font-size:.72rem;color:var(--gris);">✍️ Écrire en :</span>
+          <button type="button" class="mode-script ed-edito-script-btn actif" data-script="latin"   onclick="edChoisirScript('latin')">🔤 Latin</button>
+          <button type="button" class="mode-script ed-edito-script-btn"       data-script="adlam"   onclick="edChoisirScript('adlam')">𞤀𞤣𞤤 Adlam</button>
+          <button type="button" class="mode-script ed-edito-script-btn"       data-script="ajami"   onclick="edChoisirScript('ajami')">🕌 Ajami</button>
+          <button type="button" class="mode-script ed-edito-script-btn"       data-script="anglais" onclick="edChoisirScript('anglais')">🇬🇧 Anglais</button>
+        </div>
+        <p style="font-size:.7rem;color:var(--gris);margin:-4px 0 8px;">
+          La population peule s'écrit dans plusieurs écritures — choisis celle qui te convient, un clavier s'ouvre pour l'Adlam et l'Ajami.
+        </p>
+
         <textarea class="input-livre" id="ed-edito-contenu" placeholder="Ton texte *" style="min-height:140px;resize:vertical;" maxlength="8000"></textarea>
 
         <div style="background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;padding:10px;margin:10px 0;">
@@ -1409,6 +1445,7 @@
             <span style="font-size:.72rem;color:var(--gris);flex-shrink:0;">Saisir en :</span>
             <button id="pf-mode-latin" class="mode-script actif" onclick="setModeCreation('pf','latin')">📝 Latin</button>
             <button id="pf-mode-adlam" class="mode-script"       onclick="setModeCreation('pf','adlam')">𞤀𞤣𞤤 Adlam</button>
+            <button type="button" class="btn-ouvrir-arabe" data-cible="pf-pular" onclick="toggleClavierArabe('pf-pular')">🕌 Ajami</button>
           </div>
           <div class="form-row">
             <input id="pf-emoji"  type="text" placeholder="Emoji 🐘"       maxlength="4">
@@ -1474,6 +1511,7 @@
               <span style="font-size:.72rem;color:var(--gris);flex-shrink:0;">Saisir en :</span>
               <button id="pedit-mode-latin" class="mode-script actif" onclick="setModeCreation('pedit','latin')">📝 Latin</button>
               <button id="pedit-mode-adlam" class="mode-script"       onclick="setModeCreation('pedit','adlam')">𞤀𞤣𞤤 Adlam</button>
+              <button type="button" class="btn-ouvrir-arabe" data-cible="pedit-pular" onclick="toggleClavierArabe('pedit-pular')">🕌 Ajami</button>
             </div>
             <div class="form-row">
               <input id="pedit-emoji" type="text" placeholder="Emoji" maxlength="4">
@@ -1539,6 +1577,7 @@
             <span style="font-size:.72rem;color:var(--gris);flex-shrink:0;">Saisir en :</span>
             <button id="pp-mode-latin" class="mode-script actif" onclick="setModeCreation('pp','latin')">📝 Latin</button>
             <button id="pp-mode-adlam" class="mode-script"       onclick="setModeCreation('pp','adlam')">𞤀𞤣𞤤 Adlam</button>
+            <button type="button" class="btn-ouvrir-arabe" data-cible="pp-pular" onclick="toggleClavierArabe('pp-pular')">🕌 Ajami</button>
           </div>
           <div class="form-row">
             <input id="pp-pular" type="text" placeholder="Phrase en pular *" maxlength="200"
@@ -2526,6 +2565,94 @@ function insererAdlamGlobal(char) {
   ta.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
+// ── Clavier arabe/ajami global ─────────────────────────────────────────────
+// Contrairement à l'Adlam, il n'existe pas de correspondance latin↔ajami
+// fiable et unique (les traditions varient selon les régions) : ce clavier
+// insère directement les caractères arabes dans le champ ciblé, sans
+// tentative de conversion automatique — comme un clavier arabe physique.
+let _clavierArabeChampId = null;
+
+async function chargerClavierArabe() {
+  try {
+    const r = await fetch(`${API}/api/clavier-arabe`, { headers: H });
+    const clavier = await r.json();
+    const conteneur = document.getElementById('clavier-arabe-global');
+    if (!conteneur) return;
+    const groupes = [
+      { titre: 'Lettres',    touches: clavier.lettres },
+      { titre: 'Variantes',  touches: clavier.variantes },
+      { titre: 'Harakat',    touches: clavier.harakat },
+    ];
+    conteneur.innerHTML = '';
+    groupes.forEach(g => {
+      if (!g.touches?.length) return;
+      const sep = document.createElement('div');
+      sep.className = 'sep-clavier';
+      sep.style.cssText = 'width:100%;font-size:.68rem;color:#8fac97;margin:4px 0 2px;';
+      sep.textContent = g.titre;
+      conteneur.appendChild(sep);
+      g.touches.forEach(t => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn-clavier-arabe';
+        btn.title = t.label || '';
+        btn.textContent = t.car;
+        btn.onclick = () => insererArabeGlobal(t.car);
+        conteneur.appendChild(btn);
+      });
+    });
+  } catch (e) { /* silencieux */ }
+}
+chargerClavierArabe();
+
+function toggleClavierArabe(champId) {
+  const clavier  = document.getElementById('clavier-arabe-global');
+  const backdrop = document.getElementById('clavier-arabe-backdrop');
+  if (!clavier) return;
+
+  if (_clavierArabeChampId === champId && clavier.classList.contains('visible')) {
+    fermerClavierArabe(); return;
+  }
+  _clavierArabeChampId = champId;
+
+  const champ = document.getElementById(champId);
+  if (champ) {
+    const rect = champ.getBoundingClientRect();
+    const top  = rect.bottom + 6;
+    const left = Math.max(8, Math.min(rect.left, window.innerWidth - 320));
+    clavier.style.top  = Math.min(top, window.innerHeight - 290) + 'px';
+    clavier.style.left = left + 'px';
+    champ.focus();
+  }
+  clavier.classList.add('visible');
+  backdrop.style.display = 'block';
+  document.querySelectorAll('.btn-ouvrir-arabe').forEach(b => {
+    b.classList.toggle('actif', b.dataset.cible === champId);
+  });
+}
+window.toggleClavierArabe = toggleClavierArabe;
+
+function fermerClavierArabe() {
+  const c = document.getElementById('clavier-arabe-global');
+  const b = document.getElementById('clavier-arabe-backdrop');
+  c?.classList.remove('visible');
+  if (b) b.style.display = 'none';
+  document.querySelectorAll('.btn-ouvrir-arabe').forEach(b => b.classList.remove('actif'));
+  _clavierArabeChampId = null;
+}
+window.fermerClavierArabe = fermerClavierArabe;
+
+function insererArabeGlobal(char) {
+  if (!_clavierArabeChampId) return;
+  const champ = document.getElementById(_clavierArabeChampId);
+  if (!champ) return;
+  const pos = champ.selectionStart ?? champ.value.length;
+  champ.value = champ.value.slice(0, pos) + char + champ.value.slice(champ.selectionEnd ?? pos);
+  champ.selectionStart = champ.selectionEnd = pos + char.length;
+  champ.focus();
+  champ.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
 async function _adlamVersLatinInput(adlamId, latinId) {
   const adlamEl = document.getElementById(adlamId);
   const latinEl = document.getElementById(latinId);
@@ -3496,6 +3623,28 @@ async function edGenererImage() {
     btn.disabled = false;
   }
 }
+
+function edChoisirScript(script) {
+  document.querySelectorAll('.ed-edito-script-btn').forEach(b => {
+    b.classList.toggle('actif', b.dataset.script === script);
+  });
+  const ta = document.getElementById('ed-edito-contenu');
+  if (script === 'adlam') {
+    toggleClavierGlobal('ed-edito-contenu', null);
+  } else if (script === 'ajami') {
+    toggleClavierArabe('ed-edito-contenu');
+  } else {
+    fermerClavierGlobal();
+    fermerClavierArabe();
+  }
+  const placeholders = {
+    latin: 'Ton texte *', anglais: 'Your text *',
+    adlam: 'Ton texte * (𞤀𞤣𞤤𞤢𞤥 — utilise le clavier qui vient de s\'ouvrir)',
+    ajami: 'Ton texte * (ajami/عربي — utilise le clavier qui vient de s\'ouvrir)',
+  };
+  ta.placeholder = placeholders[script] || 'Ton texte *';
+}
+window.edChoisirScript = edChoisirScript;
 
 async function edProposerEdito() {
   const titre = document.getElementById('ed-edito-titre').value.trim();
@@ -5733,5 +5882,7 @@ chargerMotsCustom();
 <!-- Clavier Adlam flottant global (partagé par tous les champs Adlam) -->
 <div id="clavier-adlam-backdrop" onclick="fermerClavierGlobal()"></div>
 <div id="clavier-adlam-global"></div>
+<div id="clavier-arabe-backdrop" onclick="fermerClavierArabe()"></div>
+<div id="clavier-arabe-global"></div>
 </body>
 </html>

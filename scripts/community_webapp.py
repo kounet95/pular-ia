@@ -403,11 +403,17 @@ async def api_valider(
 import sys
 sys.path.insert(0, str(PROJET_ROOT / "scripts"))
 from adlam import latin_vers_adlam, adlam_vers_latin, est_adlam, CLAVIER_ADLAM
+from arabe import CLAVIER_ARABE
 
 @app.get("/api/clavier-adlam")
 async def api_clavier_adlam():
     """Retourne la disposition du clavier Adlam pour le frontend."""
     return JSONResponse(CLAVIER_ADLAM)
+
+@app.get("/api/clavier-arabe")
+async def api_clavier_arabe():
+    """Retourne la disposition du clavier arabe (ajami) pour le frontend."""
+    return JSONResponse(CLAVIER_ARABE)
 
 @app.post("/api/convertir")
 async def api_convertir(texte: str = Form(...), vers: str = Form("adlam")):
