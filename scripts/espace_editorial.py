@@ -372,10 +372,65 @@ def ajouter_edito(titre: str, auteur: str, contenu: str, image: str) -> dict:
         "statut":           "publie",
         "date_soumission":  maintenant,
         "date_publication": maintenant,
+        "likes":            [],
+        "commentaires":     [],
     }
     editos.append(edito)
     sauver_editos(editos)
     return edito
+
+def basculer_like(edito_id: str, visiteur_id: str) -> dict | None:
+    """
+    Ajoute ou retire le like d'un visiteur. Pas de compte utilisateur sur ce
+    site : `visiteur_id` est un identifiant anonyme généré côté client
+    (localStorage) — assez pour éviter les doublons/spam de clics, pas pensé
+    pour résister à un utilisateur qui vide son navigateur exprès.
+    Retourne {likes, aime} ou None si l'édito n'existe pas.
+    """
+    editos = charger_editos()
+    for e in editos:
+        if e["id"] == edito_id:
+            likes = e.setdefault("likes", [])
+            if visiteur_id in likes:
+                likes.remove(visiteur_id)
+                aime = False
+            else:
+                likes.append(visiteur_id)
+                aime = True
+            sauver_editos(editos)
+            return {"likes": len(likes), "aime": aime}
+    return None
+
+def ajouter_commentaire(edito_id: str, auteur: str, texte: str) -> dict | None:
+    """Ajoute un commentaire, publié immédiatement (même logique que les
+    éditos eux-mêmes : pas de file de modération a priori)."""
+    editos = charger_editos()
+    for e in editos:
+        if e["id"] == edito_id:
+            commentaire = {
+                "id":     str(uuid.uuid4())[:8],
+                "auteur": (auteur or "Anonyme").strip()[:60] or "Anonyme",
+                "texte":  texte.strip()[:1000],
+                "date":   datetime.now().isoformat(),
+            }
+            e.setdefault("commentaires", []).append(commentaire)
+            sauver_editos(editos)
+            return commentaire
+    return None
+
+def supprimer_commentaire(edito_id: str, commentaire_id: str) -> bool:
+    """Modération a posteriori (admin) d'un commentaire abusif."""
+    editos = charger_editos()
+    for e in editos:
+        if e["id"] == edito_id:
+            avant = e.get("commentaires", [])
+            apres = [c for c in avant if c["id"] != commentaire_id]
+            if len(apres) == len(avant):
+                return False
+            e["commentaires"] = apres
+            sauver_editos(editos)
+            return True
+    return False
 
 def publier_edito(edito_id: str) -> bool:
     editos = charger_editos()

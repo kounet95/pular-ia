@@ -1213,27 +1213,73 @@ async def api_editorial_edito_image(edito_id: str):
         raise HTTPException(404, "Image introuvable.")
     return FileResponse(chemin)
 
+def _edito_pour_client(e: dict, visiteur_id: str = "") -> dict:
+    """
+    Convertit la liste interne de likes (identifiants anonymes de visiteurs)
+    en un simple compteur + indicateur pour CE visiteur, pour ne jamais
+    exposer les identifiants des autres visiteurs dans l'API publique.
+    """
+    d = dict(e)
+    likes = d.pop("likes", [])
+    d["likes_count"] = len(likes)
+    d["mon_like"] = bool(visiteur_id) and visiteur_id in likes
+    d["commentaires"] = d.get("commentaires", [])
+    return d
+
 @app.get("/api/editorial/editos")
-async def api_editorial_editos(key: str = ""):
+async def api_editorial_editos(key: str = "", visiteur_id: str = ""):
     """
     Par défaut, ne renvoie que les éditos publiés. Avec la clé admin,
     renvoie aussi ceux en attente de validation.
     """
     editos = EE.charger_editos()
     is_admin = bool(ADMIN_KEY) and key == ADMIN_KEY
-    if is_admin:
-        return JSONResponse(editos)
-    return JSONResponse([e for e in editos if e["statut"] == "publie"])
+    if not is_admin:
+        editos = [e for e in editos if e["statut"] == "publie"]
+    return JSONResponse([_edito_pour_client(e, visiteur_id) for e in editos])
 
 @app.get("/api/editorial/editos/{edito_id}")
-async def api_editorial_edito_unique(edito_id: str, key: str = ""):
+async def api_editorial_edito_unique(edito_id: str, key: str = "", visiteur_id: str = ""):
     """Un édito précis — public uniquement s'il est publié (sinon 404, même s'il existe)."""
     editos = EE.charger_editos()
     edito = next((e for e in editos if e["id"] == edito_id), None)
     is_admin = bool(ADMIN_KEY) and key == ADMIN_KEY
     if not edito or (edito["statut"] != "publie" and not is_admin):
         raise HTTPException(404, "Édito non trouvé.")
-    return JSONResponse(edito)
+    return JSONResponse(_edito_pour_client(edito, visiteur_id))
+
+@app.post("/api/editorial/editos/{edito_id}/like")
+async def api_editorial_like_edito(edito_id: str, visiteur_id: str = Form(...)):
+    visiteur_id = visiteur_id.strip()[:80]
+    if not visiteur_id:
+        raise HTTPException(400, "Identifiant visiteur manquant.")
+    resultat = await asyncio.to_thread(EE.basculer_like, edito_id, visiteur_id)
+    if resultat is None:
+        raise HTTPException(404, "Édito non trouvé.")
+    return JSONResponse({"ok": True, **resultat})
+
+@app.post("/api/editorial/editos/{edito_id}/commentaires")
+async def api_editorial_ajouter_commentaire(
+    edito_id: str,
+    auteur: str = Form(""),
+    texte:  str = Form(...),
+):
+    texte = texte.strip()
+    if not texte:
+        raise HTTPException(400, "Commentaire vide.")
+    if len(texte) > 1000:
+        raise HTTPException(400, "Commentaire trop long (max 1000 caractères).")
+    commentaire = await asyncio.to_thread(EE.ajouter_commentaire, edito_id, auteur.strip(), texte)
+    if commentaire is None:
+        raise HTTPException(404, "Édito non trouvé.")
+    return JSONResponse({"ok": True, "commentaire": commentaire})
+
+@app.delete("/api/editorial/editos/{edito_id}/commentaires/{commentaire_id}")
+async def api_editorial_supprimer_commentaire(edito_id: str, commentaire_id: str, key: str = ""):
+    _check_admin(key)
+    if not await asyncio.to_thread(EE.supprimer_commentaire, edito_id, commentaire_id):
+        raise HTTPException(404, "Commentaire non trouvé.")
+    return JSONResponse({"ok": True})
 
 MOIS_FR = ["janvier", "février", "mars", "avril", "mai", "juin",
            "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
@@ -1277,12 +1323,14 @@ async def page_editos_publies(request: Request):
         if len(e["contenu"]) > 180:
             extrait += "…"
         image = f'{base}/api/editorial/editos/{e["id"]}/image' if e.get("image") else ""
+        nb_likes = len(e.get("likes", []))
+        nb_comm  = len(e.get("commentaires", []))
         return f"""
         <a class="carte-edito" href="{base}/lire/{e['id']}">
           {f'<img src="{image}" alt="">' if image else ''}
           <div class="carte-edito-corps">
             <h2>{titre}</h2>
-            <div class="carte-edito-meta">✍️ {auteur} · {date_pub}</div>
+            <div class="carte-edito-meta">✍️ {auteur} · {date_pub} · ❤️ {nb_likes} · 💬 {nb_comm}</div>
             <p>{extrait}</p>
           </div>
         </a>"""
@@ -1364,10 +1412,25 @@ text-align:center;padding:60px 20px;">
     extrait     = html.escape(edito["contenu"].strip().replace("\n", " ")[:180])
     image_url   = f"{base}/api/editorial/editos/{edito_id}/image" if edito.get("image") else ""
     page_url    = f"{base}/lire/{edito_id}"
+    nb_likes    = len(edito.get("likes", []))
+    commentaires = sorted(edito.get("commentaires", []), key=lambda c: c.get("date", ""))
 
     url_encodee   = quote(page_url, safe="")
     titre_encode  = quote(edito["titre"])
     whatsapp_texte = quote(f"{edito['titre']} — {page_url}")
+
+    def _commentaire_html(c: dict) -> str:
+        c_auteur = html.escape(c.get("auteur", "Anonyme"))
+        c_texte  = html.escape(c.get("texte", "")).replace("\n", "<br>")
+        c_date   = _date_fr(c.get("date", ""))
+        return f"""
+        <div class="commentaire" data-id="{c['id']}">
+          <div class="commentaire-meta"><strong>{c_auteur}</strong> · {c_date}</div>
+          <div class="commentaire-texte">{c_texte}</div>
+        </div>"""
+
+    commentaires_html = "".join(_commentaire_html(c) for c in commentaires) or \
+        '<p id="pas-de-commentaires" style="color:#8fac97;font-size:.85rem;">Aucun commentaire pour l\'instant — sois le premier à réagir !</p>'
 
     return HTMLResponse(f"""<!doctype html>
 <html lang="fr">
@@ -1414,6 +1477,32 @@ text-align:center;padding:60px 20px;">
     font-size: .82rem; font-weight: 600; cursor: pointer; font-family: inherit;
   }}
   .partage-liens a:hover, .partage-liens button:hover {{ border-color: #c8a84b; }}
+  .reactions {{ display: flex; align-items: center; gap: 14px; margin-top: 26px; }}
+  #btn-like {{
+    display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 20px;
+    border: 1px solid #2d5c3a; background: #142b1c; color: #e8f5e9; cursor: pointer;
+    font-size: .9rem; font-weight: 600; font-family: inherit; transition: border-color .15s, background .15s;
+  }}
+  #btn-like:hover {{ border-color: #8b1e5c; }}
+  #btn-like.aime {{ background: #3a1224; border-color: #8b1e5c; color: #ff7fa8; }}
+  .commentaires {{ margin-top: 36px; padding-top: 22px; border-top: 1px solid #1e3d28; }}
+  .commentaires h2 {{ font-size: 1.05rem; color: #c8a84b; margin-bottom: 16px; }}
+  .commentaire-form {{ display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }}
+  .commentaire-form input, .commentaire-form textarea {{
+    background: #142b1c; border: 1px solid #2d5c3a; border-radius: 8px; color: #e8f5e9;
+    padding: 10px 12px; font-family: inherit; font-size: .88rem;
+  }}
+  .commentaire-form textarea {{ min-height: 80px; resize: vertical; }}
+  .commentaire-form button {{
+    align-self: flex-start; padding: 9px 18px; border-radius: 8px; border: none;
+    background: #8b1e5c; color: #fff; font-weight: 600; cursor: pointer; font-size: .85rem;
+  }}
+  .commentaire-form button:hover {{ background: #a3266f; }}
+  .commentaire-form button:disabled {{ opacity: .6; cursor: default; }}
+  .commentaire {{ padding: 12px 0; border-bottom: 1px solid #1e3d28; }}
+  .commentaire-meta {{ font-size: .78rem; color: #8fac97; margin-bottom: 4px; }}
+  .commentaire-meta strong {{ color: #c8a84b; }}
+  .commentaire-texte {{ font-size: .9rem; line-height: 1.5; color: #e8f5e9; }}
   footer {{ margin-top: 40px; padding-top: 20px; border-top: 1px solid #1e3d28; width: 100%; }}
   footer a {{
     display: inline-block; padding: 10px 18px; border-radius: 8px; border: 1px solid #8b1e5c;
@@ -1430,6 +1519,10 @@ text-align:center;padding:60px 20px;">
     <div class="meta">✍️ {auteur} · {date_pub}</div>
     <div class="contenu">{contenu_html}</div>
 
+    <div class="reactions">
+      <button id="btn-like" onclick="basculerLike()">🤍 <span id="nb-likes">{nb_likes}</span></button>
+    </div>
+
     <div class="partage">
       <p class="partage-titre">📤 PARTAGER CET ARTICLE</p>
       <div class="partage-liens">
@@ -1444,12 +1537,24 @@ text-align:center;padding:60px 20px;">
       </p>
     </div>
 
+    <div class="commentaires">
+      <h2>💬 Commentaires (<span id="nb-commentaires">{len(commentaires)}</span>)</h2>
+      <div class="commentaire-form">
+        <input id="com-auteur" type="text" placeholder="Ton nom / pseudo (facultatif)" maxlength="60">
+        <textarea id="com-texte" placeholder="Ton commentaire..." maxlength="1000"></textarea>
+        <button id="btn-commenter" onclick="envoyerCommentaire()">Publier</button>
+      </div>
+      <div id="liste-commentaires">{commentaires_html}</div>
+    </div>
+
     <footer>
       <a href="{base}/#carte-editorial">📰 Voir tous les éditos</a>
     </footer>
   </main>
   <script>
-    const PAGE_URL   = {json.dumps(page_url)};
+    const API       = {json.dumps(base)};
+    const EDITO_ID  = {json.dumps(edito_id)};
+    const PAGE_URL  = {json.dumps(page_url)};
     const PAGE_TITRE = {json.dumps(edito["titre"])};
 
     function copierLien() {{
@@ -1466,6 +1571,81 @@ text-align:center;padding:60px 20px;">
     }}
     function partageNatif() {{
       navigator.share({{ title: PAGE_TITRE, url: PAGE_URL }}).catch(() => {{}});
+    }}
+
+    function visiteurId() {{
+      let id = localStorage.getItem('pularVisiteurId');
+      if (!id) {{
+        id = 'v_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+        localStorage.setItem('pularVisiteurId', id);
+      }}
+      return id;
+    }}
+
+    function escHtml(s) {{
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }}
+
+    async function chargerEtatLike() {{
+      try {{
+        const r = await fetch(`${{API}}/api/editorial/editos/${{EDITO_ID}}?visiteur_id=${{encodeURIComponent(visiteurId())}}`);
+        const e = await r.json();
+        document.getElementById('nb-likes').textContent = e.likes_count;
+        document.getElementById('btn-like').classList.toggle('aime', !!e.mon_like);
+        document.getElementById('btn-like').firstChild.textContent = e.mon_like ? '❤️ ' : '🤍 ';
+      }} catch (err) {{}}
+    }}
+    chargerEtatLike();
+
+    async function basculerLike() {{
+      const btn = document.getElementById('btn-like');
+      btn.disabled = true;
+      try {{
+        const fd = new FormData();
+        fd.append('visiteur_id', visiteurId());
+        const r = await fetch(`${{API}}/api/editorial/editos/${{EDITO_ID}}/like`, {{ method: 'POST', body: fd }});
+        const d = await r.json();
+        if (d.ok) {{
+          document.getElementById('nb-likes').textContent = d.likes;
+          btn.classList.toggle('aime', d.aime);
+          btn.firstChild.textContent = d.aime ? '❤️ ' : '🤍 ';
+        }}
+      }} catch (err) {{}}
+      btn.disabled = false;
+    }}
+
+    async function envoyerCommentaire() {{
+      const auteurEl = document.getElementById('com-auteur');
+      const texteEl  = document.getElementById('com-texte');
+      const btn      = document.getElementById('btn-commenter');
+      const texte    = texteEl.value.trim();
+      if (!texte) return;
+      btn.disabled = true;
+      try {{
+        const fd = new FormData();
+        fd.append('auteur', auteurEl.value.trim());
+        fd.append('texte', texte);
+        const r = await fetch(`${{API}}/api/editorial/editos/${{EDITO_ID}}/commentaires`, {{ method: 'POST', body: fd }});
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.detail || 'Erreur');
+        const vide = document.getElementById('pas-de-commentaires');
+        if (vide) vide.remove();
+        const c = d.commentaire;
+        const div = document.createElement('div');
+        div.className = 'commentaire';
+        div.dataset.id = c.id;
+        div.innerHTML = `<div class="commentaire-meta"><strong>${{escHtml(c.auteur)}}</strong> · à l'instant</div>
+          <div class="commentaire-texte">${{escHtml(c.texte).replace(/\\n/g, '<br>')}}</div>`;
+        document.getElementById('liste-commentaires').appendChild(div);
+        document.getElementById('nb-commentaires').textContent =
+          document.querySelectorAll('#liste-commentaires .commentaire').length;
+        texteEl.value = '';
+      }} catch (err) {{
+        alert('Impossible de publier le commentaire.');
+      }}
+      btn.disabled = false;
     }}
   </script>
 </body>

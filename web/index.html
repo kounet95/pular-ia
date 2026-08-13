@@ -3189,16 +3189,46 @@ async function edChargerEditos() {
     }
     divListe.innerHTML = publies.slice().reverse().map(e => {
       const extrait = e.contenu.length > 220 ? e.contenu.slice(0, 220).trim() + '…' : e.contenu;
+      const comms = e.commentaires || [];
+      const modHtml = key && comms.length ? `
+        <details style="margin:-4px 0 12px;font-size:.78rem;color:var(--gris);">
+          <summary style="cursor:pointer;color:#c8a84b;">🛡️ Modérer les commentaires (${comms.length})</summary>
+          <div style="margin-top:8px;display:flex;flex-direction:column;gap:8px;">
+            ${comms.map(c => `
+              <div style="border:1px solid #2d5c3a;border-radius:6px;padding:8px;">
+                <div><strong>${escHtml(c.auteur)}</strong> · ${new Date(c.date).toLocaleDateString('fr-FR')}</div>
+                <div style="margin:4px 0;">${escHtml(c.texte)}</div>
+                <button onclick="edSupprimerCommentaire('${e.id}','${c.id}')" style="font-size:.72rem;color:#e05a5a;background:none;border:none;cursor:pointer;padding:0;">🗑️ Supprimer</button>
+              </div>`).join('')}
+          </div>
+        </details>` : '';
       return `
-      <a href="${API}/lire/${e.id}" class="ed-edito-card" style="text-decoration:none;color:inherit;display:block;">
-        ${e.image ? `<img src="${API}/api/editorial/editos/${e.id}/image" style="width:100%;max-height:220px;object-fit:cover;border-radius:8px;margin-bottom:8px;" alt=""/>` : ''}
-        <div class="ed-edito-titre">${escHtml(e.titre)}</div>
-        <div class="ed-edito-meta">✍️ ${escHtml(e.auteur)} · ${new Date(e.date_publication).toLocaleDateString('fr-FR')}</div>
-        <div class="ed-edito-contenu">${escHtml(extrait)}</div>
-        <div style="font-size:.78rem;color:#c8a84b;font-weight:600;margin-top:6px;">Lire l'article complet →</div>
-      </a>`;
+      <div>
+        <a href="${API}/lire/${e.id}" class="ed-edito-card" style="text-decoration:none;color:inherit;display:block;">
+          ${e.image ? `<img src="${API}/api/editorial/editos/${e.id}/image" style="width:100%;max-height:220px;object-fit:cover;border-radius:8px;margin-bottom:8px;" alt=""/>` : ''}
+          <div class="ed-edito-titre">${escHtml(e.titre)}</div>
+          <div class="ed-edito-meta">✍️ ${escHtml(e.auteur)} · ${new Date(e.date_publication).toLocaleDateString('fr-FR')} · ❤️ ${e.likes_count || 0} · 💬 ${comms.length}</div>
+          <div class="ed-edito-contenu">${escHtml(extrait)}</div>
+          <div style="font-size:.78rem;color:#c8a84b;font-weight:600;margin-top:6px;">Lire l'article complet →</div>
+        </a>
+        ${modHtml}
+      </div>`;
     }).join('');
   } catch(e) { /* silencieux */ }
+}
+
+async function edSupprimerCommentaire(editoId, commentaireId) {
+  const key = edAdminKey();
+  if (!confirm('Supprimer ce commentaire ?')) return;
+  try {
+    const r = await fetch(`${API}/api/editorial/editos/${editoId}/commentaires/${commentaireId}?key=${encodeURIComponent(key)}`, { method:'DELETE', headers:H });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
+    toast('🗑️ Commentaire supprimé');
+    edChargerEditos();
+  } catch(e) {
+    toast('❌ ' + e.message, true);
+  }
 }
 
 async function edPublierEdito(id) {
