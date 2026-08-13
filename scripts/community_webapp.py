@@ -2490,6 +2490,8 @@ async def api_prof_ajouter_phrase(
     pular: str = Form(...),
     adlam: str = Form(""),
     fr:    str = Form(""),
+    en:    str = Form(""),
+    ar:    str = Form(""),
     cat:   str = Form("Autre"),
     pseudo: str = Form("prof"),
 ):
@@ -2501,6 +2503,8 @@ async def api_prof_ajouter_phrase(
         "pular":  pular.strip(),
         "adlam":  adlam.strip() or latin_vers_adlam(pular.strip()),
         "fr":     fr.strip(),
+        "en":     en.strip(),
+        "ar":     ar.strip(),
         "cat":    cat.strip() or "Autre",
         "pseudo": pseudo.strip(),
         "date":   datetime.now().isoformat(),
@@ -2516,6 +2520,8 @@ async def api_prof_modifier_phrase(
     pular: str = Form(...),
     adlam: str = Form(""),
     fr:    str = Form(""),
+    en:    str = Form(""),
+    ar:    str = Form(""),
     cat:   str = Form("Autre"),
 ):
     phrases = charger_phrases_custom()
@@ -2525,6 +2531,8 @@ async def api_prof_modifier_phrase(
                 "pular":   pular.strip(),
                 "adlam":   adlam.strip() or latin_vers_adlam(pular.strip()),
                 "fr":      fr.strip(),
+                "en":      en.strip(),
+                "ar":      ar.strip(),
                 "cat":     cat.strip() or "Autre",
                 "modifie": datetime.now().isoformat(),
             })
@@ -2640,6 +2648,8 @@ async def api_modifier_phrase_base(
     phrase_id: str,
     pular: str = Form(...),
     fr:    str = Form(""),
+    en:    str = Form(""),
+    ar:    str = Form(""),
     cat:   str = Form("Autre"),
 ):
     phrases = charger_phrases_base()
@@ -2651,6 +2661,8 @@ async def api_modifier_phrase_base(
         "pular": pular_clean,
         "adlam": latin_vers_adlam(pular_clean),
         "fr":    fr.strip(),
+        "en":    en.strip(),
+        "ar":    ar.strip(),
         "cat":   cat,
         "modifie": datetime.now().isoformat(),
     })
@@ -2670,6 +2682,8 @@ async def api_suggestion_phrase(
     pular_original: str = Form(...),
     pular_corrige:  str = Form(...),
     fr_corrige:     str = Form(""),
+    en_corrige:     str = Form(""),
+    ar_corrige:     str = Form(""),
     pseudo:         str = Form("anonyme"),
 ):
     pular_c = pular_corrige.strip()
@@ -2683,6 +2697,8 @@ async def api_suggestion_phrase(
         "pular_original": pular_original.strip(),
         "pular_corrige":  pular_c,
         "fr_corrige":     fr_corrige.strip(),
+        "en_corrige":     en_corrige.strip(),
+        "ar_corrige":     ar_corrige.strip(),
         "timestamp":      datetime.now().isoformat(),
     }
     path = DOSSIER_CORRECTIONS_PHRASES / entry["fichier"]
@@ -2705,6 +2721,8 @@ async def api_appliquer_suggestion_phrase(
     phrase_id:     str = Form(...),
     pular_corrige: str = Form(...),
     fr_corrige:    str = Form(""),
+    en_corrige:    str = Form(""),
+    ar_corrige:    str = Form(""),
     fichier:       str = Form(...),
 ):
     pular_c = pular_corrige.strip()
@@ -2719,6 +2737,10 @@ async def api_appliquer_suggestion_phrase(
                 p["adlam"] = latin_vers_adlam(pular_c)
                 if fr_corrige.strip():
                     p["fr"] = fr_corrige.strip()
+                if en_corrige.strip():
+                    p["en"] = en_corrige.strip()
+                if ar_corrige.strip():
+                    p["ar"] = ar_corrige.strip()
                 p["modifie"] = datetime.now().isoformat()
                 sauver(phrases)
                 (DOSSIER_CORRECTIONS_PHRASES / fichier).unlink(missing_ok=True)

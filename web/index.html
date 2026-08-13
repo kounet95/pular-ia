@@ -1593,6 +1593,13 @@
           <div id="pp-clavier-inline" class="clavier-inline"></div>
           <input id="pp-fr" type="text" placeholder="Traduction française" maxlength="200"
             style="width:100%;padding:9px 12px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;color:var(--texte);font-size:.9rem;outline:none;margin-top:6px;">
+          <input id="pp-en" type="text" placeholder="🇬🇧 Traduction anglaise (optionnel)" maxlength="200"
+            style="width:100%;padding:9px 12px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;color:var(--texte);font-size:.9rem;outline:none;margin-top:6px;">
+          <div class="champ-adlam-wrap" style="margin-top:6px;">
+            <input id="pp-ar" type="text" placeholder="🕌 Traduction arabe (optionnel)" maxlength="200"
+              style="direction:rtl;padding:9px 12px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;color:var(--texte);font-size:.9rem;outline:none;">
+            <button type="button" class="btn-ouvrir-arabe" data-cible="pp-ar" onclick="toggleClavierArabe('pp-ar')" title="Clavier arabe">🕌</button>
+          </div>
           <div class="form-row" style="margin-top:6px;">
             <select id="pp-cat" style="padding:9px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;color:var(--texte);">
               <option value="Autre">Catégorie</option>
@@ -2196,14 +2203,18 @@ function filtrerPhrases(cat) {
     const card = document.createElement('div');
     card.className = 'phrase-card' + (phraseActive === p ? ' active' : '');
     card.dataset.pid = pid;
-    const pE = p.pular.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-    const fE = p.fr.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const pE  = p.pular.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const fE  = (p.fr || '').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const enE = (p.en || '').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const arE = (p.ar || '').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     card.innerHTML = `
       <div class="phrase-card-row" onclick="selectionnerPhrase(PHRASES.find(x=>x.id==='${pid}')||PHRASES[${i}])">
         <div class="txt">
           <div class="pular">${p.pular}</div>
           <div class="adlam" style="font-size:.78rem;color:var(--or);opacity:.7;direction:rtl;text-align:right;margin-top:2px;">${latinVersAdlam(p.pular)}</div>
           <div class="fr">${p.fr}</div>
+          ${p.en ? `<div class="fr" style="opacity:.75;">🇬🇧 ${p.en}</div>` : ''}
+          ${p.ar ? `<div class="fr" style="opacity:.75;direction:rtl;text-align:right;">🕌 ${p.ar}</div>` : ''}
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
           <span class="cat">${p.cat}</span>
@@ -2224,6 +2235,13 @@ function filtrerPhrases(cat) {
             onclick="event.stopPropagation();toggleClavierGlobal('pinput-adlam-${pid}','pinput-pular-${pid}')" title="Clavier Adlam">𞤀𞤣𞤤</button>
         </div>
         <input id="pinput-fr-${pid}"    type="text" placeholder="Traduction française (optionnel)" value="${fE}">
+        <input id="pinput-en-${pid}"    type="text" placeholder="🇬🇧 Traduction anglaise (optionnel)" value="${enE}">
+        <div class="champ-adlam-wrap">
+          <input id="pinput-ar-${pid}" type="text" placeholder="🕌 Traduction arabe (optionnel)"
+            style="direction:rtl;" value="${arE}">
+          <button type="button" class="btn-ouvrir-arabe" data-cible="pinput-ar-${pid}"
+            onclick="event.stopPropagation();toggleClavierArabe('pinput-ar-${pid}')" title="Clavier arabe">🕌</button>
+        </div>
         <div class="phrase-form-btns">
           <button onclick="soumettreCorrection('${pid}','${pE}','${p.cat}')"
             style="background:var(--vert);color:white;">Envoyer la correction</button>
@@ -2248,6 +2266,8 @@ function toggleFormPhrase(pid) {
 async function soumettreCorrection(pid, pularOriginal, cat) {
   const pularInput = document.getElementById('pinput-pular-' + pid);
   const frInput    = document.getElementById('pinput-fr-' + pid);
+  const enInput    = document.getElementById('pinput-en-' + pid);
+  const arInput    = document.getElementById('pinput-ar-' + pid);
   const msg        = document.getElementById('pform-msg-' + pid);
   if (!pularInput || !msg) return;
   const pularCorrige = pularInput.value.trim();
@@ -2259,6 +2279,8 @@ async function soumettreCorrection(pid, pularOriginal, cat) {
     fd.append('pular_original', pularOriginal);
     fd.append('pular_corrige', pularCorrige);
     fd.append('fr_corrige', frInput ? frInput.value.trim() : '');
+    fd.append('en_corrige', enInput ? enInput.value.trim() : '');
+    fd.append('ar_corrige', arInput ? arInput.value.trim() : '');
     fd.append('pseudo', 'utilisateur');
     const r = await fetch('/api/suggestion-phrase', { method: 'POST', body: fd });
     const d = await r.json();
@@ -4625,9 +4647,11 @@ async function profChargerSuggestions() {
           <input id="sug-pular-${s.fichier}" type="text" value="${s.pular_corrige.replace(/"/g,'&quot;')}"
             style="width:100%;box-sizing:border-box;background:#0a160f;border:1px solid #2d5c3a;border-radius:7px;color:var(--texte);padding:6px 9px;font-size:.88rem;margin-top:3px;">
         </div>
-        ${s.fr_corrige ? `<div style="margin-bottom:8px;font-size:.8rem;color:var(--gris);">Traduction proposée : <em>${s.fr_corrige}</em></div>` : ''}
+        ${s.fr_corrige ? `<div style="margin-bottom:4px;font-size:.8rem;color:var(--gris);">🇫🇷 <em>${s.fr_corrige}</em></div>` : ''}
+        ${s.en_corrige ? `<div style="margin-bottom:4px;font-size:.8rem;color:var(--gris);">🇬🇧 <em>${s.en_corrige}</em></div>` : ''}
+        ${s.ar_corrige ? `<div style="margin-bottom:8px;font-size:.8rem;color:var(--gris);direction:rtl;">🕌 <em>${s.ar_corrige}</em></div>` : ''}
         <div style="display:flex;gap:8px;">
-          <button onclick="profAppliquerSuggestion('${s.fichier}','${s.phrase_id}','${(s.fr_corrige||'').replace(/'/g,"&#39;")}')"
+          <button onclick="profAppliquerSuggestion('${s.fichier}','${s.phrase_id}','${(s.fr_corrige||'').replace(/'/g,"&#39;")}','${(s.en_corrige||'').replace(/'/g,"&#39;")}','${(s.ar_corrige||'').replace(/'/g,"&#39;")}')"
             style="padding:6px 14px;border-radius:7px;border:none;background:var(--vert);color:white;font-weight:700;cursor:pointer;font-size:.8rem;">
             Appliquer</button>
           <button onclick="profIgnorerSuggestion('${s.fichier}')"
@@ -4641,7 +4665,7 @@ async function profChargerSuggestions() {
   }
 }
 
-async function profAppliquerSuggestion(fichier, phraseId, frCorrige) {
+async function profAppliquerSuggestion(fichier, phraseId, frCorrige, enCorrige, arCorrige) {
   const pularInput = document.getElementById('sug-pular-' + fichier);
   const pular = pularInput ? pularInput.value.trim() : '';
   if (!pular) return;
@@ -4649,6 +4673,8 @@ async function profAppliquerSuggestion(fichier, phraseId, frCorrige) {
   fd.append('phrase_id', phraseId);
   fd.append('pular_corrige', pular);
   fd.append('fr_corrige', frCorrige);
+  fd.append('en_corrige', enCorrige || '');
+  fd.append('ar_corrige', arCorrige || '');
   fd.append('fichier', fichier);
   try {
     const r = await fetch('/api/prof/appliquer-suggestion-phrase', { method: 'POST', body: fd });
@@ -5550,7 +5576,7 @@ async function profChargerPhrases() {
             <span style="font-size:.65rem;background:${isBase?'#1a3322':'#2a1a00'};color:${isBase?'#4caf7d':'var(--or)'};padding:1px 6px;border-radius:8px;">${p.cat||'?'} ${isBase?'· base':'· custom'}</span>
           </div>
           <div style="display:flex;gap:4px;">
-            <button onclick="ppEditer('${p.id}','${(p.pular||'').replace(/'/g,"\\'")}','${(p.fr||'').replace(/'/g,"\\'")}','${p.cat||''}')" style="padding:4px 7px;border-radius:5px;border:1px solid #2d5c3a;background:transparent;color:var(--gris);cursor:pointer;font-size:.75rem;">✏️</button>
+            <button onclick="ppEditer('${p.id}','${(p.pular||'').replace(/'/g,"\\'")}','${(p.fr||'').replace(/'/g,"\\'")}','${p.cat||''}','${(p.en||'').replace(/'/g,"\\'")}','${(p.ar||'').replace(/'/g,"\\'")}')" style="padding:4px 7px;border-radius:5px;border:1px solid #2d5c3a;background:transparent;color:var(--gris);cursor:pointer;font-size:.75rem;">✏️</button>
             <button onclick="ppSupprimer('${p.id}','${isBase}')" style="padding:4px 7px;border-radius:5px;border:1px solid #3d1515;background:transparent;color:#e05a5a;cursor:pointer;font-size:.75rem;">🗑️</button>
           </div>
         </div>
@@ -5562,11 +5588,13 @@ async function profChargerPhrases() {
 }
 window.profChargerPhrases = profChargerPhrases;
 
-function ppEditer(id, pular, fr, cat) {
+function ppEditer(id, pular, fr, cat, en, ar) {
   document.getElementById('pp-id').value    = id;
   document.getElementById('pp-type').value  = id.startsWith('ph') ? 'base' : 'custom';
   document.getElementById('pp-pular').value = pular;
   document.getElementById('pp-fr').value    = fr;
+  document.getElementById('pp-en').value    = en || '';
+  document.getElementById('pp-ar').value    = ar || '';
   document.getElementById('pp-adlam').value = latinVersAdlam(pular);
   const sel = document.getElementById('pp-cat');
   for (let o of sel.options) if (o.value === cat) { sel.value = cat; break; }
@@ -5578,7 +5606,7 @@ window.ppEditer = ppEditer;
 
 function ppAnnuler() {
   ppEditMode = false;
-  ['pp-id','pp-pular','pp-adlam','pp-fr'].forEach(id => document.getElementById(id).value='');
+  ['pp-id','pp-pular','pp-adlam','pp-fr','pp-en','pp-ar'].forEach(id => document.getElementById(id).value='');
   document.getElementById('pp-type').value = 'custom';
   document.getElementById('pp-form-titre').textContent = '➕ Nouvelle phrase';
 }
@@ -5592,12 +5620,14 @@ async function profSauverPhrasePanel() {
   if (!pular && adlam) pular = adlamVersLatinJS(adlam);
   if (!adlam && pular) adlam = latinVersAdlam(pular);
   const fr  = document.getElementById('pp-fr').value.trim();
+  const en  = document.getElementById('pp-en').value.trim();
+  const ar  = document.getElementById('pp-ar').value.trim();
   const cat = document.getElementById('pp-cat').value;
   if (!pular) { toast('❌ Le texte pular (ou Adlam) est obligatoire', true); return; }
 
   try {
     const fd = new FormData();
-    fd.append('pular', pular); fd.append('fr', fr); fd.append('cat', cat);
+    fd.append('pular', pular); fd.append('fr', fr); fd.append('en', en); fd.append('ar', ar); fd.append('cat', cat);
 
     let r;
     if (ppEditMode && id) {

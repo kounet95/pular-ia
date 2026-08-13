@@ -1,0 +1,164 @@
+[
+  {
+    "id": "ph0",
+    "pular": "Jam waali? Jam tan, baŋ-baŋ.",
+    "fr": "Comment vas-tu? Je vais bien, merci.",
+    "cat": "Salutations"
+  },
+  {
+    "id": "ph1",
+    "pular": "Hol tò innde maa?",
+    "fr": "Comment t'appelles-tu?",
+    "cat": "Salutations"
+  },
+  {
+    "id": "ph2",
+    "pular": "Innde am ko Amadou. Mi jooɗii e Kanade.",
+    "fr": "Je m'appelle Amadou. J'habite au Canada.",
+    "cat": "Salutations"
+  },
+  {
+    "id": "ph3",
+    "pular": "A jaaraama walaa! Alla hokku jam.",
+    "fr": "Merci beaucoup! Qu'Allah te donne la paix.",
+    "cat": "Salutations"
+  },
+  {
+    "id": "ph4",
+    "pular": "Nde ndarii? Nde warii?",
+    "fr": "D'où viens-tu? Où vas-tu?",
+    "cat": "Salutations"
+  },
+  {
+    "id": "ph5",
+    "pular": "Bismillahi Rahmaani Rahiimi.",
+    "fr": "Au nom d'Allah, le Clément, le Miséricordieux.",
+    "cat": "Islam"
+  },
+  {
+    "id": "ph6",
+    "pular": "Alhamdulillaahi Rabbil aalamiin.",
+    "fr": "Louange à Allah, Seigneur des mondes.",
+    "cat": "Islam"
+  },
+  {
+    "id": "ph7",
+    "pular": "Allahu Akbar, Allah mo Moƴƴo, Allah mo Jom baawɗe fof.",
+    "fr": "Allah est Grand, Allah est Bon, Allah est Tout-Puissant.",
+    "cat": "Islam"
+  },
+  {
+    "id": "ph8",
+    "pular": "Mi andaa ko Allah yiɗi. Mi yiɗi janngude Al-Qur'aana.",
+    "fr": "Je sais ce qu'Allah aime. J'aime lire le Coran.",
+    "cat": "Islam"
+  },
+  {
+    "id": "ph9",
+    "pular": "Ramadan woni lewru barke e naafoore.",
+    "fr": "Le Ramadan est un mois de bénédiction et de bienfaits.",
+    "cat": "Islam"
+  },
+  {
+    "id": "ph10",
+    "pular": "Minen kuɓɓi. Mi jogii debbo e ɓiɓɓe tati.",
+    "fr": "Je suis marié. J'ai une femme et trois enfants.",
+    "cat": "Famille"
+  },
+  {
+    "id": "ph11",
+    "pular": "Baaba am woni ngesa. Yinaande am woni galle.",
+    "fr": "Mon père est au champ. Ma mère est à la maison.",
+    "cat": "Famille"
+  },
+  {
+    "id": "ph12",
+    "pular": "Mi yiɗi ɓiɓɓe am haa ɓuri fof.",
+    "fr": "J'aime mes enfants plus que tout.",
+    "cat": "Famille"
+  },
+  {
+    "id": "ph13",
+    "pular": "Worɓe e rewɓe fof poti yiɗde famili maɓɓe.",
+    "fr": "Les hommes et les femmes doivent aimer leur famille.",
+    "cat": "Famille"
+  },
+  {
+    "id": "ph14",
+    "pular": "Hannde subaka, mi ñaami nyiiri e kosam.",
+    "fr": "Ce matin, j'ai mangé du riz avec du lait.",
+    "cat": "Quotidien"
+  },
+  {
+    "id": "ph15",
+    "pular": "Ndiyam moƴƴi. Ñaamdu moƴƴi faa jeyɗo.",
+    "fr": "L'eau est bonne. La nourriture est bonne pour celui qui en a.",
+    "cat": "Quotidien"
+  },
+  {
+    "id": "ph16",
+    "pular": "Mi yahay suudu janngo sakkitin.",
+    "fr": "J'irai à l'école demain matin.",
+    "cat": "Quotidien"
+  },
+  {
+    "id": "ph17",
+    "pular": "Leydi pular woni leydi moƴƴere.",
+    "fr": "Le pays peul est un beau pays.",
+    "cat": "Quotidien"
+  },
+  {
+    "id": "ph18",
+    "pular": "Ko waɗi-ɗaa hannde? Mi golliima tawa.",
+    "fr": "Qu'as-tu fait aujourd'hui? J'ai travaillé fort.",
+    "cat": "Quotidien"
+  },
+  {
+    "id": "ph19",
+    "pular": "Nagge am jogii ɓiɓɓe ɗiɗi yontere hee.",
+    "fr": "Ma vache a eu deux veaux cette semaine.",
+    "cat": "Nature"
+  },
+  {
+    "id": "ph20",
+    "pular": "Ladde mawndi. Ladde moƴƴi faa aynaaɓe.",
+    "fr": "La forêt est grande. La forêt est bonne pour les éleveurs.",
+    "cat": "Nature"
+  },
+  {
+    "id": "ph21",
+    "pular": "Ndungu wari. Ndiyam ɓurtii e maayo.",
+    "fr": "La saison des pluies est arrivée. L'eau a débordé du fleuve.",
+    "cat": "Nature"
+  },
+  {
+    "id": "ph22",
+    "pular": "Winde mawndi woni dow ladde.",
+    "fr": "Le grand village est au-dessus de la forêt.",
+    "cat": "Nature"
+  },
+  {
+    "id": "ph23",
+    "pular": "Pulaagu woni ndimaagu e moƴƴere e muuɗum.",
+    "fr": "Le Pulaagu c'est la noblesse, la bonté et la pudeur.",
+    "cat": "Culture"
+  },
+  {
+    "id": "ph24",
+    "pular": "Semteende woni tiitoonde Pullo kañum.",
+    "fr": "La pudeur est le fondement de l'identité peule.",
+    "cat": "Culture"
+  },
+  {
+    "id": "ph25",
+    "pular": "Ko feewde haa ɓuri yiɗde woni gollirde.",
+    "fr": "Ce qui est bien et ce qu'on aime, c'est ce qu'il faut faire.",
+    "cat": "Culture"
+  },
+  {
+    "id": "ph26",
+    "pular": "Gerɗol peelo woni moƴƴere e teddungal.",
+    "fr": "La musique peule est beauté et dignité.",
+    "cat": "Culture"
+  }
+]
