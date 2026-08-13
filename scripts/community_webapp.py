@@ -1146,23 +1146,38 @@ async def api_editorial_livres():
 
 @app.post("/api/editorial/livres")
 async def api_editorial_ajouter_livre(
-    titre:         str = Form(...),
-    description:   str = Form(""),
-    prix:          float = Form(...),
-    devise:        str = Form("eur"),
-    format_livre:  str = Form("numérique"),
-    key:           str = Form(""),
-    couverture:    UploadFile | None = File(None),
+    titre:              str = Form(...),
+    auteur:             str = Form(""),
+    description:        str = Form(""),
+    devise:             str = Form("gnf"),
+    prix_numerique:     str = Form(""),   # chaîne vide = format non proposé
+    prix_papier:        str = Form(""),
+    key:                str = Form(""),
+    couverture:         UploadFile | None = File(None),
+    fichier_numerique:  UploadFile | None = File(None),
 ):
     """Ajoute un livre au catalogue de vente (admin uniquement)."""
     _check_admin(key)
     if not titre.strip():
         raise HTTPException(400, "Titre requis.")
-    if prix <= 0:
-        raise HTTPException(400, "Le prix doit être positif.")
     devise = devise.lower()
     if devise not in EE.DEVISES_ACCEPTEES:
         raise HTTPException(400, f"Devise non supportée. Acceptées: {EE.DEVISES_ACCEPTEES}")
+
+    def _parse_prix(brut: str) -> int | None:
+        brut = brut.strip()
+        if not brut:
+            return None
+        try:
+            val = float(brut)
+        except ValueError:
+            raise HTTPException(400, "Prix invalide.")
+        if val <= 0:
+            raise HTTPException(400, "Le prix doit être positif.")
+        return EE.calculer_montant_stripe(val, devise)
+
+    prix_num_centimes = _parse_prix(prix_numerique)
+    prix_pap_centimes = _parse_prix(prix_papier)
 
     couverture_nom = ""
     if couverture is not None and couverture.filename:
@@ -1173,12 +1188,27 @@ async def api_editorial_ajouter_livre(
         couverture_nom = f"{uuid.uuid4().hex[:8]}{ext}"
         (EE.DOSSIER_COUVERTURES / couverture_nom).write_bytes(contenu)
 
-    prix_centimes = EE.calculer_montant_stripe(prix, devise)
-    fiche = await asyncio.to_thread(
-        EE.ajouter_livre, titre.strip(), description.strip(), prix_centimes,
-        devise, format_livre, couverture_nom,
-    )
-    log.info(f"Éditorial — livre ajouté au catalogue: {titre} ({prix}{devise})")
+    fichier_nom = ""
+    if prix_num_centimes is not None:
+        if fichier_numerique is None or not fichier_numerique.filename:
+            raise HTTPException(400, "Un fichier (PDF/EPUB) est requis pour proposer le format numérique.")
+        ext = Path(fichier_numerique.filename).suffix.lower()
+        if ext not in EE.EXTENSIONS_FICHIER_NUMERIQUE:
+            raise HTTPException(400, "Fichier numérique: PDF ou EPUB uniquement.")
+        contenu_fichier = await fichier_numerique.read()
+        if len(contenu_fichier) < 10:
+            raise HTTPException(400, "Fichier numérique invalide.")
+        fichier_nom = f"{uuid.uuid4().hex[:8]}{ext}"
+        (EE.DOSSIER_LIVRES_FICHIERS / fichier_nom).write_bytes(contenu_fichier)
+
+    try:
+        fiche = await asyncio.to_thread(
+            EE.ajouter_livre, titre.strip(), auteur.strip(), description.strip(), devise,
+            couverture_nom, prix_num_centimes, prix_pap_centimes, fichier_nom,
+        )
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    log.info(f"Éditorial — livre ajouté au catalogue: {titre}")
     return JSONResponse({"ok": True, "livre": fiche})
 
 @app.get("/api/editorial/livres/{livre_id}/couverture")
@@ -1199,27 +1229,228 @@ async def api_editorial_supprimer_livre(livre_id: str, key: str = ""):
         raise HTTPException(404, "Livre non trouvé.")
     return JSONResponse({"ok": True})
 
+# ── Zones de livraison (papier) ─────────────────────────────────────────────
+
+@app.get("/api/editorial/zones-livraison")
+async def api_editorial_zones_livraison():
+    return JSONResponse(EE.charger_zones_livraison())
+
+@app.post("/api/editorial/zones-livraison")
+async def api_editorial_ajouter_zone(
+    nom:    str = Form(...),
+    frais:  float = Form(...),
+    devise: str = Form("gnf"),
+    key:    str = Form(""),
+):
+    _check_admin(key)
+    if not nom.strip():
+        raise HTTPException(400, "Nom de zone requis.")
+    if frais < 0:
+        raise HTTPException(400, "Les frais ne peuvent pas être négatifs.")
+    devise = devise.lower()
+    if devise not in EE.DEVISES_ACCEPTEES:
+        raise HTTPException(400, f"Devise non supportée. Acceptées: {EE.DEVISES_ACCEPTEES}")
+    frais_centimes = EE.calculer_montant_stripe(frais, devise)
+    zone = await asyncio.to_thread(EE.ajouter_zone_livraison, nom.strip(), frais_centimes, devise)
+    return JSONResponse({"ok": True, "zone": zone})
+
+@app.delete("/api/editorial/zones-livraison/{zone_id}")
+async def api_editorial_supprimer_zone(zone_id: str, key: str = ""):
+    _check_admin(key)
+    if not await asyncio.to_thread(EE.supprimer_zone_livraison, zone_id):
+        raise HTTPException(404, "Zone non trouvée.")
+    return JSONResponse({"ok": True})
+
+@app.get("/livres", response_class=HTMLResponse)
+async def page_livres(request: Request):
+    """Librairie — catalogue complet, achat en numérique ou papier
+    (avec choix de zone de livraison), rendu côté serveur."""
+    base = _base_url(request)
+    livres = EE.charger_catalogue()
+    rep = EE.REPARTITION_REVENUS
+
+    def _prix_html(centimes: int, devise: str) -> str:
+        d = devise.lower()
+        if d in ("gnf", "xof"):
+            return f"{centimes:,}".replace(",", " ") + f" {devise.upper()}"
+        return f"{centimes/100:.2f} {devise.upper()}"
+
+    def _carte(l: dict) -> str:
+        titre = html.escape(l["titre"])
+        auteur = html.escape(l.get("auteur", ""))
+        desc = html.escape(l.get("description", ""))
+        image = f'{base}/api/editorial/livres/{l["id"]}/couverture' if l.get("couverture") else ""
+        devise = l["devise"]
+
+        boutons = []
+        if l.get("prix_numerique_centimes") is not None:
+            boutons.append(
+                f'<button class="livre-achat-btn" onclick="livreAcheter(\'{l["id"]}\',\'numerique\',null)">'
+                f'📱 Numérique — {_prix_html(l["prix_numerique_centimes"], devise)}</button>'
+            )
+        if l.get("prix_papier_centimes") is not None:
+            boutons.append(
+                f'<button class="livre-achat-btn" onclick="livreChoisirPapier(\'{l["id"]}\')">'
+                f'📦 Papier — {_prix_html(l["prix_papier_centimes"], devise)}</button>'
+            )
+
+        return f"""
+        <div class="livre-carte" id="livre-{l['id']}">
+          {f'<img class="livre-couv" src="{image}" alt="">' if image else '<div class="livre-couv livre-couv-vide">📖</div>'}
+          <div class="livre-corps">
+            <h2>{titre}</h2>
+            {f'<div class="livre-auteur">✍️ {auteur}</div>' if auteur else ''}
+            <p class="livre-desc">{desc}</p>
+            <div class="livre-boutons">{''.join(boutons)}</div>
+            <div class="livre-zone-choix" id="zone-choix-{l['id']}" style="display:none;"></div>
+          </div>
+        </div>"""
+
+    liste_html = "".join(_carte(l) for l in livres) if livres else \
+        '<p style="color:#8fac97;text-align:center;padding:40px 0;">Aucun livre en vente pour l\'instant.</p>'
+
+    return HTMLResponse(f"""<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Librairie — Pular IA</title>
+<meta name="description" content="Achète les livres de la communauté Pular IA, en numérique ou en papier.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Librairie — Pular IA">
+<meta property="og:url" content="{base}/livres">
+<style>
+  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  body {{
+    background: #0d1f15; color: #e8f5e9; font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+  }}
+  header {{
+    width: 100%; background: linear-gradient(135deg, #0a3d20 0%, #1a6b3c 100%);
+    border-bottom: 2px solid #c8a84b; padding: 14px 20px; text-align: center;
+  }}
+  header a {{ color: #c8a84b; text-decoration: none; font-size: .85rem; font-weight: 600; }}
+  header a:hover {{ text-decoration: underline; }}
+  header h1 {{ font-size: 1.2rem; color: #c8a84b; margin-top: 8px; }}
+  .repartition {{
+    width: 100%; max-width: 720px; margin: 16px auto 0; padding: 14px 18px; border-radius: 10px;
+    background: #142b1c; border: 1px solid #1e3d28; font-size: .8rem; color: #8fac97;
+  }}
+  .repartition strong {{ color: #c8a84b; }}
+  main {{ width: 100%; max-width: 720px; padding: 20px 16px 60px; display: flex; flex-direction: column; gap: 16px; }}
+  .livre-carte {{
+    display: flex; gap: 14px; background: #142b1c; border: 1px solid #1e3d28;
+    border-radius: 12px; padding: 14px; scroll-margin-top: 20px;
+  }}
+  .livre-couv {{ width: 110px; height: 150px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }}
+  .livre-couv-vide {{
+    display: flex; align-items: center; justify-content: center; font-size: 2rem;
+    background: #0d1f15; border: 1px solid #2d5c3a;
+  }}
+  .livre-corps h2 {{ font-size: 1.05rem; color: #c8a84b; margin-bottom: 4px; line-height: 1.3; }}
+  .livre-auteur {{ font-size: .78rem; color: #8fac97; margin-bottom: 6px; }}
+  .livre-desc {{ font-size: .85rem; line-height: 1.5; color: #e8f5e9; margin-bottom: 10px; }}
+  .livre-boutons {{ display: flex; gap: 8px; flex-wrap: wrap; }}
+  .livre-achat-btn, .zone-btn {{
+    padding: 9px 14px; border-radius: 8px; border: 1px solid #8b1e5c; background: transparent;
+    color: #e8f5e9; font-size: .82rem; font-weight: 600; cursor: pointer; font-family: inherit;
+  }}
+  .livre-achat-btn:hover, .zone-btn:hover {{ background: #8b1e5c; }}
+  .livre-zone-choix {{ margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }}
+</style>
+</head>
+<body>
+  <header>
+    <a href="{base}/#carte-editorial">← Espace Éditorial Pular IA</a>
+    <h1>🛒 Librairie</h1>
+  </header>
+  <div class="repartition">
+    💛 <strong>100% du prix est réparti</strong> : {rep['auteur']}% pour l'auteur ·
+    {rep['plateforme']}% pour l'entretien de la plateforme ·
+    {rep['projet']}% pour financer le projet (IA qui comprend le pular, restauration du Fouta, et d'autres initiatives communautaires).
+  </div>
+  <main>{liste_html}</main>
+  <script>
+    const API = {json.dumps(base)};
+    let ZONES = null;
+
+    async function chargerZones() {{
+      if (ZONES) return ZONES;
+      try {{
+        const r = await fetch(`${{API}}/api/editorial/zones-livraison`);
+        ZONES = await r.json();
+      }} catch (e) {{ ZONES = []; }}
+      return ZONES;
+    }}
+
+    async function livreChoisirPapier(livreId) {{
+      const zones = await chargerZones();
+      const div = document.getElementById(`zone-choix-${{livreId}}`);
+      const boutons = zones.map(z =>
+        `<button class="zone-btn" onclick="livreAcheter('${{livreId}}','papier','${{z.id}}')">📍 ${{z.nom}}</button>`
+      ).join('');
+      div.innerHTML = `<p style="font-size:.78rem;color:#8fac97;">Choisis ta zone de livraison :</p>` + boutons +
+        `<button class="zone-btn" onclick="livreAcheter('${{livreId}}','papier',null)">🤝 Retrait / à organiser (sans frais)</button>`;
+      div.style.display = 'flex';
+    }}
+
+    async function livreAcheter(livreId, format, zoneId) {{
+      try {{
+        const fd = new FormData();
+        fd.append('livre_id', livreId);
+        fd.append('format', format);
+        fd.append('origin', window.location.origin);
+        if (zoneId) fd.append('zone_id', zoneId);
+        const r = await fetch(`${{API}}/api/editorial/checkout`, {{ method: 'POST', body: fd }});
+        const d = await r.json();
+        if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
+        window.location.href = d.url;
+      }} catch (e) {{
+        alert('Erreur : ' + e.message);
+      }}
+    }}
+
+    if (window.location.hash) {{
+      const cible = document.querySelector(window.location.hash);
+      if (cible) cible.scrollIntoView({{ behavior: 'smooth' }});
+    }}
+  </script>
+</body>
+</html>""")
+
 # ── Paiement (Stripe Checkout) ──────────────────────────────────────────────
 
 @app.post("/api/editorial/checkout")
 async def api_editorial_checkout(
-    livre_id: str = Form(...),
-    origin:   str = Form(...),
-    email:    str = Form(""),
+    livre_id:      str = Form(...),
+    format_achete: str = Form(..., alias="format"),
+    origin:        str = Form(...),
+    zone_id:       str = Form(""),
+    email:         str = Form(""),
 ):
     livres = EE.charger_catalogue()
     livre = next((l for l in livres if l["id"] == livre_id), None)
     if not livre:
         raise HTTPException(404, "Livre non trouvé.")
+    zone = None
+    if format_achete == "papier" and zone_id.strip():
+        zones = EE.charger_zones_livraison()
+        zone = next((z for z in zones if z["id"] == zone_id.strip()), None)
+        if not zone:
+            raise HTTPException(404, "Zone de livraison non trouvée.")
     try:
-        session = await asyncio.to_thread(EE.creer_session_paiement, livre, origin, email.strip())
+        session = await asyncio.to_thread(
+            EE.creer_session_paiement, livre, format_achete, zone, origin, email.strip(),
+        )
+    except ValueError as e:
+        raise HTTPException(400, str(e))
     except RuntimeError as e:
         raise HTTPException(503, str(e))
     except Exception as e:
         log.error(f"Erreur création session Stripe: {e}")
         raise HTTPException(500, "Erreur lors de la création du paiement.")
-    await asyncio.to_thread(EE.enregistrer_commande, session, livre)
-    return JSONResponse({"ok": True, "url": session.url})
+    commande = await asyncio.to_thread(EE.enregistrer_commande, session, livre, format_achete, zone)
+    return JSONResponse({"ok": True, "url": session.url, "commande_id": commande["id"]})
 
 @app.post("/api/editorial/webhook")
 async def api_editorial_webhook(request: Request):
@@ -1246,6 +1477,124 @@ async def api_editorial_commandes(key: str = ""):
     """Liste des commandes — admin uniquement (contient les emails acheteurs)."""
     _check_admin(key)
     return JSONResponse(EE.charger_commandes())
+
+@app.get("/api/editorial/commandes/{commande_id}/statut")
+async def api_editorial_commande_statut(commande_id: str, jeton: str = ""):
+    commande = EE.obtenir_commande(commande_id)
+    if not commande or not jeton or commande.get("jeton") != jeton:
+        raise HTTPException(404, "Commande non trouvée.")
+    return JSONResponse({
+        "statut": commande["statut"], "format": commande["format"],
+        "titre": commande["titre"], "zone": commande.get("zone"),
+    })
+
+@app.get("/api/editorial/commandes/{commande_id}/fichier")
+async def api_editorial_commande_fichier(commande_id: str, jeton: str = ""):
+    commande = EE.obtenir_commande(commande_id)
+    if not commande or not jeton or commande.get("jeton") != jeton:
+        raise HTTPException(404, "Commande non trouvée.")
+    if commande["statut"] != "paye":
+        raise HTTPException(402, "Paiement non confirmé.")
+    if commande["format"] != "numerique" or not commande.get("fichier_numerique"):
+        raise HTTPException(404, "Aucun fichier numérique pour cette commande.")
+    chemin = EE.DOSSIER_LIVRES_FICHIERS / commande["fichier_numerique"]
+    if not chemin.exists():
+        raise HTTPException(404, "Fichier introuvable.")
+    nom_telecharge = f"{commande['titre']}{chemin.suffix}"
+    return FileResponse(chemin, filename=nom_telecharge)
+
+@app.get("/livre-achete", response_class=HTMLResponse)
+async def page_livre_achete(request: Request, session_id: str = ""):
+    """Page de confirmation après un paiement Stripe réussi — affiche le
+    téléchargement (numérique) ou les infos de livraison (papier), avec un
+    rappel de la répartition des revenus."""
+    base = _base_url(request)
+    commande = EE.obtenir_commande_par_session(session_id) if session_id else None
+    if not commande:
+        return HTMLResponse(f"""<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<title>Commande introuvable — Pular IA</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="background:#0d1f15;color:#e8f5e9;font-family:system-ui,sans-serif;
+text-align:center;padding:60px 20px;">
+<h1 style="color:#c8a84b;">Commande introuvable</h1>
+<a href="{base}/#carte-editorial" style="color:#c8a84b;">← Retour à l'espace Éditorial</a>
+</body></html>""", status_code=404)
+
+    titre = html.escape(commande["titre"])
+    rep = EE.REPARTITION_REVENUS
+    zone_nom = html.escape(commande["zone"]["nom"]) if commande.get("zone") else ""
+
+    return HTMLResponse(f"""<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Merci pour ton achat — Pular IA</title>
+<style>
+  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  body {{
+    background: #0d1f15; color: #e8f5e9; font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+  }}
+  main {{ width: 100%; max-width: 520px; padding: 40px 20px; text-align: center; }}
+  h1 {{ font-size: 1.5rem; color: #c8a84b; margin-bottom: 10px; }}
+  .sous {{ color: #8fac97; font-size: .9rem; margin-bottom: 26px; }}
+  #statut {{ padding: 18px; border-radius: 10px; border: 1px solid #2d5c3a; background: #142b1c; }}
+  .telecharger {{
+    display: inline-block; margin-top: 14px; padding: 12px 22px; border-radius: 8px;
+    background: #8b1e5c; color: #fff; text-decoration: none; font-weight: 700;
+  }}
+  .repartition {{
+    margin-top: 30px; padding: 16px; border-radius: 10px; background: #142b1c;
+    border: 1px solid #1e3d28; font-size: .8rem; color: #8fac97; text-align: left;
+  }}
+  .repartition strong {{ color: #c8a84b; }}
+  footer {{ margin-top: 30px; }}
+  footer a {{ color: #c8a84b; text-decoration: none; font-size: .85rem; font-weight: 600; }}
+</style>
+</head>
+<body>
+  <main>
+    <h1>🙏 Merci pour ton achat !</h1>
+    <p class="sous">{titre}</p>
+    <div id="statut">⏳ Confirmation du paiement en cours...</div>
+
+    <div class="repartition">
+      💛 <strong>100% du prix est réparti</strong> : {rep['auteur']}% pour l'auteur ·
+      {rep['plateforme']}% pour l'entretien de la plateforme ·
+      {rep['projet']}% pour financer le projet (IA qui comprend le pular, restauration du Fouta, et d'autres initiatives communautaires).
+    </div>
+
+    <footer><a href="{base}/#carte-editorial">← Retour à l'espace Éditorial</a></footer>
+  </main>
+  <script>
+    const COMMANDE_ID = {json.dumps(commande["id"])};
+    const JETON       = {json.dumps(commande["jeton"])};
+    const ZONE_NOM     = {json.dumps(zone_nom)};
+
+    async function verifier() {{
+      try {{
+        const r = await fetch(`/api/editorial/commandes/${{COMMANDE_ID}}/statut?jeton=${{JETON}}`);
+        const d = await r.json();
+        const el = document.getElementById('statut');
+        if (d.statut !== 'paye') {{
+          setTimeout(verifier, 2500);
+          return;
+        }}
+        if (d.format === 'numerique') {{
+          el.innerHTML = '✅ Paiement confirmé — ton livre est prêt !<br>' +
+            `<a class="telecharger" href="/api/editorial/commandes/${{COMMANDE_ID}}/fichier?jeton=${{JETON}}">⬇️ Télécharger le livre</a>`;
+        }} else {{
+          el.innerHTML = '✅ Paiement confirmé — commande papier enregistrée' +
+            (ZONE_NOM ? ` pour <strong>${{ZONE_NOM}}</strong>.` : '.') +
+            '<br>On te contacte bientôt pour organiser la remise.';
+        }}
+      }} catch (err) {{ setTimeout(verifier, 3000); }}
+    }}
+    verifier();
+  </script>
+</body>
+</html>""")
 
 # ── Éditos (articles communautaires) ────────────────────────────────────────
 

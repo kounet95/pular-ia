@@ -12,6 +12,7 @@ Commandes disponibles:
     /top    — Top contributeurs
     /duel   — Défier un ami en duel de vocabulaire (+ /duel CODE pour rejoindre)
     /classement — Classement des duels
+    /livres — Acheter des livres (numérique ou papier)
     /aide   — Aide complète
 """
 
@@ -26,6 +27,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 import duels as DU
 import comptes as CP
+import espace_editorial as EE
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application, CommandHandler, MessageHandler,
@@ -53,6 +55,16 @@ DOSSIER_CONTRIB = Path("./corpus-pular/community/contributions")
 DOSSIER_AUDIO   = Path("./corpus-pular/community/audio")
 FICHIER_STATS   = Path("./corpus-pular/community/stats.json")
 WHISPER_MODEL   = os.getenv("WHISPER_MODEL_BOT", "base")  # base = rapide pour le bot
+
+# URL publique du site — utilisée pour construire les liens de paiement
+# Stripe depuis le bot (contrairement au webapp, il n'y a pas de Request
+# HTTP dont dériver l'origine ici).
+SITE_URL = os.getenv("SITE_URL", "").rstrip("/")
+if not SITE_URL:
+    _base = os.getenv("APP_BASE_URL", "").rstrip("/")
+    SITE_URL = _base[:-4] if _base.endswith("/api") else _base
+if not SITE_URL:
+    SITE_URL = "http://localhost:8080"
 
 for d in [DOSSIER_CONTRIB, DOSSIER_AUDIO]:
     d.mkdir(parents=True, exist_ok=True)
@@ -151,6 +163,7 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "🏆 /top — Top contributeurs\n"
         "⚔️ /duel — Défier un ami en duel de vocabulaire\n"
         "🏅 /classement — Classement des duels\n"
+        "📚 /livres — Acheter des livres (numérique ou papier)\n"
         "❓ /aide — Aide complète\n\n"
         "_Baŋ-baŋ! 🙏_",
         parse_mode="Markdown",
@@ -202,6 +215,7 @@ async def cmd_aide(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "/duel — crée un duel et partage le lien/code\n"
         "/duel CODE — rejoins le duel d'un ami\n"
         "🏅 /classement — voir qui domine\n\n"
+        "📚 /livres — voir et acheter les livres (numérique ou papier)\n\n"
         "📌 *Conseils pour une bonne qualité:*\n"
         "• Parle clairement, micro proche\n"
         "• Messages de 5 à 60 secondes idéaux\n"
@@ -516,6 +530,187 @@ async def cmd_classement(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         lignes.append(f"{medailles[i]} {e['pseudo']} — {e['victoires']} victoire(s), {e['points']} pts")
     await update.message.reply_text("\n".join(lignes))
 
+# ── Achat de livres ───────────────────────────────────────────────────────────
+# Le catalogue, les zones de livraison et les commandes vivent dans les mêmes
+# fichiers JSON que le webapp (espace_editorial.py) — pas besoin d'appel HTTP
+# entre les deux processus, ils partagent le même volume/filesystem.
+
+def _prix_lisible(centimes: int, devise: str) -> str:
+    if devise.lower() in EE.DEVISES_ZERO_DECIMALE:
+        return f"{centimes:,} {devise}".replace(",", " ")
+    return f"{centimes / 100:.2f} {devise}"
+
+async def cmd_livres(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    livres = await asyncio.to_thread(EE.charger_catalogue)
+    if not livres:
+        await update.message.reply_text("📚 Aucun livre disponible pour l'instant.")
+        return
+    rep = EE.REPARTITION_REVENUS
+    await update.message.reply_text(
+        "📚 Catalogue Pular IA\n\n"
+        f"💛 100% du prix de chaque livre est réparti : {rep['auteur']}% pour l'auteur, "
+        f"{rep['plateforme']}% pour l'entretien de la plateforme, "
+        f"{rep['projet']}% pour financer le projet — une IA qui comprend le pular, "
+        "des projets de restauration du Fouta, et d'autres initiatives communautaires."
+    )
+    for livre in livres:
+        await _envoyer_fiche_livre(update.effective_chat.id, ctx, livre)
+
+async def _envoyer_fiche_livre(chat_id: int, ctx: ContextTypes.DEFAULT_TYPE, livre: dict):
+    devise = livre.get("devise", "gnf").upper()
+    prix_num = livre.get("prix_numerique_centimes")
+    prix_pap = livre.get("prix_papier_centimes")
+
+    morceaux = [livre["titre"]]
+    if livre.get("auteur"):
+        morceaux.append(f"✍️ {livre['auteur']}")
+    if livre.get("description"):
+        desc = livre["description"].strip()
+        morceaux.append(desc[:400] + ("…" if len(desc) > 400 else ""))
+    # Pas de parse_mode : titre/auteur/description viennent du catalogue
+    # (texte libre saisi par l'admin) et peuvent contenir _ ou * sans
+    # échappement — même leçon que pour les duels.
+    caption = "\n\n".join(morceaux)[:1000]
+
+    boutons = []
+    if prix_num is not None:
+        boutons.append([InlineKeyboardButton(
+            f"📱 Numérique — {_prix_lisible(prix_num, devise)}",
+            callback_data=f"livrefmt:{livre['id']}:numerique",
+        )])
+    if prix_pap is not None:
+        boutons.append([InlineKeyboardButton(
+            f"📦 Papier — {_prix_lisible(prix_pap, devise)}",
+            callback_data=f"livrefmt:{livre['id']}:papier",
+        )])
+    clavier = InlineKeyboardMarkup(boutons)
+
+    chemin_couverture = EE.DOSSIER_COUVERTURES / livre["couverture"] if livre.get("couverture") else None
+    if chemin_couverture and chemin_couverture.exists():
+        with open(chemin_couverture, "rb") as f:
+            await ctx.bot.send_photo(chat_id, photo=f, caption=caption, reply_markup=clavier)
+    else:
+        await ctx.bot.send_message(chat_id, caption, reply_markup=clavier)
+
+async def handle_livre_format_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    _, livre_id, format_achete = query.data.split(":")
+    livres = await asyncio.to_thread(EE.charger_catalogue)
+    livre = next((l for l in livres if l["id"] == livre_id), None)
+    if not livre:
+        await query.message.reply_text("⚠️ Ce livre n'est plus disponible.")
+        return
+
+    if format_achete == "papier":
+        zones = await asyncio.to_thread(EE.charger_zones_livraison)
+        boutons = [
+            [InlineKeyboardButton(
+                f"📍 {z['nom']} (+{_prix_lisible(z['frais_centimes'], z['devise'].upper())})",
+                callback_data=f"livrezone:{livre_id}:{z['id']}",
+            )]
+            for z in zones
+        ]
+        boutons.append([InlineKeyboardButton(
+            "🤝 Retrait / à organiser (sans frais)", callback_data=f"livrezone:{livre_id}:none",
+        )])
+        await query.message.reply_text(
+            f"📦 Livraison papier pour « {livre['titre']} »\nChoisis ta zone :",
+            reply_markup=InlineKeyboardMarkup(boutons),
+        )
+        return
+
+    await _demarrer_paiement(update, ctx, livre, "numerique", None)
+
+async def handle_livre_zone_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    _, livre_id, zone_id = query.data.split(":")
+    livres = await asyncio.to_thread(EE.charger_catalogue)
+    livre = next((l for l in livres if l["id"] == livre_id), None)
+    if not livre:
+        await query.message.reply_text("⚠️ Ce livre n'est plus disponible.")
+        return
+    zone = None
+    if zone_id != "none":
+        zones = await asyncio.to_thread(EE.charger_zones_livraison)
+        zone = next((z for z in zones if z["id"] == zone_id), None)
+    await _demarrer_paiement(update, ctx, livre, "papier", zone)
+
+async def _demarrer_paiement(update: Update, ctx: ContextTypes.DEFAULT_TYPE, livre: dict, format_achete: str, zone: dict | None):
+    chat = update.effective_chat
+    user = update.effective_user
+    try:
+        session = await asyncio.to_thread(
+            EE.creer_session_paiement, livre, format_achete, zone, SITE_URL, "",
+        )
+    except ValueError as e:
+        await chat.send_message(f"⚠️ {e}")
+        return
+    except RuntimeError as e:
+        await chat.send_message(f"⚠️ Paiement indisponible : {e}")
+        return
+    except Exception as e:
+        log.error(f"Erreur création session Stripe (bot): {e}")
+        await chat.send_message("⚠️ Erreur lors de la création du paiement, réessaie plus tard.")
+        return
+
+    commande = await asyncio.to_thread(
+        EE.enregistrer_commande, session, livre, format_achete, zone, user.id,
+    )
+
+    nom_format = "Numérique" if format_achete == "numerique" else "Papier"
+    await chat.send_message(
+        f"💳 Paiement — {livre['titre']} ({nom_format})\n\n"
+        f"Ouvre ce lien pour payer en toute sécurité (Stripe) :\n{session.url}\n\n"
+        "Reviens ici une fois payé, je te préviens automatiquement ✅"
+    )
+    asyncio.create_task(_surveiller_paiement(ctx, chat.id, commande["id"]))
+
+async def _surveiller_paiement(ctx: ContextTypes.DEFAULT_TYPE, chat_id: int, commande_id: str,
+                                tentatives: int = 240, intervalle: int = 5):
+    """
+    Vérifie périodiquement (jusqu'à ~20 min) si la commande a été payée, et
+    livre automatiquement : le fichier pour le numérique, une confirmation
+    pour le papier. Si le bot redémarre entre-temps, cette tâche en mémoire
+    est perdue — le paiement reste enregistré (page /livre-achete côté web
+    fait la même vérification en parallèle), seule la livraison automatique
+    dans le chat ne se déclenche pas ; acceptable pour une v1.
+    """
+    for _ in range(tentatives):
+        await asyncio.sleep(intervalle)
+        commande = await asyncio.to_thread(EE.obtenir_commande, commande_id)
+        if not commande:
+            return
+        if commande["statut"] == "paye":
+            await _livrer_commande(ctx, chat_id, commande)
+            return
+
+async def _livrer_commande(ctx: ContextTypes.DEFAULT_TYPE, chat_id: int, commande: dict):
+    rep = EE.REPARTITION_REVENUS
+    if commande["format"] == "numerique" and commande.get("fichier_numerique"):
+        chemin = EE.DOSSIER_LIVRES_FICHIERS / commande["fichier_numerique"]
+        if chemin.exists():
+            with open(chemin, "rb") as f:
+                await ctx.bot.send_document(
+                    chat_id, document=f, filename=f"{commande['titre']}{chemin.suffix}",
+                    caption=f"✅ Paiement confirmé — merci ! Voici « {commande['titre']} ».",
+                )
+        else:
+            await ctx.bot.send_message(chat_id, "✅ Paiement confirmé, mais le fichier est introuvable — contacte l'équipe.")
+    else:
+        zone_txt = f" pour {commande['zone']['nom']}" if commande.get("zone") else ""
+        await ctx.bot.send_message(
+            chat_id,
+            f"✅ Paiement confirmé — commande papier enregistrée{zone_txt}.\n"
+            "On te contacte bientôt pour organiser la remise.",
+        )
+    await ctx.bot.send_message(
+        chat_id,
+        f"💛 Répartition : {rep['auteur']}% auteur · {rep['plateforme']}% plateforme · "
+        f"{rep['projet']}% projet (IA pular, restauration du Fouta...). Merci pour ton soutien 🙏",
+    )
+
 # ── Erreurs ───────────────────────────────────────────────────────────────────
 async def handle_error(update: object, ctx: ContextTypes.DEFAULT_TYPE):
     """Filet de sécurité global : sans ça, une exception dans un handler
@@ -552,12 +747,15 @@ def main():
     app.add_handler(CommandHandler("top",        cmd_top))
     app.add_handler(CommandHandler("duel",       cmd_duel))
     app.add_handler(CommandHandler("classement", cmd_classement))
+    app.add_handler(CommandHandler("livres",     cmd_livres))
     app.add_handler(CommandHandler("aide",       cmd_aide))
     app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, handle_voice))
-    # Le handler de duel (motif "duel:") doit être enregistré avant le
-    # handler générique ci-dessous, sinon celui-ci intercepterait tout.
+    # Les handlers à motif précis doivent être enregistrés avant le handler
+    # générique ci-dessous, sinon celui-ci intercepterait tout.
     app.add_handler(CallbackQueryHandler(handle_duelcfg_callback, pattern=r"^duelcfg:"))
     app.add_handler(CallbackQueryHandler(handle_duel_callback, pattern=r"^duel:"))
+    app.add_handler(CallbackQueryHandler(handle_livre_format_callback, pattern=r"^livrefmt:"))
+    app.add_handler(CallbackQueryHandler(handle_livre_zone_callback, pattern=r"^livrezone:"))
     app.add_handler(CallbackQueryHandler(handle_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     app.add_error_handler(handle_error)

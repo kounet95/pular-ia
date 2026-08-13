@@ -18,6 +18,7 @@ proprement au lieu de planter.
 import json
 import logging
 import os
+import secrets
 import uuid
 from pathlib import Path
 from datetime import datetime
@@ -39,6 +40,20 @@ for d in [DOSSIER_EDITORIAL, DOSSIER_COUVERTURES, DOSSIER_EDITOS_IMAGES, DOSSIER
 DEVISES_ACCEPTEES = ["eur", "usd", "gnf", "xof"]
 EXTENSIONS_COUVERTURE = {".jpg", ".jpeg", ".png", ".webp"}
 EXTENSIONS_SOURCE = {".pdf", ".txt", ".docx", ".doc", ".html", ".htm", ".md"}
+EXTENSIONS_FICHIER_NUMERIQUE = {".pdf", ".epub"}
+
+DOSSIER_LIVRES_FICHIERS = DOSSIER_EDITORIAL / "livres_fichiers"
+FICHIER_ZONES_LIVRAISON = DOSSIER_EDITORIAL / "zones_livraison.json"
+DOSSIER_LIVRES_FICHIERS.mkdir(parents=True, exist_ok=True)
+
+FORMATS_LIVRE = ["numerique", "papier"]
+
+# Répartition affichée aux acheteurs (mention légale/transparence) — ceci ne
+# déclenche AUCUN versement automatique séparé : Stripe encaisse la totalité
+# sur le compte du projet, la répartition réelle vers les auteurs se fait
+# manuellement pour l'instant (un vrai partage automatique demanderait Stripe
+# Connect + un compte par auteur, hors périmètre ici).
+REPARTITION_REVENUS = {"auteur": 60, "plateforme": 20, "projet": 20}
 
 # Devises "zéro décimale" chez Stripe : `unit_amount` est le montant entier
 # tel quel (pas de centimes) — le GNF (Guinée) et le XOF (Franc CFA — BCEAO,
@@ -74,27 +89,62 @@ def stripe_configure():
     stripe.api_key = cle
     return stripe
 
-def creer_session_paiement(livre: dict, origin: str, email: str = "") -> "stripe.checkout.Session":
-    """Crée une session de paiement Stripe Checkout pour un livre du catalogue."""
+def prix_format(livre: dict, format_achete: str) -> int | None:
+    """Prix (centimes) du livre pour ce format, ou None si le format n'est
+    pas proposé pour ce livre."""
+    cle = "prix_numerique_centimes" if format_achete == "numerique" else "prix_papier_centimes"
+    return livre.get(cle)
+
+def creer_session_paiement(
+    livre: dict, format_achete: str, zone: dict | None, origin: str, email: str = "",
+) -> "stripe.checkout.Session":
+    """
+    Crée une session de paiement Stripe Checkout pour un format précis d'un
+    livre du catalogue (numérique ou papier). `zone` (uniquement pertinent
+    pour le papier) ajoute une ligne de frais de livraison séparée — la
+    livraison reste possible sans zone définie (retrait / à organiser),
+    auquel cas aucun frais n'est ajouté.
+    """
     stripe = stripe_configure()
+    if format_achete not in FORMATS_LIVRE:
+        raise ValueError("Format de livre invalide.")
+    prix = prix_format(livre, format_achete)
+    if prix is None:
+        raise ValueError("Ce format n'est pas disponible pour ce livre.")
 
     origin = origin.rstrip("/")
-    params = dict(
-        mode="payment",
-        line_items=[{
+    nom_format = "Numérique" if format_achete == "numerique" else "Papier"
+    line_items = [{
+        "price_data": {
+            "currency": livre["devise"],
+            "unit_amount": prix,
+            "product_data": {
+                "name": f"{livre['titre']} ({nom_format})",
+                "description": livre.get("description", "")[:500] or None,
+            },
+        },
+        "quantity": 1,
+    }]
+    if format_achete == "papier" and zone:
+        line_items.append({
             "price_data": {
                 "currency": livre["devise"],
-                "unit_amount": livre["prix_centimes"],
-                "product_data": {
-                    "name": livre["titre"],
-                    "description": livre.get("description", "")[:500] or None,
-                },
+                "unit_amount": zone["frais_centimes"],
+                "product_data": {"name": f"Livraison — {zone['nom']}"},
             },
             "quantity": 1,
-        }],
-        success_url=f"{origin}/?edito_paiement=succes&session_id={{CHECKOUT_SESSION_ID}}",
+        })
+
+    params = dict(
+        mode="payment",
+        line_items=line_items,
+        success_url=f"{origin}/livre-achete?session_id={{CHECKOUT_SESSION_ID}}",
         cancel_url=f"{origin}/?edito_paiement=annule",
-        metadata={"livre_id": livre["id"]},
+        metadata={
+            "livre_id": livre["id"],
+            "format": format_achete,
+            "zone_id": zone["id"] if zone else "",
+        },
     )
     if email:
         params["customer_email"] = email
@@ -273,22 +323,36 @@ def sauver_catalogue(livres: list[dict]):
 
 def ajouter_livre(
     titre: str,
+    auteur: str,
     description: str,
-    prix_centimes: int,
     devise: str,
-    format_livre: str,
     couverture_nom: str = "",
+    prix_numerique_centimes: int | None = None,
+    prix_papier_centimes: int | None = None,
+    fichier_numerique_nom: str = "",
 ) -> dict:
+    """
+    Un livre peut être proposé en numérique, en papier, ou les deux — chacun
+    avec son propre prix (`None` = format non proposé pour ce livre).
+    `fichier_numerique_nom` : fichier PDF/EPUB livré automatiquement après
+    paiement pour le format numérique.
+    """
+    if prix_numerique_centimes is None and prix_papier_centimes is None:
+        raise ValueError("Choisis au moins un format (numérique ou papier) avec un prix.")
+    if prix_numerique_centimes is not None and not fichier_numerique_nom:
+        raise ValueError("Un fichier (PDF/EPUB) est requis pour proposer le format numérique.")
     livres = charger_catalogue()
     fiche = {
-        "id":              str(uuid.uuid4())[:8],
-        "titre":           titre,
-        "description":     description,
-        "prix_centimes":   prix_centimes,
-        "devise":          devise,
-        "format":          format_livre,
-        "couverture":      couverture_nom,
-        "date":            datetime.now().isoformat(),
+        "id":                      str(uuid.uuid4())[:8],
+        "titre":                   titre,
+        "auteur":                  auteur or "Auteur inconnu",
+        "description":             description,
+        "devise":                  devise,
+        "couverture":              couverture_nom,
+        "prix_numerique_centimes": prix_numerique_centimes,
+        "prix_papier_centimes":    prix_papier_centimes,
+        "fichier_numerique":       fichier_numerique_nom,
+        "date":                    datetime.now().isoformat(),
     }
     livres.append(fiche)
     sauver_catalogue(livres)
@@ -301,8 +365,45 @@ def supprimer_livre(livre_id: str) -> bool:
         return False
     if trouve.get("couverture"):
         (DOSSIER_COUVERTURES / trouve["couverture"]).unlink(missing_ok=True)
+    if trouve.get("fichier_numerique"):
+        (DOSSIER_LIVRES_FICHIERS / trouve["fichier_numerique"]).unlink(missing_ok=True)
     livres = [l for l in livres if l["id"] != livre_id]
     sauver_catalogue(livres)
+    return True
+
+# ── Zones de livraison (papier) ─────────────────────────────────────────────
+# Liste générique et modifiable par l'admin — la livraison papier reste
+# disponible même sans zone définie (retrait / organisation manuelle),
+# simplement sans frais de livraison ajoutés automatiquement.
+
+def charger_zones_livraison() -> list[dict]:
+    if FICHIER_ZONES_LIVRAISON.exists():
+        with open(FICHIER_ZONES_LIVRAISON, encoding="utf-8") as f:
+            return json.load(f)
+    return []
+
+def sauver_zones_livraison(zones: list[dict]):
+    with open(FICHIER_ZONES_LIVRAISON, "w", encoding="utf-8") as f:
+        json.dump(zones, f, ensure_ascii=False, indent=2)
+
+def ajouter_zone_livraison(nom: str, frais_centimes: int, devise: str) -> dict:
+    zones = charger_zones_livraison()
+    zone = {
+        "id":             str(uuid.uuid4())[:8],
+        "nom":            nom.strip()[:80],
+        "frais_centimes": frais_centimes,
+        "devise":         devise,
+    }
+    zones.append(zone)
+    sauver_zones_livraison(zones)
+    return zone
+
+def supprimer_zone_livraison(zone_id: str) -> bool:
+    zones = charger_zones_livraison()
+    apres = [z for z in zones if z["id"] != zone_id]
+    if len(apres) == len(zones):
+        return False
+    sauver_zones_livraison(apres)
     return True
 
 # ── Commandes ────────────────────────────────────────────────────────────────
@@ -317,18 +418,27 @@ def sauver_commandes(commandes: list[dict]):
     with open(FICHIER_COMMANDES, "w", encoding="utf-8") as f:
         json.dump(commandes, f, ensure_ascii=False, indent=2)
 
-def enregistrer_commande(session, livre: dict) -> dict:
+def enregistrer_commande(
+    session, livre: dict, format_achete: str, zone: dict | None = None, telegram_id: int | None = None,
+) -> dict:
     commandes = charger_commandes()
     commande = {
-        "id":               str(uuid.uuid4())[:8],
-        "stripe_session_id": session.id,
-        "livre_id":         livre["id"],
-        "titre":            livre["titre"],
-        "prix_centimes":    livre["prix_centimes"],
-        "devise":           livre["devise"],
-        "email":            "",
-        "statut":           "en_attente",
-        "date":             datetime.now().isoformat(),
+        "id":                       str(uuid.uuid4())[:8],
+        "jeton":                    secrets.token_urlsafe(16),
+        "stripe_session_id":        session.id,
+        "livre_id":                 livre["id"],
+        "titre":                    livre["titre"],
+        "auteur":                   livre.get("auteur", ""),
+        "format":                   format_achete,
+        "zone":                     zone,
+        "prix_centimes":            prix_format(livre, format_achete) or 0,
+        "frais_livraison_centimes": zone["frais_centimes"] if zone else 0,
+        "devise":                   livre["devise"],
+        "fichier_numerique":        livre.get("fichier_numerique", "") if format_achete == "numerique" else "",
+        "email":                    "",
+        "telegram_id":              telegram_id,
+        "statut":                   "en_attente",
+        "date":                     datetime.now().isoformat(),
     }
     commandes.append(commande)
     sauver_commandes(commandes)
@@ -342,10 +452,16 @@ def marquer_commande_payee(session_id: str, email: str) -> dict | None:
             c["email"] = email or c.get("email", "")
             c["date_paiement"] = datetime.now().isoformat()
             sauver_commandes(commandes)
-            log.info(f"Éditorial — commande payée: {c['titre']} ({email})")
+            log.info(f"Éditorial — commande payée: {c['titre']} ({c['format']}) — {email or c.get('telegram_id', '')}")
             return c
     log.warning(f"Éditorial — webhook pour session inconnue: {session_id}")
     return None
+
+def obtenir_commande(commande_id: str) -> dict | None:
+    return next((c for c in charger_commandes() if c["id"] == commande_id), None)
+
+def obtenir_commande_par_session(session_id: str) -> dict | None:
+    return next((c for c in charger_commandes() if c["stripe_session_id"] == session_id), None)
 
 # ── Éditos (articles communautaires) ────────────────────────────────────────
 

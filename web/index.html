@@ -626,6 +626,7 @@
   <a href="#carte-compte">👤 Mon compte</a>
   <a href="#carte-editorial">📰 Éditorial</a>
   <a href="/editos">✍️ Éditos</a>
+  <a href="/livres">🛒 Librairie</a>
   <a href="#carte-jeu">🎮 Jeu</a>
   <a href="#carte-prof">🎓 Professeur</a>
   <a href="#carte-aide">📌 Aide</a>
@@ -1068,6 +1069,10 @@
 
     <!-- ── Mon livre ── -->
     <h3 style="font-size:1rem;margin-bottom:8px;">📖 Mon livre</h3>
+    <p style="font-size:.8rem;color:var(--gris);margin-bottom:10px;">
+      Le catalogue complet, avec achat en numérique ou papier, est sur la
+      <a href="/livres" style="color:var(--or);">page Librairie →</a>
+    </p>
     <div id="ed-livres-liste"></div>
 
     <!-- Formulaire admin : ajouter un livre au catalogue -->
@@ -1075,27 +1080,50 @@
       <summary>➕ Ajouter un livre au catalogue (admin)</summary>
       <div style="margin-top:10px;">
         <input class="input-livre" id="ed-liv-titre" type="text" placeholder="Titre du livre *" maxlength="150"/>
+        <input class="input-livre" id="ed-liv-auteur" type="text" placeholder="Auteur *" maxlength="120"/>
         <textarea class="input-livre" id="ed-liv-desc" placeholder="Description / résumé" style="min-height:70px;resize:vertical;" maxlength="1000"></textarea>
-        <div style="display:flex;gap:8px;">
-          <input class="input-livre" id="ed-liv-prix" type="number" min="0" step="0.01" placeholder="Prix *" style="flex:1;"/>
-          <select class="input-livre" id="ed-liv-devise" style="flex:0 0 140px;cursor:pointer;" onchange="edMajDevisePas()">
-            <option value="eur">EUR €</option>
-            <option value="usd">USD $</option>
-            <option value="gnf">GNF (Guinée)</option>
-            <option value="xof">XOF (FCFA)</option>
-          </select>
-        </div>
-        <p id="ed-liv-devise-hint" style="font-size:.72rem;color:var(--gris);margin:-4px 0 8px;"></p>
-        <select class="input-livre" id="ed-liv-format" style="cursor:pointer;">
-          <option value="numérique">📱 Numérique (PDF/ebook)</option>
-          <option value="papier">📕 Papier</option>
-          <option value="numérique et papier">📱📕 Numérique et papier</option>
+        <select class="input-livre" id="ed-liv-devise" style="cursor:pointer;" onchange="edMajDevisePas()">
+          <option value="gnf">GNF (Guinée)</option>
+          <option value="xof">XOF (FCFA)</option>
+          <option value="eur">EUR €</option>
+          <option value="usd">USD $</option>
         </select>
+        <p id="ed-liv-devise-hint" style="font-size:.72rem;color:var(--gris);margin:-4px 0 8px;"></p>
+
+        <div style="background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;padding:10px;margin-bottom:8px;">
+          <p style="font-size:.78rem;color:var(--or);font-weight:600;margin-bottom:6px;">📱 Format numérique (laisser vide si non proposé)</p>
+          <input class="input-livre" id="ed-liv-prix-num" type="number" min="0" step="0.01" placeholder="Prix numérique" style="margin-bottom:6px;"/>
+          <input type="file" id="ed-liv-fichier-num" accept=".pdf,.epub" style="font-size:.8rem;"/>
+          <p style="font-size:.7rem;color:var(--gris);margin-top:4px;">Fichier PDF/EPUB obligatoire si un prix numérique est indiqué — envoyé automatiquement à l'achat.</p>
+        </div>
+
+        <div style="background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;padding:10px;margin-bottom:8px;">
+          <p style="font-size:.78rem;color:var(--or);font-weight:600;margin-bottom:6px;">📦 Format papier (laisser vide si non proposé)</p>
+          <input class="input-livre" id="ed-liv-prix-pap" type="number" min="0" step="0.01" placeholder="Prix papier"/>
+        </div>
+
         <input type="file" id="ed-liv-couverture" accept=".jpg,.jpeg,.png,.webp" style="margin-bottom:8px;font-size:.8rem;"/>
         <button onclick="edAjouterLivre()" style="
           width:100%;padding:11px;border-radius:8px;border:none;
           background:#8b1e5c;color:white;font-weight:700;cursor:pointer;font-size:.9rem;
         ">📤 Publier au catalogue</button>
+      </div>
+    </details>
+
+    <!-- Formulaire admin : zones de livraison -->
+    <details class="ed-admin-box">
+      <summary>📍 Zones de livraison papier (admin)</summary>
+      <div style="margin-top:10px;">
+        <div id="ed-zones-liste" style="margin-bottom:10px;"></div>
+        <div style="display:flex;gap:8px;">
+          <input class="input-livre" id="ed-zone-nom" type="text" placeholder="Ville / zone (ex: Conakry)" style="flex:2;" maxlength="80"/>
+          <input class="input-livre" id="ed-zone-frais" type="number" min="0" step="0.01" placeholder="Frais" style="flex:1;"/>
+        </div>
+        <button onclick="edAjouterZone()" style="
+          width:100%;padding:9px;border-radius:8px;border:1px solid #c8a84b;margin-top:6px;
+          background:transparent;color:var(--or);font-weight:600;cursor:pointer;font-size:.85rem;
+        ">➕ Ajouter la zone</button>
+        <p style="font-size:.7rem;color:var(--gris);margin-top:6px;">Utilise la même devise que celle choisie ci-dessus pour les livres. Sans zone définie, la livraison papier reste possible (retrait / à organiser), simplement sans frais automatique.</p>
       </div>
     </details>
 
@@ -3128,17 +3156,22 @@ function edFormaterPrix(centimes, devise) {
 
 function edMajDevisePas() {
   const devise = document.getElementById('ed-liv-devise').value;
-  const prixInput = document.getElementById('ed-liv-prix');
   const hint = document.getElementById('ed-liv-devise-hint');
-  if (DEVISES_ZERO_DECIMALE.has(devise)) {
-    prixInput.step = '1';
-    hint.textContent = 'Nombre entier, sans centimes (ex: 150000).';
-  } else {
-    prixInput.step = '0.01';
-    hint.textContent = '';
-  }
+  const pas = DEVISES_ZERO_DECIMALE.has(devise) ? '1' : '0.01';
+  ['ed-liv-prix-num', 'ed-liv-prix-pap', 'ed-zone-frais'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.step = pas;
+  });
+  hint.textContent = DEVISES_ZERO_DECIMALE.has(devise) ? 'Nombre entier, sans centimes (ex: 150000).' : '';
 }
 edMajDevisePas();
+
+function edPrixFormatLigne(l) {
+  const morceaux = [];
+  if (l.prix_numerique_centimes != null) morceaux.push(`📱 ${edFormaterPrix(l.prix_numerique_centimes, l.devise)}`);
+  if (l.prix_papier_centimes != null) morceaux.push(`📦 ${edFormaterPrix(l.prix_papier_centimes, l.devise)}`);
+  return morceaux.join(' · ');
+}
 
 async function edChargerLivres() {
   try {
@@ -3157,11 +3190,11 @@ async function edChargerLivres() {
         </div>
         <div class="ed-livre-info">
           <div class="ed-livre-titre">${escHtml(l.titre)}</div>
+          ${l.auteur ? `<div style="font-size:.75rem;color:var(--gris);margin-bottom:4px;">✍️ ${escHtml(l.auteur)}</div>` : ''}
           <div class="ed-livre-desc">${escHtml(l.description)}</div>
-          <div style="font-size:.7rem;color:var(--gris);margin-bottom:8px;">${escHtml(l.format)}</div>
           <div class="ed-livre-bas">
-            <span class="ed-livre-prix">${edFormaterPrix(l.prix_centimes, l.devise)}</span>
-            <button class="btn-acheter" onclick="edAcheter('${l.id}')">🛒 Acheter</button>
+            <span class="ed-livre-prix">${edPrixFormatLigne(l)}</span>
+            <a class="btn-acheter" href="/livres#livre-${l.id}">🛒 Voir / Acheter</a>
           </div>
           ${key ? `<button onclick="edSupprimerLivre('${l.id}')" style="margin-top:8px;background:none;border:1px solid #5c2d2d;color:#e8a0a0;border-radius:6px;padding:5px 10px;font-size:.72rem;cursor:pointer;">🗑️ Retirer du catalogue</button>` : ''}
         </div>
@@ -3173,28 +3206,36 @@ async function edAjouterLivre() {
   const key = edAdminKey();
   if (!key) { toast('❌ Renseigne la clé admin ci-dessus', true); return; }
   const titre = document.getElementById('ed-liv-titre').value.trim();
-  const prix  = parseFloat(document.getElementById('ed-liv-prix').value);
+  const auteur = document.getElementById('ed-liv-auteur').value.trim();
+  const prixNum = document.getElementById('ed-liv-prix-num').value.trim();
+  const prixPap = document.getElementById('ed-liv-prix-pap').value.trim();
   if (!titre) { toast('❌ Donne un titre au livre', true); return; }
-  if (!prix || prix <= 0) { toast('❌ Indique un prix valide', true); return; }
+  if (!auteur) { toast('❌ Indique l\'auteur', true); return; }
+  if (!prixNum && !prixPap) { toast('❌ Indique au moins un prix (numérique ou papier)', true); return; }
+  const fichierNum = document.getElementById('ed-liv-fichier-num').files[0];
+  if (prixNum && !fichierNum) { toast('❌ Le format numérique demande un fichier PDF/EPUB', true); return; }
 
   try {
     const fd = new FormData();
     fd.append('titre', titre);
+    fd.append('auteur', auteur);
     fd.append('description', document.getElementById('ed-liv-desc').value.trim());
-    fd.append('prix', prix);
     fd.append('devise', document.getElementById('ed-liv-devise').value);
-    fd.append('format_livre', document.getElementById('ed-liv-format').value);
+    fd.append('prix_numerique', prixNum);
+    fd.append('prix_papier', prixPap);
     fd.append('key', key);
-    const fichier = document.getElementById('ed-liv-couverture').files[0];
-    if (fichier) fd.append('couverture', fichier, fichier.name);
+    const couverture = document.getElementById('ed-liv-couverture').files[0];
+    if (couverture) fd.append('couverture', couverture, couverture.name);
+    if (fichierNum) fd.append('fichier_numerique', fichierNum, fichierNum.name);
 
     const r = await fetch(`${API}/api/editorial/livres`, { method:'POST', body:fd, headers:H });
     const d = await r.json();
     if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
 
     toast(`✅ "${titre}" ajouté au catalogue!`);
-    ['ed-liv-titre','ed-liv-desc','ed-liv-prix'].forEach(id => document.getElementById(id).value = '');
+    ['ed-liv-titre','ed-liv-auteur','ed-liv-desc','ed-liv-prix-num','ed-liv-prix-pap'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('ed-liv-couverture').value = '';
+    document.getElementById('ed-liv-fichier-num').value = '';
     edChargerLivres();
   } catch(e) {
     toast('❌ ' + e.message, true);
@@ -3214,15 +3255,56 @@ async function edSupprimerLivre(id) {
   }
 }
 
-async function edAcheter(livreId) {
+async function edChargerZones() {
+  try {
+    const r = await fetch(`${API}/api/editorial/zones-livraison`, { headers: H });
+    const zones = await r.json();
+    const div = document.getElementById('ed-zones-liste');
+    if (!zones.length) {
+      div.innerHTML = '<p style="font-size:.78rem;color:var(--gris);">Aucune zone définie — la livraison papier reste possible sans frais automatique.</p>';
+      return;
+    }
+    div.innerHTML = zones.map(z => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #2a2a2a;font-size:.82rem;">
+        <span>📍 ${escHtml(z.nom)} — ${edFormaterPrix(z.frais_centimes, z.devise)}</span>
+        <button onclick="edSupprimerZone('${z.id}')" style="background:none;border:none;color:#e8a0a0;cursor:pointer;font-size:.85rem;">🗑️</button>
+      </div>`).join('');
+  } catch(e) { /* silencieux */ }
+}
+
+async function edAjouterZone() {
+  const key = edAdminKey();
+  if (!key) { toast('❌ Renseigne la clé admin ci-dessus', true); return; }
+  const nom = document.getElementById('ed-zone-nom').value.trim();
+  const frais = document.getElementById('ed-zone-frais').value.trim();
+  if (!nom) { toast('❌ Donne un nom de zone', true); return; }
+  if (frais === '' || parseFloat(frais) < 0) { toast('❌ Indique des frais valides (0 si gratuit)', true); return; }
   try {
     const fd = new FormData();
-    fd.append('livre_id', livreId);
-    fd.append('origin', window.location.origin);
-    const r = await fetch(`${API}/api/editorial/checkout`, { method:'POST', body:fd, headers:H });
+    fd.append('nom', nom);
+    fd.append('frais', frais);
+    fd.append('devise', document.getElementById('ed-liv-devise').value);
+    fd.append('key', key);
+    const r = await fetch(`${API}/api/editorial/zones-livraison`, { method:'POST', body:fd, headers:H });
     const d = await r.json();
     if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
-    window.location.href = d.url;
+    toast(`✅ Zone "${nom}" ajoutée`);
+    document.getElementById('ed-zone-nom').value = '';
+    document.getElementById('ed-zone-frais').value = '';
+    edChargerZones();
+  } catch(e) {
+    toast('❌ ' + e.message, true);
+  }
+}
+
+async function edSupprimerZone(id) {
+  const key = edAdminKey();
+  try {
+    const r = await fetch(`${API}/api/editorial/zones-livraison/${id}?key=${encodeURIComponent(key)}`, { method:'DELETE', headers:H });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
+    toast('🗑️ Zone supprimée');
+    edChargerZones();
   } catch(e) {
     toast('❌ ' + e.message, true);
   }
@@ -3464,6 +3546,7 @@ async function edProposerEdito() {
 
 document.getElementById('ed-admin-key').value = edAdminKey();
 edChargerLivres();
+edChargerZones();
 edChargerEditos();
 
 // ═══════════════════════════════════════════════════════════════
