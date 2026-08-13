@@ -175,11 +175,14 @@ async def cmd_top(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not contribs:
         await update.message.reply_text("Pas encore de contributeurs. Sois le premier! 🚀")
         return
-    lignes = ["🏆 *Top contributeurs Pular IA*\n"]
+    # Pas de parse_mode : c['nom'] vient du prénom/pseudo Telegram de
+    # l'utilisateur (texte libre) — un underscore ou astérisque dedans
+    # casse le parseur Markdown et fait échouer l'envoi silencieusement.
+    lignes = ["🏆 Top contributeurs Pular IA\n"]
     medailles = ["🥇", "🥈", "🥉"] + ["🔹"] * 7
     for i, c in enumerate(contribs):
         lignes.append(f"{medailles[i]} {c['nom']} — {c['contributions']} vocaux")
-    await update.message.reply_text("\n".join(lignes), parse_mode="Markdown")
+    await update.message.reply_text("\n".join(lignes))
 
 async def cmd_aide(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
@@ -342,12 +345,15 @@ async def _duel_creer(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
     moi = await ctx.bot.get_me()
     lien = f"https://t.me/{moi.username}?start=duel_{code}"
+    # Pas de parse_mode ici : le lien contient "duel_" (underscore) et le
+    # pseudo/nom Telegram de l'adversaire est arbitraire — l'un ou l'autre
+    # peut casser le parseur Markdown de Telegram et faire échouer l'envoi
+    # du message *silencieusement* (aucune erreur visible côté utilisateur).
     await update.message.reply_text(
-        f"⚔️ *Duel créé!*\n\nCode : `{code}`\n\n"
+        f"⚔️ Duel créé!\n\nCode : {code}\n\n"
         f"Envoie ce lien à un ami :\n{lien}\n\n"
-        f"Ou il tape `/duel {code}` pour te rejoindre directement.\n\n"
-        "_En attente d'un adversaire..._",
-        parse_mode="Markdown",
+        f"Ou il tape /duel {code} pour te rejoindre directement.\n\n"
+        "En attente d'un adversaire..."
     )
 
 async def _duel_rejoindre(update: Update, ctx: ContextTypes.DEFAULT_TYPE, code: str):
@@ -363,7 +369,7 @@ async def _duel_rejoindre(update: Update, ctx: ContextTypes.DEFAULT_TYPE, code: 
     chats.setdefault(code, {})[pseudo] = update.effective_chat.id
     adversaire = duel["joueurs"][0]["pseudo"]
     await update.effective_message.reply_text(
-        f"⚔️ Tu affrontes *{adversaire}*! Que le meilleur gagne 🔥", parse_mode="Markdown",
+        f"⚔️ Tu affrontes {adversaire}! Que le meilleur gagne 🔥"
     )
 
     ctx.bot_data.setdefault("duel_q_debut", {})[code] = time.time()
@@ -377,10 +383,10 @@ async def _duel_envoyer_question(ctx: ContextTypes.DEFAULT_TYPE, duel: dict, cod
         [InlineKeyboardButton(opt, callback_data=f"duel:{code}:{qidx}:{i}")]
         for i, opt in enumerate(q["options"])
     ])
-    texte = f"⚔️ *Question {qidx+1}/{len(duel['questions'])}*\n\n{q['emoji']} Comment dit-on *{q['fr']}* en pular?"
+    texte = f"⚔️ Question {qidx+1}/{len(duel['questions'])}\n\n{q['emoji']} Comment dit-on {q['fr']} en pular?"
     for pseudo, chat_id in list(chats.items()):
         try:
-            await ctx.bot.send_message(chat_id, texte, reply_markup=clavier, parse_mode="Markdown")
+            await ctx.bot.send_message(chat_id, texte, reply_markup=clavier)
         except Exception as e:
             log.warning(f"Envoi question duel {code} à {pseudo}: {e}")
 
@@ -409,8 +415,8 @@ async def handle_duel_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if ma_reponse and ma_reponse["correct"]:
         resultat = f"✅ Bonne réponse! +{ma_reponse['points']} points"
     else:
-        resultat = f"❌ Raté — c'était *{duel_avant['questions'][qidx]['reponse']}*"
-    await query.edit_message_text(f"{resultat}\n\n_En attente de la question suivante..._", parse_mode="Markdown")
+        resultat = f"❌ Raté — c'était {duel_avant['questions'][qidx]['reponse']}"
+    await query.edit_message_text(f"{resultat}\n\nEn attente de la question suivante...")
 
     if duel["statut"] == "termine":
         await _duel_terminer(ctx, duel, code)
@@ -424,17 +430,16 @@ async def _duel_terminer(ctx: ContextTypes.DEFAULT_TYPE, duel: dict, code: str):
     for pseudo, chat_id in chats.items():
         moi, adversaire = (j1, j2) if j1["pseudo"] == pseudo else (j2, j1)
         if moi["score"] > adversaire["score"]:
-            titre = "🏆 *Tu as gagné!*"
+            titre = "🏆 Tu as gagné!"
         elif moi["score"] < adversaire["score"]:
-            titre = "😅 *Perdu — la revanche t'attend!*"
+            titre = "😅 Perdu — la revanche t'attend!"
         else:
-            titre = "🤝 *Égalité!*"
+            titre = "🤝 Égalité!"
         try:
             await ctx.bot.send_message(
                 chat_id,
-                f"{titre}\n\n*Toi:* {moi['score']} pts\n*{adversaire['pseudo']}:* {adversaire['score']} pts\n\n"
+                f"{titre}\n\nToi: {moi['score']} pts\n{adversaire['pseudo']}: {adversaire['score']} pts\n\n"
                 "Tape /duel pour relancer un défi, ou /classement pour voir le classement!",
-                parse_mode="Markdown",
             )
         except Exception as e:
             log.warning(f"Envoi résultats duel {code} à {pseudo}: {e}")
@@ -448,10 +453,26 @@ async def cmd_classement(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Aucun duel terminé pour l'instant. Lance-toi avec /duel! ⚔️")
         return
     medailles = ["🥇", "🥈", "🥉"] + ["⚔️"] * 7
-    lignes = ["🏆 *Classement des duels Pular IA*\n"]
+    # Pas de parse_mode : les pseudos viennent aussi du site web, en texte
+    # libre — un underscore ou astérisque dedans casserait le Markdown.
+    lignes = ["🏆 Classement des duels Pular IA\n"]
     for i, e in enumerate(top):
         lignes.append(f"{medailles[i]} {e['pseudo']} — {e['victoires']} victoire(s), {e['points']} pts")
-    await update.message.reply_text("\n".join(lignes), parse_mode="Markdown")
+    await update.message.reply_text("\n".join(lignes))
+
+# ── Erreurs ───────────────────────────────────────────────────────────────────
+async def handle_error(update: object, ctx: ContextTypes.DEFAULT_TYPE):
+    """Filet de sécurité global : sans ça, une exception dans un handler
+    (ex: message Markdown mal formé rejeté par Telegram) échoue en silence
+    totale — rien dans le chat, juste une ligne perdue dans les logs."""
+    log.error(f"Exception non gérée: {ctx.error}", exc_info=ctx.error)
+    if isinstance(update, Update) and update.effective_message:
+        try:
+            await update.effective_message.reply_text(
+                "⚠️ Une erreur s'est produite. Réessaie dans un instant."
+            )
+        except Exception:
+            pass
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
@@ -482,6 +503,7 @@ def main():
     app.add_handler(CallbackQueryHandler(handle_duel_callback, pattern=r"^duel:"))
     app.add_handler(CallbackQueryHandler(handle_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+    app.add_error_handler(handle_error)
 
     log.info("🤖 Bot Pular IA démarré! Ctrl+C pour arrêter.")
     app.run_polling(drop_pending_updates=True, bootstrap_retries=5)
