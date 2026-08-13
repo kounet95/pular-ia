@@ -1028,7 +1028,7 @@
     <!-- ── Éditos ── -->
     <h3 id="carte-editos-publies" style="font-size:1rem;margin:18px 0 8px;border-top:1px solid #2a2a2a;padding-top:16px;scroll-margin-top:56px;">✍️ Éditos de la communauté</h3>
     <p style="font-size:.8rem;color:var(--gris);margin-bottom:12px;">
-      Écris un article court sur la langue, la culture, l'histoire ou l'actualité peule. Il sera relu avant publication.
+      Écris un article court sur la langue, la culture, l'histoire ou l'actualité peule. Il est publié immédiatement.
     </p>
 
     <div id="ed-editos-attente"></div>
@@ -1076,7 +1076,7 @@
         <button onclick="edProposerEdito()" style="
           width:100%;padding:11px;border-radius:8px;border:none;
           background:#8b1e5c;color:white;font-weight:700;cursor:pointer;font-size:.9rem;
-        ">📨 Envoyer pour relecture</button>
+        ">📨 Publier l'édito</button>
       </div>
     </details>
   </div>
@@ -3246,7 +3246,7 @@ async function edProposerEdito() {
     const d = await r.json();
     if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
 
-    toast('📨 Édito envoyé — merci! Il sera publié après relecture.');
+    toast('✅ Édito publié — merci!');
     ['ed-edito-titre','ed-edito-auteur','ed-edito-contenu','ed-ia-image-sujet','ed-ia-sujet','ed-ia-angle'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('ed-edito-image-input').value = '';
     document.getElementById('ed-edito-image-preview').style.display = 'none';

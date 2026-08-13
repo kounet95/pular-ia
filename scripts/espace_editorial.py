@@ -360,6 +360,8 @@ def sauver_editos(editos: list[dict]):
         json.dump(editos, f, ensure_ascii=False, indent=2)
 
 def ajouter_edito(titre: str, auteur: str, contenu: str, image: str) -> dict:
+    """Publie l'édito immédiatement — pas de file d'attente de relecture."""
+    maintenant = datetime.now().isoformat()
     editos = charger_editos()
     edito = {
         "id":               str(uuid.uuid4())[:8],
@@ -367,9 +369,9 @@ def ajouter_edito(titre: str, auteur: str, contenu: str, image: str) -> dict:
         "auteur":           auteur or "Anonyme",
         "contenu":          contenu,
         "image":            image,
-        "statut":           "en_attente",
-        "date_soumission":  datetime.now().isoformat(),
-        "date_publication": None,
+        "statut":           "publie",
+        "date_soumission":  maintenant,
+        "date_publication": maintenant,
     }
     editos.append(edito)
     sauver_editos(editos)
