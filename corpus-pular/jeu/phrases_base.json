@@ -3,162 +3,306 @@
     "id": "ph0",
     "pular": "Jam waali? Jam tan, baŋ-baŋ.",
     "fr": "Comment vas-tu? Je vais bien, merci.",
-    "cat": "Salutations"
+    "cat": "Salutations",
+    "en": "How are you? I'm fine, thank you.",
+    "ar": "كيف حالك؟ أنا بخير، شكرًا."
   },
   {
     "id": "ph1",
     "pular": "Hol tò innde maa?",
     "fr": "Comment t'appelles-tu?",
-    "cat": "Salutations"
+    "cat": "Salutations",
+    "en": "What is your name?",
+    "ar": "ما اسمك؟"
   },
   {
     "id": "ph2",
     "pular": "Innde am ko Amadou. Mi jooɗii e Kanade.",
     "fr": "Je m'appelle Amadou. J'habite au Canada.",
-    "cat": "Salutations"
+    "cat": "Salutations",
+    "en": "My name is Amadou. I live in Canada.",
+    "ar": "اسمي أمادو. أسكن في كندا."
   },
   {
     "id": "ph3",
     "pular": "A jaaraama walaa! Alla hokku jam.",
     "fr": "Merci beaucoup! Qu'Allah te donne la paix.",
-    "cat": "Salutations"
+    "cat": "Salutations",
+    "en": "Thank you very much! May Allah grant you peace.",
+    "ar": "شكرًا جزيلاً! أعطاك الله السلام."
   },
   {
     "id": "ph4",
     "pular": "Nde ndarii? Nde warii?",
     "fr": "D'où viens-tu? Où vas-tu?",
-    "cat": "Salutations"
+    "cat": "Salutations",
+    "en": "Where do you come from? Where are you going?",
+    "ar": "من أين أتيت؟ إلى أين تذهب؟"
   },
   {
     "id": "ph5",
     "pular": "Bismillahi Rahmaani Rahiimi.",
     "fr": "Au nom d'Allah, le Clément, le Miséricordieux.",
-    "cat": "Islam"
+    "cat": "Islam",
+    "en": "In the name of Allah, the Most Gracious, the Most Merciful.",
+    "ar": "بسم الله الرحمن الرحيم."
   },
   {
     "id": "ph6",
     "pular": "Alhamdulillaahi Rabbil aalamiin.",
     "fr": "Louange à Allah, Seigneur des mondes.",
-    "cat": "Islam"
+    "cat": "Islam",
+    "en": "Praise be to Allah, Lord of the worlds.",
+    "ar": "الحمد لله رب العالمين."
   },
   {
     "id": "ph7",
     "pular": "Allahu Akbar, Allah mo Moƴƴo, Allah mo Jom baawɗe fof.",
     "fr": "Allah est Grand, Allah est Bon, Allah est Tout-Puissant.",
-    "cat": "Islam"
+    "cat": "Islam",
+    "en": "Allah is Great, Allah is Good, Allah is All-Powerful.",
+    "ar": "الله أكبر، الله الطيب، الله القادر على كل شيء."
   },
   {
     "id": "ph8",
     "pular": "Mi andaa ko Allah yiɗi. Mi yiɗi janngude Al-Qur'aana.",
     "fr": "Je sais ce qu'Allah aime. J'aime lire le Coran.",
-    "cat": "Islam"
+    "cat": "Islam",
+    "en": "I know what Allah loves. I love reading the Quran.",
+    "ar": "أعرف ما يحبه الله. أحب قراءة القرآن."
   },
   {
     "id": "ph9",
     "pular": "Ramadan woni lewru barke e naafoore.",
     "fr": "Le Ramadan est un mois de bénédiction et de bienfaits.",
-    "cat": "Islam"
+    "cat": "Islam",
+    "en": "Ramadan is a month of blessing and goodness.",
+    "ar": "رمضان شهر البركة والخير."
   },
   {
     "id": "ph10",
     "pular": "Minen kuɓɓi. Mi jogii debbo e ɓiɓɓe tati.",
     "fr": "Je suis marié. J'ai une femme et trois enfants.",
-    "cat": "Famille"
+    "cat": "Famille",
+    "en": "I am married. I have a wife and three children.",
+    "ar": "أنا متزوج. لدي زوجة وثلاثة أطفال."
   },
   {
     "id": "ph11",
     "pular": "Baaba am woni ngesa. Yinaande am woni galle.",
     "fr": "Mon père est au champ. Ma mère est à la maison.",
-    "cat": "Famille"
+    "cat": "Famille",
+    "en": "My father is in the field. My mother is at home.",
+    "ar": "أبي في الحقل. أمي في المنزل."
   },
   {
     "id": "ph12",
     "pular": "Mi yiɗi ɓiɓɓe am haa ɓuri fof.",
     "fr": "J'aime mes enfants plus que tout.",
-    "cat": "Famille"
+    "cat": "Famille",
+    "en": "I love my children more than anything.",
+    "ar": "أحب أطفالي أكثر من أي شيء."
   },
   {
     "id": "ph13",
     "pular": "Worɓe e rewɓe fof poti yiɗde famili maɓɓe.",
     "fr": "Les hommes et les femmes doivent aimer leur famille.",
-    "cat": "Famille"
+    "cat": "Famille",
+    "en": "Men and women must love their family.",
+    "ar": "يجب على الرجال والنساء أن يحبوا عائلتهم."
   },
   {
     "id": "ph14",
     "pular": "Hannde subaka, mi ñaami nyiiri e kosam.",
     "fr": "Ce matin, j'ai mangé du riz avec du lait.",
-    "cat": "Quotidien"
+    "cat": "Quotidien",
+    "en": "This morning, I ate rice with milk.",
+    "ar": "هذا الصباح، أكلت الأرز مع الحليب."
   },
   {
     "id": "ph15",
     "pular": "Ndiyam moƴƴi. Ñaamdu moƴƴi faa jeyɗo.",
     "fr": "L'eau est bonne. La nourriture est bonne pour celui qui en a.",
-    "cat": "Quotidien"
+    "cat": "Quotidien",
+    "en": "Water is good. Food is good for those who have it.",
+    "ar": "الماء طيب. الطعام طيب لمن يملكه."
   },
   {
     "id": "ph16",
     "pular": "Mi yahay suudu janngo sakkitin.",
     "fr": "J'irai à l'école demain matin.",
-    "cat": "Quotidien"
+    "cat": "Quotidien",
+    "en": "I will go to school tomorrow morning.",
+    "ar": "سأذهب إلى المدرسة غدًا صباحًا."
   },
   {
     "id": "ph17",
     "pular": "Leydi pular woni leydi moƴƴere.",
     "fr": "Le pays peul est un beau pays.",
-    "cat": "Quotidien"
+    "cat": "Quotidien",
+    "en": "The Fula land is a beautiful country.",
+    "ar": "بلاد الفولاني بلد جميل."
   },
   {
     "id": "ph18",
     "pular": "Ko waɗi-ɗaa hannde? Mi golliima tawa.",
     "fr": "Qu'as-tu fait aujourd'hui? J'ai travaillé fort.",
-    "cat": "Quotidien"
+    "cat": "Quotidien",
+    "en": "What did you do today? I worked hard.",
+    "ar": "ماذا فعلت اليوم؟ عملت بجد."
   },
   {
     "id": "ph19",
     "pular": "Nagge am jogii ɓiɓɓe ɗiɗi yontere hee.",
     "fr": "Ma vache a eu deux veaux cette semaine.",
-    "cat": "Nature"
+    "cat": "Nature",
+    "en": "My cow had two calves this week.",
+    "ar": "ولدت بقرتي عجلين هذا الأسبوع."
   },
   {
     "id": "ph20",
     "pular": "Ladde mawndi. Ladde moƴƴi faa aynaaɓe.",
     "fr": "La forêt est grande. La forêt est bonne pour les éleveurs.",
-    "cat": "Nature"
+    "cat": "Nature",
+    "en": "The forest is big. The forest is good for herders.",
+    "ar": "الغابة كبيرة. الغابة جيدة للرعاة."
   },
   {
     "id": "ph21",
     "pular": "Ndungu wari. Ndiyam ɓurtii e maayo.",
     "fr": "La saison des pluies est arrivée. L'eau a débordé du fleuve.",
-    "cat": "Nature"
+    "cat": "Nature",
+    "en": "The rainy season has arrived. The river has overflowed.",
+    "ar": "جاء موسم الأمطار. فاض النهر."
   },
   {
     "id": "ph22",
     "pular": "Winde mawndi woni dow ladde.",
     "fr": "Le grand village est au-dessus de la forêt.",
-    "cat": "Nature"
+    "cat": "Nature",
+    "en": "The big village is above the forest.",
+    "ar": "القرية الكبيرة فوق الغابة."
   },
   {
     "id": "ph23",
     "pular": "Pulaagu woni ndimaagu e moƴƴere e muuɗum.",
     "fr": "Le Pulaagu c'est la noblesse, la bonté et la pudeur.",
-    "cat": "Culture"
+    "cat": "Culture",
+    "en": "Pulaagu is nobility, kindness and modesty.",
+    "ar": "البولاآڠو هو النبل والطيبة والحياء."
   },
   {
     "id": "ph24",
     "pular": "Semteende woni tiitoonde Pullo kañum.",
     "fr": "La pudeur est le fondement de l'identité peule.",
-    "cat": "Culture"
+    "cat": "Culture",
+    "en": "Modesty is the foundation of Fula identity.",
+    "ar": "الحياء هو أساس الهوية الفولانية."
   },
   {
     "id": "ph25",
     "pular": "Ko feewde haa ɓuri yiɗde woni gollirde.",
     "fr": "Ce qui est bien et ce qu'on aime, c'est ce qu'il faut faire.",
-    "cat": "Culture"
+    "cat": "Culture",
+    "en": "What is good and what one loves is what should be done.",
+    "ar": "ما هو جيد وما نحبه هو ما يجب فعله."
   },
   {
     "id": "ph26",
     "pular": "Gerɗol peelo woni moƴƴere e teddungal.",
     "fr": "La musique peule est beauté et dignité.",
-    "cat": "Culture"
+    "cat": "Culture",
+    "en": "Fula music is beauty and dignity.",
+    "ar": "الموسيقى الفولانية جمال وكرامة."
+  },
+  {
+    "id": "phn0",
+    "pular": "Taariik amen teddi.",
+    "fr": "Notre histoire est précieuse.",
+    "en": "Our history is precious.",
+    "ar": "تاريخنا ثمين.",
+    "cat": "Histoire",
+    "a_verifier": true
+  },
+  {
+    "id": "phn1",
+    "pular": "Mi yiɗi anndude taariik amen.",
+    "fr": "J'aime connaître notre histoire.",
+    "en": "I love knowing our history.",
+    "ar": "أحب معرفة تاريخنا.",
+    "cat": "Histoire",
+    "a_verifier": true
+  },
+  {
+    "id": "phn2",
+    "pular": "Mi yiɗi jangude siyaans.",
+    "fr": "J'aime étudier les sciences.",
+    "en": "I love studying science.",
+    "ar": "أحب دراسة العلوم.",
+    "cat": "Scientifique",
+    "a_verifier": true
+  },
+  {
+    "id": "phn3",
+    "pular": "Siyaans hokku en ganndal.",
+    "fr": "La science nous donne du savoir.",
+    "en": "Science gives us knowledge.",
+    "ar": "العلم يمنحنا المعرفة.",
+    "cat": "Scientifique",
+    "a_verifier": true
+  },
+  {
+    "id": "phn4",
+    "pular": "Filosofi woni miijo.",
+    "fr": "La philosophie est une réflexion.",
+    "en": "Philosophy is a reflection.",
+    "ar": "الفلسفة تأمل.",
+    "cat": "Philosophie",
+    "a_verifier": true
+  },
+  {
+    "id": "phn5",
+    "pular": "Mi yiɗi miijaade ko woni goonga.",
+    "fr": "J'aime réfléchir à ce qui est vrai.",
+    "en": "I love reflecting on what is true.",
+    "ar": "أحب التفكير فيما هو صحيح.",
+    "cat": "Philosophie",
+    "a_verifier": true
+  },
+  {
+    "id": "phn6",
+    "pular": "Politik woni fii leydi.",
+    "fr": "La politique concerne le pays.",
+    "en": "Politics concerns the country.",
+    "ar": "السياسة تتعلق بالبلد.",
+    "cat": "Politique",
+    "a_verifier": true
+  },
+  {
+    "id": "phn7",
+    "pular": "En fof poti wallitde leydi amen.",
+    "fr": "Nous devons tous aider notre pays.",
+    "en": "We must all help our country.",
+    "ar": "يجب علينا جميعا مساعدة بلدنا.",
+    "cat": "Politique",
+    "a_verifier": true
+  },
+  {
+    "id": "phn8",
+    "pular": "Ko moƴƴi woni ko poti gollirde.",
+    "fr": "Ce qui est bon est ce qu'il faut faire.",
+    "en": "What is good is what must be done.",
+    "ar": "ما هو جيد هو ما يجب فعله.",
+    "cat": "Proverbes",
+    "a_verifier": true
+  },
+  {
+    "id": "phn9",
+    "pular": "Semteende ɓuri jawdi.",
+    "fr": "La pudeur vaut plus que la richesse.",
+    "en": "Modesty is worth more than wealth.",
+    "ar": "الحياء أثمن من الثروة.",
+    "cat": "Proverbes",
+    "a_verifier": true
   }
 ]

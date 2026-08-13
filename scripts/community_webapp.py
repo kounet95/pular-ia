@@ -2555,33 +2555,51 @@ FICHIER_PHRASES_BASE = DOSSIER_JEU / "phrases_base.json"
 FICHIER_MOTS_BASE    = DOSSIER_JEU / "mots_base.json"
 
 _PHRASES_SEED = [
-    ("Jam waali? Jam tan, baŋ-baŋ.",           "Comment vas-tu? Je vais bien, merci.",                      "Salutations"),
-    ("Hol tò innde maa?",                       "Comment t'appelles-tu?",                                    "Salutations"),
-    ("Innde am ko Amadou. Mi jooɗii e Kanade.", "Je m'appelle Amadou. J'habite au Canada.",                  "Salutations"),
-    ("A jaaraama walaa! Alla hokku jam.",        "Merci beaucoup! Qu'Allah te donne la paix.",               "Salutations"),
-    ("Nde ndarii? Nde warii?",                  "D'où viens-tu? Où vas-tu?",                                "Salutations"),
-    ("Bismillahi Rahmaani Rahiimi.",             "Au nom d'Allah, le Clément, le Miséricordieux.",           "Islam"),
-    ("Alhamdulillaahi Rabbil aalamiin.",         "Louange à Allah, Seigneur des mondes.",                    "Islam"),
-    ("Allahu Akbar, Allah mo Moƴƴo, Allah mo Jom baawɗe fof.", "Allah est Grand, Allah est Bon, Allah est Tout-Puissant.", "Islam"),
-    ("Mi andaa ko Allah yiɗi. Mi yiɗi janngude Al-Qur'aana.", "Je sais ce qu'Allah aime. J'aime lire le Coran.", "Islam"),
-    ("Ramadan woni lewru barke e naafoore.",     "Le Ramadan est un mois de bénédiction et de bienfaits.",  "Islam"),
-    ("Minen kuɓɓi. Mi jogii debbo e ɓiɓɓe tati.", "Je suis marié. J'ai une femme et trois enfants.",       "Famille"),
-    ("Baaba am woni ngesa. Yinaande am woni galle.", "Mon père est au champ. Ma mère est à la maison.",    "Famille"),
-    ("Mi yiɗi ɓiɓɓe am haa ɓuri fof.",          "J'aime mes enfants plus que tout.",                       "Famille"),
-    ("Worɓe e rewɓe fof poti yiɗde famili maɓɓe.", "Les hommes et les femmes doivent aimer leur famille.", "Famille"),
-    ("Hannde subaka, mi ñaami nyiiri e kosam.",  "Ce matin, j'ai mangé du riz avec du lait.",               "Quotidien"),
-    ("Ndiyam moƴƴi. Ñaamdu moƴƴi faa jeyɗo.",   "L'eau est bonne. La nourriture est bonne pour celui qui en a.", "Quotidien"),
-    ("Mi yahay suudu janngo sakkitin.",           "J'irai à l'école demain matin.",                         "Quotidien"),
-    ("Leydi pular woni leydi moƴƴere.",          "Le pays peul est un beau pays.",                          "Quotidien"),
-    ("Ko waɗi-ɗaa hannde? Mi golliima tawa.",    "Qu'as-tu fait aujourd'hui? J'ai travaillé fort.",         "Quotidien"),
-    ("Nagge am jogii ɓiɓɓe ɗiɗi yontere hee.",  "Ma vache a eu deux veaux cette semaine.",                 "Nature"),
-    ("Ladde mawndi. Ladde moƴƴi faa aynaaɓe.",  "La forêt est grande. La forêt est bonne pour les éleveurs.", "Nature"),
-    ("Ndungu wari. Ndiyam ɓurtii e maayo.",      "La saison des pluies est arrivée. L'eau a débordé du fleuve.", "Nature"),
-    ("Winde mawndi woni dow ladde.",              "Le grand village est au-dessus de la forêt.",             "Nature"),
-    ("Pulaagu woni ndimaagu e moƴƴere e muuɗum.", "Le Pulaagu c'est la noblesse, la bonté et la pudeur.",  "Culture"),
-    ("Semteende woni tiitoonde Pullo kañum.",    "La pudeur est le fondement de l'identité peule.",         "Culture"),
-    ("Ko feewde haa ɓuri yiɗde woni gollirde.",  "Ce qui est bien et ce qu'on aime, c'est ce qu'il faut faire.", "Culture"),
-    ("Gerɗol peelo woni moƴƴere e teddungal.",   "La musique peule est beauté et dignité.",                 "Culture"),
+    # (pular, fr, en, ar, cat)
+    ("Jam waali? Jam tan, baŋ-baŋ.",           "Comment vas-tu? Je vais bien, merci.",                      "How are you? I'm fine, thank you.",                          "كيف حالك؟ أنا بخير، شكرًا.",                       "Salutations"),
+    ("Hol tò innde maa?",                       "Comment t'appelles-tu?",                                    "What is your name?",                                         "ما اسمك؟",                                            "Salutations"),
+    ("Innde am ko Amadou. Mi jooɗii e Kanade.", "Je m'appelle Amadou. J'habite au Canada.",                  "My name is Amadou. I live in Canada.",                       "اسمي أمادو. أسكن في كندا.",                           "Salutations"),
+    ("A jaaraama walaa! Alla hokku jam.",        "Merci beaucoup! Qu'Allah te donne la paix.",               "Thank you very much! May Allah grant you peace.",            "شكرًا جزيلاً! أعطاك الله السلام.",                     "Salutations"),
+    ("Nde ndarii? Nde warii?",                  "D'où viens-tu? Où vas-tu?",                                "Where do you come from? Where are you going?",               "من أين أتيت؟ إلى أين تذهب؟",                          "Salutations"),
+    ("Bismillahi Rahmaani Rahiimi.",             "Au nom d'Allah, le Clément, le Miséricordieux.",           "In the name of Allah, the Most Gracious, the Most Merciful.", "بسم الله الرحمن الرحيم.",                             "Islam"),
+    ("Alhamdulillaahi Rabbil aalamiin.",         "Louange à Allah, Seigneur des mondes.",                    "Praise be to Allah, Lord of the worlds.",                    "الحمد لله رب العالمين.",                              "Islam"),
+    ("Allahu Akbar, Allah mo Moƴƴo, Allah mo Jom baawɗe fof.", "Allah est Grand, Allah est Bon, Allah est Tout-Puissant.", "Allah is Great, Allah is Good, Allah is All-Powerful.", "الله أكبر، الله الطيب، الله القادر على كل شيء.",       "Islam"),
+    ("Mi andaa ko Allah yiɗi. Mi yiɗi janngude Al-Qur'aana.", "Je sais ce qu'Allah aime. J'aime lire le Coran.", "I know what Allah loves. I love reading the Quran.",     "أعرف ما يحبه الله. أحب قراءة القرآن.",                "Islam"),
+    ("Ramadan woni lewru barke e naafoore.",     "Le Ramadan est un mois de bénédiction et de bienfaits.",  "Ramadan is a month of blessing and goodness.",               "رمضان شهر البركة والخير.",                            "Islam"),
+    ("Minen kuɓɓi. Mi jogii debbo e ɓiɓɓe tati.", "Je suis marié. J'ai une femme et trois enfants.",       "I am married. I have a wife and three children.",            "أنا متزوج. لدي زوجة وثلاثة أطفال.",                    "Famille"),
+    ("Baaba am woni ngesa. Yinaande am woni galle.", "Mon père est au champ. Ma mère est à la maison.",    "My father is in the field. My mother is at home.",           "أبي في الحقل. أمي في المنزل.",                        "Famille"),
+    ("Mi yiɗi ɓiɓɓe am haa ɓuri fof.",          "J'aime mes enfants plus que tout.",                       "I love my children more than anything.",                     "أحب أطفالي أكثر من أي شيء.",                          "Famille"),
+    ("Worɓe e rewɓe fof poti yiɗde famili maɓɓe.", "Les hommes et les femmes doivent aimer leur famille.", "Men and women must love their family.",                      "يجب على الرجال والنساء أن يحبوا عائلتهم.",             "Famille"),
+    ("Hannde subaka, mi ñaami nyiiri e kosam.",  "Ce matin, j'ai mangé du riz avec du lait.",               "This morning, I ate rice with milk.",                        "هذا الصباح، أكلت الأرز مع الحليب.",                    "Quotidien"),
+    ("Ndiyam moƴƴi. Ñaamdu moƴƴi faa jeyɗo.",   "L'eau est bonne. La nourriture est bonne pour celui qui en a.", "Water is good. Food is good for those who have it.",   "الماء طيب. الطعام طيب لمن يملكه.",                     "Quotidien"),
+    ("Mi yahay suudu janngo sakkitin.",           "J'irai à l'école demain matin.",                         "I will go to school tomorrow morning.",                      "سأذهب إلى المدرسة غدًا صباحًا.",                       "Quotidien"),
+    ("Leydi pular woni leydi moƴƴere.",          "Le pays peul est un beau pays.",                          "The Fula land is a beautiful country.",                      "بلاد الفولاني بلد جميل.",                             "Quotidien"),
+    ("Ko waɗi-ɗaa hannde? Mi golliima tawa.",    "Qu'as-tu fait aujourd'hui? J'ai travaillé fort.",         "What did you do today? I worked hard.",                      "ماذا فعلت اليوم؟ عملت بجد.",                          "Quotidien"),
+    ("Nagge am jogii ɓiɓɓe ɗiɗi yontere hee.",  "Ma vache a eu deux veaux cette semaine.",                 "My cow had two calves this week.",                           "ولدت بقرتي عجلين هذا الأسبوع.",                       "Nature"),
+    ("Ladde mawndi. Ladde moƴƴi faa aynaaɓe.",  "La forêt est grande. La forêt est bonne pour les éleveurs.", "The forest is big. The forest is good for herders.",      "الغابة كبيرة. الغابة جيدة للرعاة.",                    "Nature"),
+    ("Ndungu wari. Ndiyam ɓurtii e maayo.",      "La saison des pluies est arrivée. L'eau a débordé du fleuve.", "The rainy season has arrived. The river has overflowed.", "جاء موسم الأمطار. فاض النهر.",                       "Nature"),
+    ("Winde mawndi woni dow ladde.",              "Le grand village est au-dessus de la forêt.",             "The big village is above the forest.",                       "القرية الكبيرة فوق الغابة.",                          "Nature"),
+    ("Pulaagu woni ndimaagu e moƴƴere e muuɗum.", "Le Pulaagu c'est la noblesse, la bonté et la pudeur.",  "Pulaagu is nobility, kindness and modesty.",                 "البولاآڠو هو النبل والطيبة والحياء.",                  "Culture"),
+    ("Semteende woni tiitoonde Pullo kañum.",    "La pudeur est le fondement de l'identité peule.",         "Modesty is the foundation of Fula identity.",                "الحياء هو أساس الهوية الفولانية.",                    "Culture"),
+    ("Ko feewde haa ɓuri yiɗde woni gollirde.",  "Ce qui est bien et ce qu'on aime, c'est ce qu'il faut faire.", "What is good and what one loves is what should be done.", "ما هو جيد وما نحبه هو ما يجب فعله.",                  "Culture"),
+    ("Gerɗol peelo woni moƴƴere e teddungal.",   "La musique peule est beauté et dignité.",                 "Fula music is beauty and dignity.",                          "الموسيقى الفولانية جمال وكرامة.",                     "Culture"),
+]
+
+# Nouveaux sujets (histoire, sciences, philosophie, politique, proverbes) :
+# brouillons rédigés par Claude, PAS relus par un locuteur natif du pular.
+# Marqués `a_verifier` pour ne jamais se mélanger silencieusement aux
+# phrases déjà établies tant qu'un locuteur natif ne les a pas validées.
+_PHRASES_NOUVEAUX_SUJETS = [
+    ("Taariik amen teddi.",                    "Notre histoire est précieuse.",              "Our history is precious.",              "تاريخنا ثمين.",                      "Histoire"),
+    ("Mi yiɗi anndude taariik amen.",           "J'aime connaître notre histoire.",           "I love knowing our history.",           "أحب معرفة تاريخنا.",                 "Histoire"),
+    ("Mi yiɗi jangude siyaans.",                "J'aime étudier les sciences.",               "I love studying science.",              "أحب دراسة العلوم.",                  "Scientifique"),
+    ("Siyaans hokku en ganndal.",               "La science nous donne du savoir.",           "Science gives us knowledge.",           "العلم يمنحنا المعرفة.",              "Scientifique"),
+    ("Filosofi woni miijo.",                    "La philosophie est une réflexion.",          "Philosophy is a reflection.",           "الفلسفة تأمل.",                     "Philosophie"),
+    ("Mi yiɗi miijaade ko woni goonga.",        "J'aime réfléchir à ce qui est vrai.",        "I love reflecting on what is true.",    "أحب التفكير فيما هو صحيح.",          "Philosophie"),
+    ("Politik woni fii leydi.",                 "La politique concerne le pays.",             "Politics concerns the country.",        "السياسة تتعلق بالبلد.",              "Politique"),
+    ("En fof poti wallitde leydi amen.",        "Nous devons tous aider notre pays.",         "We must all help our country.",         "يجب علينا جميعا مساعدة بلدنا.",       "Politique"),
+    ("Ko moƴƴi woni ko poti gollirde.",         "Ce qui est bon est ce qu'il faut faire.",    "What is good is what must be done.",    "ما هو جيد هو ما يجب فعله.",          "Proverbes"),
+    ("Semteende ɓuri jawdi.",                   "La pudeur vaut plus que la richesse.",       "Modesty is worth more than wealth.",    "الحياء أثمن من الثروة.",             "Proverbes"),
 ]
 
 _MOTS_SEED = [
@@ -2612,9 +2630,43 @@ _MOTS_SEED = [
 ]
 
 def charger_phrases_base() -> list[dict]:
+    """
+    Charge les phrases de base. Migration automatique et idempotente :
+    - complète en/ar sur les phrases d'origine si le fichier a été écrit sur
+      disque avant l'ajout des traductions (repérées par leur texte pular) ;
+    - ajoute les phrases des nouveaux sujets (histoire, sciences...) si elles
+      ne sont pas encore présentes, sans dupliquer ni écraser des phrases
+      déjà éditées par un admin.
+    """
+    traductions_originales = {p: (e, a) for p, f, e, a, c in _PHRASES_SEED}
+    nouveaux = {
+        f"phn{i}": {"id": f"phn{i}", "pular": p, "fr": f, "en": e, "ar": a, "cat": c, "a_verifier": True}
+        for i, (p, f, e, a, c) in enumerate(_PHRASES_NOUVEAUX_SUJETS)
+    }
+
     if FICHIER_PHRASES_BASE.exists():
-        return json.loads(FICHIER_PHRASES_BASE.read_text(encoding="utf-8"))
-    data = [{"id": f"ph{i}", "pular": p, "fr": f, "cat": c} for i, (p, f, c) in enumerate(_PHRASES_SEED)]
+        data = json.loads(FICHIER_PHRASES_BASE.read_text(encoding="utf-8"))
+        modifie = False
+        for ph in data:
+            if ph.get("pular") in traductions_originales:
+                en, ar = traductions_originales[ph["pular"]]
+                if not ph.get("en"):
+                    ph["en"] = en; modifie = True
+                if not ph.get("ar"):
+                    ph["ar"] = ar; modifie = True
+        ids_presents = {ph.get("id") for ph in data}
+        for nid, nph in nouveaux.items():
+            if nid not in ids_presents:
+                data.append(nph)
+                modifie = True
+        if modifie:
+            FICHIER_PHRASES_BASE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+        return data
+
+    data = [
+        {"id": f"ph{i}", "pular": p, "fr": f, "en": e, "ar": a, "cat": c}
+        for i, (p, f, e, a, c) in enumerate(_PHRASES_SEED)
+    ] + list(nouveaux.values())
     FICHIER_PHRASES_BASE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     return data
 
@@ -2666,6 +2718,9 @@ async def api_modifier_phrase_base(
         "cat":   cat,
         "modifie": datetime.now().isoformat(),
     })
+    # Une modification par un admin vaut relecture : on retire le badge
+    # "à vérifier" éventuellement posé sur un brouillon généré par l'IA.
+    phrases[idx].pop("a_verifier", None)
     sauver_phrases_base(phrases)
     return JSONResponse({"ok": True, "phrase": phrases[idx]})
 

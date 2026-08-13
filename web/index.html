@@ -525,6 +525,16 @@
       transition: all .15s;
     }
     .filtre.actif { background: var(--vert); color: white; border-color: var(--vert); }
+    .filtre-langue {
+      padding: 5px 12px; border-radius: 20px; border: 1px solid #2d5c3a;
+      background: transparent; color: var(--gris); cursor: pointer;
+      font-size: .8rem; transition: all .15s;
+    }
+    .filtre-langue.actif { background: var(--vert); color: white; border-color: var(--vert); }
+    .badge-averifier {
+      display: inline-block; font-size: .65rem; color: #1a1a1a; background: var(--or);
+      border-radius: 5px; padding: 1px 6px; margin-left: 6px; font-weight: 700; vertical-align: middle;
+    }
     .phrase-card {
       display: flex;
       flex-direction: column;
@@ -805,6 +815,14 @@
     <p style="font-size:.82rem;color:var(--gris);margin-bottom:14px;">
       Clique sur une phrase → lis-la à voix haute en pular → enregistre-toi.
     </p>
+
+    <!-- Langue de traduction affichée -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+      <span style="font-size:.75rem;color:var(--gris);">🌐 Traduction :</span>
+      <button type="button" class="filtre-langue actif" data-langue="fr" onclick="choisirLangueTraduction('fr')">🇫🇷 Français</button>
+      <button type="button" class="filtre-langue"       data-langue="en" onclick="choisirLangueTraduction('en')">🇬🇧 English</button>
+      <button type="button" class="filtre-langue"       data-langue="ar" onclick="choisirLangueTraduction('ar')">🕌 عربي</button>
+    </div>
 
     <!-- Filtres par catégorie -->
     <div id="filtres" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;"></div>
@@ -1606,6 +1624,7 @@
               <option>Salutations</option><option>Islam</option><option>Famille</option>
               <option>Quotidien</option><option>Nature</option><option>Culture</option>
               <option>Proverbes</option><option>Communauté</option>
+              <option>Histoire</option><option>Scientifique</option><option>Philosophie</option><option>Politique</option>
             </select>
             <button id="pp-btn-save" onclick="profSauverPhrasePanel()" style="padding:9px 18px;border-radius:8px;border:none;background:var(--vert);color:white;font-weight:700;cursor:pointer;">💾 Sauver</button>
             <button onclick="ppAnnuler()" style="padding:9px 12px;border-radius:8px;border:1px solid #2d5c3a;background:transparent;color:var(--gris);cursor:pointer;">✕</button>
@@ -2162,6 +2181,16 @@ const PHRASES = [
 
 let phraseActive   = null;
 let catActive      = "Tout";
+let phraseLangueTraduction = 'fr';
+
+function choisirLangueTraduction(langue) {
+  phraseLangueTraduction = langue;
+  document.querySelectorAll('.filtre-langue').forEach(b => {
+    b.classList.toggle('actif', b.dataset.langue === langue);
+  });
+  filtrerPhrases(catActive);
+}
+window.choisirLangueTraduction = choisirLangueTraduction;
 
 async function initPhrases() {
   // Charger toutes les phrases depuis l'API (base + custom), sinon fallback local
@@ -2207,17 +2236,18 @@ function filtrerPhrases(cat) {
     const fE  = (p.fr || '').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     const enE = (p.en || '').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     const arE = (p.ar || '').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const traductions = { fr: p.fr, en: p.en, ar: p.ar };
+    const traductionAffichee = traductions[phraseLangueTraduction] || p.fr || '';
+    const traductionRtl = phraseLangueTraduction === 'ar';
     card.innerHTML = `
       <div class="phrase-card-row" onclick="selectionnerPhrase(PHRASES.find(x=>x.id==='${pid}')||PHRASES[${i}])">
         <div class="txt">
           <div class="pular">${p.pular}</div>
           <div class="adlam" style="font-size:.78rem;color:var(--or);opacity:.7;direction:rtl;text-align:right;margin-top:2px;">${latinVersAdlam(p.pular)}</div>
-          <div class="fr">${p.fr}</div>
-          ${p.en ? `<div class="fr" style="opacity:.75;">🇬🇧 ${p.en}</div>` : ''}
-          ${p.ar ? `<div class="fr" style="opacity:.75;direction:rtl;text-align:right;">🕌 ${p.ar}</div>` : ''}
+          <div class="fr"${traductionRtl ? ' style="direction:rtl;text-align:right;"' : ''}>${traductionAffichee || '(traduction manquante)'}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
-          <span class="cat">${p.cat}</span>
+          <span class="cat">${p.cat}${p.a_verifier ? '<span class="badge-averifier" title="Brouillon généré par IA, pas encore relu par un locuteur natif">⚠️ à vérifier</span>' : ''}</span>
           <button class="btn-ecouter"  id="btn-tts-${pid}" onclick="event.stopPropagation();ecouterPhrase('${pid}','${pE}')">🔊 Écouter</button>
           <button class="btn-corriger" onclick="event.stopPropagation();toggleFormPhrase('${pid}')">✏️ Corriger</button>
         </div>
