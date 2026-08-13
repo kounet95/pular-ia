@@ -26,6 +26,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 from datetime import datetime
+from urllib.parse import quote
 
 import uvicorn
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
@@ -1364,6 +1365,10 @@ text-align:center;padding:60px 20px;">
     image_url   = f"{base}/api/editorial/editos/{edito_id}/image" if edito.get("image") else ""
     page_url    = f"{base}/lire/{edito_id}"
 
+    url_encodee   = quote(page_url, safe="")
+    titre_encode  = quote(edito["titre"])
+    whatsapp_texte = quote(f"{edito['titre']} — {page_url}")
+
     return HTMLResponse(f"""<!doctype html>
 <html lang="fr">
 <head>
@@ -1400,6 +1405,15 @@ text-align:center;padding:60px 20px;">
   h1 {{ font-size: 1.7rem; color: #c8a84b; line-height: 1.3; margin-bottom: 10px; }}
   .meta {{ font-size: .85rem; color: #8fac97; margin-bottom: 26px; }}
   .contenu p {{ font-size: 1.05rem; line-height: 1.8; margin-bottom: 18px; color: #e8f5e9; }}
+  .partage {{ margin-top: 34px; padding-top: 22px; border-top: 1px solid #1e3d28; }}
+  .partage-titre {{ font-size: .8rem; color: #8fac97; font-weight: 600; margin-bottom: 10px; }}
+  .partage-liens {{ display: flex; gap: 8px; flex-wrap: wrap; }}
+  .partage-liens a, .partage-liens button {{
+    display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; border-radius: 8px;
+    border: 1px solid #2d5c3a; background: #142b1c; color: #e8f5e9; text-decoration: none;
+    font-size: .82rem; font-weight: 600; cursor: pointer; font-family: inherit;
+  }}
+  .partage-liens a:hover, .partage-liens button:hover {{ border-color: #c8a84b; }}
   footer {{ margin-top: 40px; padding-top: 20px; border-top: 1px solid #1e3d28; width: 100%; }}
   footer a {{
     display: inline-block; padding: 10px 18px; border-radius: 8px; border: 1px solid #8b1e5c;
@@ -1415,10 +1429,31 @@ text-align:center;padding:60px 20px;">
     <h1>{titre}</h1>
     <div class="meta">✍️ {auteur} · {date_pub}</div>
     <div class="contenu">{contenu_html}</div>
+
+    <div class="partage">
+      <p class="partage-titre">📤 PARTAGER CET ARTICLE</p>
+      <div class="partage-liens">
+        <a href="https://wa.me/?text={whatsapp_texte}" target="_blank" rel="noopener">🟢 WhatsApp</a>
+        <a href="https://www.facebook.com/sharer/sharer.php?u={url_encodee}" target="_blank" rel="noopener">🔵 Facebook</a>
+        <a href="https://twitter.com/intent/tweet?text={titre_encode}&url={url_encodee}" target="_blank" rel="noopener">⚫ X</a>
+        <button id="btn-copier-lien" onclick="copierLien()">🔗 Copier le lien</button>
+      </div>
+    </div>
+
     <footer>
       <a href="{base}/#carte-editorial">📰 Voir tous les éditos</a>
     </footer>
   </main>
+  <script>
+    function copierLien() {{
+      const btn = document.getElementById('btn-copier-lien');
+      navigator.clipboard.writeText({json.dumps(page_url)}).then(() => {{
+        const original = btn.textContent;
+        btn.textContent = '✅ Lien copié!';
+        setTimeout(() => btn.textContent = original, 2000);
+      }});
+    }}
+  </script>
 </body>
 </html>""")
 
