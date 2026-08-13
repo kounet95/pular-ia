@@ -76,8 +76,10 @@ def charger_mots_pour_duel() -> list[dict]:
     base_pular = {m["pular"] for m in base}
     return base + [m for m in custom if m.get("pular") not in base_pular]
 
-NB_QUESTIONS      = 5
+NB_QUESTIONS      = 10  # défaut si non précisé
+LONGUEURS_VALIDES = [5, 10, 20]
 DUREE_QUESTION_MS = 15000  # 15s — indicatif, le minuteur vit côté client/bot
+THEMES = ["Tout", "Animaux", "Objets", "Corps", "Nature", "Famille"]
 
 def charger_duels() -> list[dict]:
     if FICHIER_DUELS.exists():
@@ -115,8 +117,24 @@ def generer_questions(mots: list[dict], n: int = NB_QUESTIONS) -> list[dict]:
         })
     return questions
 
-def creer_duel(pseudo: str, mots: list[dict], surface: str = "web") -> dict:
-    """Crée un duel en attente d'un second joueur."""
+def creer_duel(
+    pseudo: str,
+    mots: list[dict],
+    surface: str = "web",
+    theme: str = "Tout",
+    nb_questions: int = NB_QUESTIONS,
+) -> dict:
+    """Crée un duel en attente d'un second joueur, filtré sur un thème et
+    une longueur donnés (repli sur toute la banque si le thème est trop
+    pauvre pour fournir assez de questions et de distracteurs)."""
+    theme = theme if theme in THEMES else "Tout"
+    nb_questions = nb_questions if nb_questions in LONGUEURS_VALIDES else NB_QUESTIONS
+
+    mots_theme = mots if theme == "Tout" else [m for m in mots if m.get("cat") == theme]
+    if len(mots_theme) < 4:
+        theme = "Tout"
+        mots_theme = mots
+
     duels = charger_duels()
     code = _generer_code()
     while any(d["code"] == code for d in duels):
@@ -125,7 +143,8 @@ def creer_duel(pseudo: str, mots: list[dict], surface: str = "web") -> dict:
         "code":              code,
         "statut":            "attente",  # attente → en_cours → termine
         "surface":           surface,
-        "questions":         generer_questions(mots),
+        "theme":             theme,
+        "questions":         generer_questions(mots_theme, nb_questions),
         "question_actuelle": 0,
         "joueurs":           [{"pseudo": pseudo, "score": 0, "reponses": []}],
         "cree_le":           datetime.now().isoformat(),

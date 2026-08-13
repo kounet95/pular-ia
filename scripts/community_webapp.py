@@ -1552,16 +1552,24 @@ async def _duel_diffuser(code: str, payload: dict):
         DUEL_CONNEXIONS.get(code, {}).pop(p, None)
 
 @app.post("/api/duel/creer")
-async def api_duel_creer(pseudo: str = Form(...)):
+async def api_duel_creer(
+    pseudo:       str = Form(...),
+    theme:        str = Form("Tout"),
+    nb_questions: int = Form(DU.NB_QUESTIONS),
+):
     pseudo = pseudo.strip()[:40]
     if not pseudo:
         raise HTTPException(400, "Choisis un pseudo.")
     mots = _mots_jeu_pour_duel()
     if len(mots) < 4:
         raise HTTPException(503, "Pas assez de mots dans le jeu pour lancer un duel.")
-    duel = await asyncio.to_thread(DU.creer_duel, pseudo, mots, "web")
-    log.info(f"Duel créé: {duel['code']} par {pseudo}")
+    duel = await asyncio.to_thread(DU.creer_duel, pseudo, mots, "web", theme, nb_questions)
+    log.info(f"Duel créé: {duel['code']} par {pseudo} — thème={duel['theme']}, {len(duel['questions'])} questions")
     return JSONResponse({"ok": True, "duel": duel})
+
+@app.get("/api/duel/meta")
+async def api_duel_meta():
+    return JSONResponse({"themes": DU.THEMES, "longueurs": DU.LONGUEURS_VALIDES})
 
 @app.get("/api/duel/{code}")
 async def api_duel_etat(code: str):
@@ -1625,6 +1633,14 @@ async def ws_duel(websocket: WebSocket, code: str, pseudo: str = ""):
                     await _duel_diffuser(code, {"type": "etat", "duel": duel})
     except WebSocketDisconnect:
         pass
+    except RuntimeError:
+        # Starlette peut lever RuntimeError("WebSocket is not connected...")
+        # plutôt qu'un WebSocketDisconnect propre quand l'autre joueur se
+        # déconnecte pendant qu'une diffusion est en cours sur ce socket —
+        # dans les deux cas, la connexion est bel et bien terminée.
+        pass
+    except Exception as e:
+        log.warning(f"Erreur websocket duel {code} ({pseudo}): {e}")
     finally:
         if connexions_duel.get(pseudo) is websocket:
             connexions_duel.pop(pseudo, None)

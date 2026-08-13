@@ -333,13 +333,41 @@ async def cmd_duel(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await _duel_creer(update, ctx)
 
 async def _duel_creer(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Affiche le choix du thème (bouton par catégorie) avant de créer."""
+    lignes = [DU.THEMES[i:i + 2] for i in range(0, len(DU.THEMES), 2)]
+    clavier = InlineKeyboardMarkup([
+        [InlineKeyboardButton(t, callback_data=f"duelcfg:theme:{t}") for t in ligne]
+        for ligne in lignes
+    ])
+    await update.message.reply_text("⚔️ Quel thème pour ce duel ?", reply_markup=clavier)
+
+async def handle_duelcfg_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    parts = query.data.split(":")  # ["duelcfg", "theme", Theme] ou ["duelcfg", "len", Theme, N]
+
+    if parts[1] == "theme":
+        theme = parts[2]
+        clavier = InlineKeyboardMarkup([[
+            InlineKeyboardButton(f"⚡ Rapide (5)",    callback_data=f"duelcfg:len:{theme}:5"),
+            InlineKeyboardButton(f"🎯 Standard (10)", callback_data=f"duelcfg:len:{theme}:10"),
+            InlineKeyboardButton(f"🏁 Marathon (20)", callback_data=f"duelcfg:len:{theme}:20"),
+        ]])
+        await query.edit_message_text(f"⚔️ Thème : {theme}\n\nCombien de questions ?", reply_markup=clavier)
+        return
+
+    if parts[1] == "len":
+        theme, nb_questions = parts[2], int(parts[3])
+        await _duel_creer_avec_options(update, ctx, theme, nb_questions)
+
+async def _duel_creer_avec_options(update: Update, ctx: ContextTypes.DEFAULT_TYPE, theme: str, nb_questions: int):
     pseudo = _pseudo_telegram(update.effective_user)
     mots = DU.charger_mots_pour_duel()
     if len(mots) < 4:
-        await update.message.reply_text("⚠️ Pas assez de mots dans le jeu pour lancer un duel pour l'instant.")
+        await update.effective_message.reply_text("⚠️ Pas assez de mots dans le jeu pour lancer un duel pour l'instant.")
         return
 
-    duel = await asyncio.to_thread(DU.creer_duel, pseudo, mots, "telegram")
+    duel = await asyncio.to_thread(DU.creer_duel, pseudo, mots, "telegram", theme, nb_questions)
     code = duel["code"]
     ctx.bot_data.setdefault("duel_chats", {})[code] = {pseudo: update.effective_chat.id}
 
@@ -349,12 +377,17 @@ async def _duel_creer(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     # pseudo/nom Telegram de l'adversaire est arbitraire — l'un ou l'autre
     # peut casser le parseur Markdown de Telegram et faire échouer l'envoi
     # du message *silencieusement* (aucune erreur visible côté utilisateur).
-    await update.message.reply_text(
-        f"⚔️ Duel créé!\n\nCode : {code}\n\n"
+    texte = (
+        f"⚔️ Duel créé!\n\nThème : {duel['theme']} · {len(duel['questions'])} questions\n"
+        f"Code : {code}\n\n"
         f"Envoie ce lien à un ami :\n{lien}\n\n"
         f"Ou il tape /duel {code} pour te rejoindre directement.\n\n"
         "En attente d'un adversaire..."
     )
+    if update.callback_query:
+        await update.callback_query.edit_message_text(texte)
+    else:
+        await update.effective_message.reply_text(texte)
 
 async def _duel_rejoindre(update: Update, ctx: ContextTypes.DEFAULT_TYPE, code: str):
     pseudo = _pseudo_telegram(update.effective_user)
@@ -500,6 +533,7 @@ def main():
     app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, handle_voice))
     # Le handler de duel (motif "duel:") doit être enregistré avant le
     # handler générique ci-dessous, sinon celui-ci intercepterait tout.
+    app.add_handler(CallbackQueryHandler(handle_duelcfg_callback, pattern=r"^duelcfg:"))
     app.add_handler(CallbackQueryHandler(handle_duel_callback, pattern=r"^duel:"))
     app.add_handler(CallbackQueryHandler(handle_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))

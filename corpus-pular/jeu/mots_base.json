@@ -1,0 +1,324 @@
+[
+  {
+    "id": "m0",
+    "emoji": "🐄",
+    "fr": "Vache",
+    "pular": "nagge",
+    "cat": "Animaux"
+  },
+  {
+    "id": "m1",
+    "emoji": "🐑",
+    "fr": "Mouton",
+    "pular": "mbabba",
+    "cat": "Animaux"
+  },
+  {
+    "id": "m2",
+    "emoji": "🐐",
+    "fr": "Chèvre",
+    "pular": "mbewa",
+    "cat": "Animaux"
+  },
+  {
+    "id": "m3",
+    "emoji": "🐎",
+    "fr": "Cheval",
+    "pular": "puccu",
+    "cat": "Animaux"
+  },
+  {
+    "id": "m4",
+    "emoji": "🐓",
+    "fr": "Poule",
+    "pular": "gertooɗe",
+    "cat": "Animaux"
+  },
+  {
+    "id": "m5",
+    "emoji": "🐕",
+    "fr": "Chien",
+    "pular": "rawaandu",
+    "cat": "Animaux"
+  },
+  {
+    "id": "m6",
+    "emoji": "🐈",
+    "fr": "Chat",
+    "pular": "muuse",
+    "cat": "Animaux"
+  },
+  {
+    "id": "m7",
+    "emoji": "🦁",
+    "fr": "Lion",
+    "pular": "liingu",
+    "cat": "Animaux"
+  },
+  {
+    "id": "m8",
+    "emoji": "🐊",
+    "fr": "Caïman",
+    "pular": "baylo",
+    "cat": "Animaux"
+  },
+  {
+    "id": "m9",
+    "emoji": "🦅",
+    "fr": "Aigle",
+    "pular": "galeejo",
+    "cat": "Animaux"
+  },
+  {
+    "id": "m10",
+    "emoji": "🐍",
+    "fr": "Serpent",
+    "pular": "mbeewa",
+    "cat": "Animaux"
+  },
+  {
+    "id": "m11",
+    "emoji": "🦋",
+    "fr": "Papillon",
+    "pular": "lekki",
+    "cat": "Animaux"
+  },
+  {
+    "id": "m12",
+    "emoji": "🏠",
+    "fr": "Maison",
+    "pular": "galle",
+    "cat": "Objets"
+  },
+  {
+    "id": "m13",
+    "emoji": "💧",
+    "fr": "Eau",
+    "pular": "ndiyam",
+    "cat": "Objets"
+  },
+  {
+    "id": "m14",
+    "emoji": "🔥",
+    "fr": "Feu",
+    "pular": "jaango",
+    "cat": "Objets"
+  },
+  {
+    "id": "m15",
+    "emoji": "☀️",
+    "fr": "Soleil",
+    "pular": "naange",
+    "cat": "Objets"
+  },
+  {
+    "id": "m16",
+    "emoji": "🌙",
+    "fr": "Lune",
+    "pular": "lewru",
+    "cat": "Objets"
+  },
+  {
+    "id": "m17",
+    "emoji": "🌳",
+    "fr": "Arbre",
+    "pular": "ledde",
+    "cat": "Objets"
+  },
+  {
+    "id": "m18",
+    "emoji": "🥛",
+    "fr": "Lait",
+    "pular": "kosam",
+    "cat": "Objets"
+  },
+  {
+    "id": "m19",
+    "emoji": "🍚",
+    "fr": "Riz",
+    "pular": "nyiiri",
+    "cat": "Objets"
+  },
+  {
+    "id": "m20",
+    "emoji": "📚",
+    "fr": "Livre",
+    "pular": "defte",
+    "cat": "Objets"
+  },
+  {
+    "id": "m21",
+    "emoji": "🥁",
+    "fr": "Tambour",
+    "pular": "tammbari",
+    "cat": "Objets"
+  },
+  {
+    "id": "m22",
+    "emoji": "🔪",
+    "fr": "Couteau",
+    "pular": "lahal",
+    "cat": "Objets"
+  },
+  {
+    "id": "m23",
+    "emoji": "🪣",
+    "fr": "Calebasse",
+    "pular": "hoore",
+    "cat": "Objets"
+  },
+  {
+    "id": "m24",
+    "emoji": "👁️",
+    "fr": "Œil",
+    "pular": "yitere",
+    "cat": "Corps"
+  },
+  {
+    "id": "m25",
+    "emoji": "👂",
+    "fr": "Oreille",
+    "pular": "nowru",
+    "cat": "Corps"
+  },
+  {
+    "id": "m26",
+    "emoji": "👃",
+    "fr": "Nez",
+    "pular": "hinere",
+    "cat": "Corps"
+  },
+  {
+    "id": "m27",
+    "emoji": "👄",
+    "fr": "Bouche",
+    "pular": "hunuko",
+    "cat": "Corps"
+  },
+  {
+    "id": "m28",
+    "emoji": "✋",
+    "fr": "Main",
+    "pular": "juuɗe",
+    "cat": "Corps"
+  },
+  {
+    "id": "m29",
+    "emoji": "🦶",
+    "fr": "Pied",
+    "pular": "koyngal",
+    "cat": "Corps"
+  },
+  {
+    "id": "m30",
+    "emoji": "🦷",
+    "fr": "Dents",
+    "pular": "ñiiɓe",
+    "cat": "Corps"
+  },
+  {
+    "id": "m31",
+    "emoji": "💪",
+    "fr": "Bras",
+    "pular": "hakke",
+    "cat": "Corps"
+  },
+  {
+    "id": "m32",
+    "emoji": "🌧️",
+    "fr": "Pluie",
+    "pular": "ndungu",
+    "cat": "Nature"
+  },
+  {
+    "id": "m33",
+    "emoji": "🌊",
+    "fr": "Fleuve",
+    "pular": "maayo",
+    "cat": "Nature"
+  },
+  {
+    "id": "m34",
+    "emoji": "🌾",
+    "fr": "Champ",
+    "pular": "ngesa",
+    "cat": "Nature"
+  },
+  {
+    "id": "m35",
+    "emoji": "🌿",
+    "fr": "Herbe",
+    "pular": "gaawri",
+    "cat": "Nature"
+  },
+  {
+    "id": "m36",
+    "emoji": "⛰️",
+    "fr": "Montagne",
+    "pular": "tugal",
+    "cat": "Nature"
+  },
+  {
+    "id": "m37",
+    "emoji": "🌬️",
+    "fr": "Vent",
+    "pular": "hendu",
+    "cat": "Nature"
+  },
+  {
+    "id": "m38",
+    "emoji": "🌑",
+    "fr": "Nuit",
+    "pular": "jamma",
+    "cat": "Nature"
+  },
+  {
+    "id": "m39",
+    "emoji": "👨",
+    "fr": "Père",
+    "pular": "baaba",
+    "cat": "Famille"
+  },
+  {
+    "id": "m40",
+    "emoji": "👩",
+    "fr": "Mère",
+    "pular": "yinaande",
+    "cat": "Famille"
+  },
+  {
+    "id": "m41",
+    "emoji": "👶",
+    "fr": "Enfant",
+    "pular": "ɓiɗɗo",
+    "cat": "Famille"
+  },
+  {
+    "id": "m42",
+    "emoji": "👴",
+    "fr": "Grand-père",
+    "pular": "kaawu",
+    "cat": "Famille"
+  },
+  {
+    "id": "m43",
+    "emoji": "👵",
+    "fr": "Grand-mère",
+    "pular": "mawndoo",
+    "cat": "Famille"
+  },
+  {
+    "id": "m44",
+    "emoji": "👫",
+    "fr": "Époux",
+    "pular": "gorko",
+    "cat": "Famille"
+  },
+  {
+    "id": "m45",
+    "emoji": "👭",
+    "fr": "Femme",
+    "pular": "debbo",
+    "cat": "Famille"
+  }
+]

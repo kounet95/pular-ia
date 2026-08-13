@@ -1179,6 +1179,13 @@
         <p style="font-size:.85rem;color:var(--gris);margin-bottom:12px;">
           Défie un ami en direct : mêmes questions, celui qui répond juste et vite marque le plus de points!
         </p>
+
+        <p style="font-size:.72rem;color:var(--gris);margin-bottom:4px;">🎯 Thème</p>
+        <select class="input-livre" id="duel-theme-select" style="cursor:pointer;"></select>
+
+        <p style="font-size:.72rem;color:var(--gris);margin:6px 0 4px;">⏱️ Longueur</p>
+        <div id="duel-longueur-tabs" style="display:flex;gap:6px;margin-bottom:12px;"></div>
+
         <button onclick="duelCreer()" style="width:100%;padding:12px;border-radius:10px;border:none;background:var(--or);color:#0d1f15;font-weight:800;cursor:pointer;font-size:.95rem;margin-bottom:8px;">⚔️ Défier un ami</button>
         <div style="display:flex;gap:8px;margin-bottom:8px;">
           <input class="input-livre" id="duel-code-input" type="text" placeholder="Code reçu (ex: K6XSCG)" maxlength="6" style="margin:0;flex:1;text-transform:uppercase;">
@@ -1193,6 +1200,7 @@
         <p style="color:var(--gris);font-size:.85rem;margin-bottom:10px;">En attente d'un adversaire...</p>
         <div style="background:#0a1a0f;border:1px dashed var(--or);border-radius:10px;padding:14px;margin-bottom:12px;">
           <div style="font-size:1.6rem;font-weight:800;color:var(--or);letter-spacing:3px;" id="duel-code-affiche"></div>
+          <div style="font-size:.75rem;color:var(--gris);margin-top:6px;" id="duel-attente-infos"></div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
           <a id="duel-lien-whatsapp" target="_blank" rel="noopener" style="padding:8px 14px;border-radius:8px;border:1px solid #2d5c3a;color:var(--texte);text-decoration:none;font-size:.8rem;">🟢 WhatsApp</a>
@@ -1223,6 +1231,7 @@
 
       <!-- Résultats -->
       <div id="duel-resultats" style="display:none;text-align:center;">
+        <div id="duel-remotion-mount" style="width:100%;max-width:260px;aspect-ratio:9/16;margin:0 auto 14px;border-radius:14px;overflow:hidden;background:#0a1a0f;border:1px solid #2d5c3a;"></div>
         <div style="font-size:2.4rem;margin-bottom:6px;" id="duel-resultat-emoji"></div>
         <h3 style="color:var(--or);margin-bottom:10px;" id="duel-resultat-titre"></h3>
         <div class="jeu-score-bar" style="margin-bottom:16px;">
@@ -3840,6 +3849,7 @@ let duelQuestionDebut = 0;
 let duelTimerInterval = null;
 let duelQuestionRepondue = false;
 let duelDernierQAffiche = -1;
+let duelLongueurChoisie = 10;
 const DUEL_DUREE_MS = 15000;
 
 function duelPseudoActuel() {
@@ -3853,16 +3863,44 @@ function duelAfficherPanneau(id) {
   });
 }
 
+async function duelChargerMeta() {
+  try {
+    const r = await fetch(`${API}/api/duel/meta`, { headers: H });
+    const d = await r.json();
+
+    const selTheme = document.getElementById('duel-theme-select');
+    selTheme.innerHTML = d.themes.map(t => `<option value="${t}">${t === 'Tout' ? '🌍 Tout mélanger' : t}</option>`).join('');
+
+    const noms = { 5: 'Rapide (5)', 10: 'Standard (10)', 20: 'Marathon (20)' };
+    duelLongueurChoisie = d.longueurs.includes(10) ? 10 : d.longueurs[0];
+    const divLong = document.getElementById('duel-longueur-tabs');
+    divLong.innerHTML = d.longueurs.map(n => `
+      <button type="button" class="filtre${n === duelLongueurChoisie ? ' actif' : ''}" data-n="${n}" onclick="duelChoisirLongueur(${n})" style="flex:1;">${noms[n] || n}</button>
+    `).join('');
+  } catch(e) { /* silencieux */ }
+}
+
+function duelChoisirLongueur(n) {
+  duelLongueurChoisie = n;
+  document.querySelectorAll('#duel-longueur-tabs .filtre').forEach(b => {
+    b.classList.toggle('actif', Number(b.dataset.n) === n);
+  });
+}
+window.duelChoisirLongueur = duelChoisirLongueur;
+
 async function duelCreer() {
   duelMonPseudo = duelPseudoActuel();
   duelDernierQAffiche = -1;
   try {
     const fd = new FormData();
     fd.append('pseudo', duelMonPseudo);
+    fd.append('theme', document.getElementById('duel-theme-select').value || 'Tout');
+    fd.append('nb_questions', duelLongueurChoisie);
     const r = await fetch(`${API}/api/duel/creer`, { method:'POST', body:fd, headers:H });
     const d = await r.json();
     if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
     duelCode = d.duel.code;
+    duelEtatActuel = d.duel;
     duelAfficherSalleAttente();
     duelConnecter(duelCode, duelMonPseudo);
   } catch(e) {
@@ -3873,6 +3911,10 @@ window.duelCreer = duelCreer;
 
 function duelAfficherSalleAttente() {
   document.getElementById('duel-code-affiche').textContent = duelCode;
+  if (duelEtatActuel) {
+    document.getElementById('duel-attente-infos').textContent =
+      `🎯 ${duelEtatActuel.theme || 'Tout'} · ${duelEtatActuel.questions.length} questions`;
+  }
   const lien = `${API}/?duel=${duelCode}`;
   document.getElementById('duel-lien-whatsapp').href =
     `https://wa.me/?text=${encodeURIComponent('⚔️ Défie-moi dans un duel Pulaar! ' + lien)}`;
@@ -3936,6 +3978,13 @@ function duelRendre(duel) {
     else                          { titre = 'Égalité!';                        emoji = '🤝'; }
     document.getElementById('duel-resultat-titre').textContent = titre;
     document.getElementById('duel-resultat-emoji').textContent = emoji;
+    if (window.duelMonterRemotion) {
+      window.duelMonterRemotion({
+        titre, moiScore: monScore, sonScore: sonScore,
+        monNom: duelMonPseudo, sonNom: adversaire ? adversaire.pseudo : 'Adversaire',
+        theme: duel.theme || 'Tout',
+      });
+    }
     return;
   }
 
@@ -4044,7 +4093,8 @@ function duelPartagerResultat() {
   if (!duelEtatActuel) return;
   const moi        = duelEtatActuel.joueurs.find(j => j.pseudo === duelMonPseudo);
   const adversaire = duelEtatActuel.joueurs.find(j => j.pseudo !== duelMonPseudo);
-  const texte = `⚔️ Duel Pulaar : ${moi?.score||0} - ${adversaire?.score||0} contre ${adversaire?.pseudo||'un ami'}! Défie-moi 👉 ${API}/`;
+  const theme = duelEtatActuel.theme && duelEtatActuel.theme !== 'Tout' ? ` (thème ${duelEtatActuel.theme})` : '';
+  const texte = `⚔️ Duel Pulaar${theme} : ${moi?.score||0} - ${adversaire?.score||0} contre ${adversaire?.pseudo||'un ami'}! Défie-moi 👉 ${API}/`;
   if (navigator.share) {
     navigator.share({ text: texte }).catch(() => {});
   } else {
@@ -4052,6 +4102,8 @@ function duelPartagerResultat() {
   }
 }
 window.duelPartagerResultat = duelPartagerResultat;
+
+duelChargerMeta();
 
 // Auto-rejoindre si ?duel=CODE dans l'URL
 (function duelAutoRejoindre() {
@@ -5283,6 +5335,99 @@ chargerMotsCustom();
     }
   } catch(e) {}
 })();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     ANIMATION DE RÉSULTAT DE DUEL — Remotion Player, rendu 100% côté
+     navigateur (aucune installation Node/Chromium côté serveur : le
+     rendu vidéo classique de Remotion se fait via sa CLI, incompatible
+     avec ce déploiement Python déjà chargé — le Player est la même
+     techno mais s'exécute directement dans le navigateur du visiteur).
+     Défensif : si le CDN ou l'API change, l'écran de résultat texte
+     existant reste fonctionnel, cette animation n'est qu'un bonus.
+     ═══════════════════════════════════════════════════════════════ -->
+<script type="module">
+  try {
+    const React = await import('https://esm.sh/react@18');
+    const { createRoot } = await import('https://esm.sh/react-dom@18/client');
+    const { Player } = await import('https://esm.sh/@remotion/player@4?deps=react@18,react-dom@18');
+    const { AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate, spring } =
+      await import('https://esm.sh/remotion@4?deps=react@18,react-dom@18');
+
+    const h = React.createElement;
+
+    function DuelVictoryReel(props) {
+      const frame = useCurrentFrame();
+      const { fps, durationInFrames } = useVideoConfig();
+      const { titre, moiScore, sonScore, monNom, sonNom, theme } = props;
+
+      const scaleTitre = spring({ frame, fps, config: { damping: 12 } });
+      const opaciteScores = interpolate(frame, [15, 35], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+      const maxScore = Math.max(moiScore, sonScore, 1);
+      const largeurMoi = interpolate(frame, [35, 65], [0, (moiScore / maxScore) * 100], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+      const largeurSon = interpolate(frame, [35, 65], [0, (sonScore / maxScore) * 100], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+
+      const confettis = Array.from({ length: 14 }, (_, i) => {
+        const y = interpolate(frame, [0, durationInFrames], [-40, 520], { extrapolateRight: 'clamp' }) + i * 11;
+        const x = (i * 37) % 320;
+        const rotation = frame * (i % 2 === 0 ? 4 : -4);
+        return h('div', {
+          key: i,
+          style: { position: 'absolute', left: x, top: y, fontSize: 20, transform: `rotate(${rotation}deg)`, opacity: 0.85 },
+        }, ['🎉', '⭐', '🔥', '🏆'][i % 4]);
+      });
+
+      return h(AbsoluteFill, {
+        style: {
+          background: 'linear-gradient(160deg, #0a3d20 0%, #142b1c 60%, #0d1f15 100%)',
+          color: '#e8f5e9', fontFamily: 'Segoe UI, system-ui, sans-serif',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          overflow: 'hidden', padding: 20,
+        },
+      },
+        h('div', { style: { position: 'absolute', inset: 0 } }, confettis),
+        h('div', {
+          style: { fontSize: 24, fontWeight: 800, color: '#c8a84b', transform: `scale(${scaleTitre})`, textAlign: 'center', marginBottom: 18 },
+        }, titre),
+        h('div', { style: { opacity: opaciteScores, width: '100%' } },
+          h('div', { style: { marginBottom: 14 } },
+            h('div', { style: { fontSize: 12, marginBottom: 4 } }, `${monNom} · ${moiScore} pts`),
+            h('div', { style: { background: '#1e3d28', borderRadius: 6, height: 10, overflow: 'hidden' } },
+              h('div', { style: { width: `${largeurMoi}%`, height: '100%', background: '#c8a84b', borderRadius: 6 } })),
+          ),
+          h('div', {},
+            h('div', { style: { fontSize: 12, marginBottom: 4 } }, `${sonNom} · ${sonScore} pts`),
+            h('div', { style: { background: '#1e3d28', borderRadius: 6, height: 10, overflow: 'hidden' } },
+              h('div', { style: { width: `${largeurSon}%`, height: '100%', background: '#8b1e5c', borderRadius: 6 } })),
+          ),
+        ),
+        h('div', { style: { marginTop: 18, fontSize: 11, color: '#8fac97' } }, `🎯 ${theme} · Pular IA`),
+      );
+    }
+
+    window.duelMonterRemotion = function (props) {
+      const conteneur = document.getElementById('duel-remotion-mount');
+      if (!conteneur) return;
+      conteneur.innerHTML = '';
+      const racine = createRoot(conteneur);
+      racine.render(
+        h(Player, {
+          component: DuelVictoryReel,
+          inputProps: props,
+          durationInFrames: 90,
+          fps: 30,
+          compositionWidth: 360,
+          compositionHeight: 640,
+          style: { width: '100%', height: '100%' },
+          controls: false,
+          autoPlay: true,
+          loop: true,
+        }),
+      );
+    };
+  } catch (e) {
+    console.warn('Remotion Player indisponible — écran de résultat texte utilisé à la place.', e);
+  }
 </script>
 
 <!-- Clavier Adlam flottant global (partagé par tous les champs Adlam) -->
