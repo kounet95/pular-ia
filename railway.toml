@@ -2,7 +2,7 @@
 dockerfile = "Dockerfile"
 
 [deploy]
-startCommand = "python scripts/community_webapp.py"
+startCommand = "./start.sh"
 healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"

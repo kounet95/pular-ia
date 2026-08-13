@@ -45,15 +45,21 @@ RUN pip install --no-cache-dir --timeout 300 \
     anthropic>=0.90.0 \
     openai>=2.0.0
 
-# ── 6. Forcer numpy 1.26.4 + numba 0.59 compatibles ─────────────────────────
+# ── 6. Bot Telegram (community_bot.py, lancé avec le serveur web) ────────────
+RUN pip install --no-cache-dir --timeout 300 \
+    python-telegram-bot>=20.0
+
+# ── 7. Forcer numpy 1.26.4 + numba 0.59 compatibles ─────────────────────────
 # chromadb/sentence-transformers tirent numpy 2.x ET numba compilé pour numpy 2.x.
 # numba 0.59 = dernière version supportant numpy 1.x (obligatoire pour torch 2.2).
 # Placé après toutes les installs (dont l'étape 5 ci-dessus) pour avoir le dernier mot.
 RUN pip install --no-cache-dir "numpy==1.26.4" "numba==0.59.1"
 
 # ── Code source ───────────────────────────────────────────────────────────────
-COPY scripts/ ./scripts/
-COPY web/     ./web/
+COPY scripts/  ./scripts/
+COPY web/      ./web/
+COPY start.sh  ./start.sh
+RUN chmod +x start.sh
 
 # ── Dossiers de données (montés en volume sur Railway) ───────────────────────
 RUN mkdir -p \
@@ -78,4 +84,4 @@ ENV PYTHONDONTWRITEBYTECODE=1
 
 EXPOSE 8080
 
-CMD ["python", "scripts/community_webapp.py"]
+CMD ["./start.sh"]
