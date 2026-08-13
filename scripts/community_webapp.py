@@ -1433,11 +1433,15 @@ text-align:center;padding:60px 20px;">
     <div class="partage">
       <p class="partage-titre">📤 PARTAGER CET ARTICLE</p>
       <div class="partage-liens">
+        <button id="btn-partage-natif" onclick="partageNatif()" style="display:none;">📱 Partager (TikTok, Instagram...)</button>
         <a href="https://wa.me/?text={whatsapp_texte}" target="_blank" rel="noopener">🟢 WhatsApp</a>
         <a href="https://www.facebook.com/sharer/sharer.php?u={url_encodee}" target="_blank" rel="noopener">🔵 Facebook</a>
         <a href="https://twitter.com/intent/tweet?text={titre_encode}&url={url_encodee}" target="_blank" rel="noopener">⚫ X</a>
         <button id="btn-copier-lien" onclick="copierLien()">🔗 Copier le lien</button>
       </div>
+      <p style="font-size:.72rem;color:#8fac97;margin-top:8px;">
+        TikTok n'a pas de lien de partage direct — utilise "Partager" ci-dessus (sur mobile) pour l'envoyer vers l'appli TikTok, ou colle le lien copié dans ta bio/description.
+      </p>
     </div>
 
     <footer>
@@ -1445,13 +1449,23 @@ text-align:center;padding:60px 20px;">
     </footer>
   </main>
   <script>
+    const PAGE_URL   = {json.dumps(page_url)};
+    const PAGE_TITRE = {json.dumps(edito["titre"])};
+
     function copierLien() {{
       const btn = document.getElementById('btn-copier-lien');
-      navigator.clipboard.writeText({json.dumps(page_url)}).then(() => {{
+      navigator.clipboard.writeText(PAGE_URL).then(() => {{
         const original = btn.textContent;
         btn.textContent = '✅ Lien copié!';
         setTimeout(() => btn.textContent = original, 2000);
       }});
+    }}
+
+    if (navigator.share) {{
+      document.getElementById('btn-partage-natif').style.display = 'inline-flex';
+    }}
+    function partageNatif() {{
+      navigator.share({{ title: PAGE_TITRE, url: PAGE_URL }}).catch(() => {{}});
     }}
   </script>
 </body>
