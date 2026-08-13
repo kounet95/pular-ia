@@ -1257,6 +1257,86 @@ def _base_url(request: Request) -> str:
         base += f":{request.url.port}"
     return base
 
+@app.get("/editos", response_class=HTMLResponse)
+async def page_editos_publies(request: Request):
+    """Page listant tous les éditos publiés — rendue côté serveur, style magazine,
+    chaque entrée renvoyant vers sa page de lecture /lire/{id}."""
+    base = _base_url(request)
+    editos = sorted(
+        (e for e in EE.charger_editos() if e["statut"] == "publie"),
+        key=lambda e: e.get("date_publication") or "",
+        reverse=True,
+    )
+
+    def _carte(e: dict) -> str:
+        titre   = html.escape(e["titre"])
+        auteur  = html.escape(e.get("auteur", "Anonyme"))
+        date_pub = _date_fr(e.get("date_publication") or e.get("date_soumission", ""))
+        extrait = html.escape(e["contenu"].strip().replace("\n", " ")[:180])
+        if len(e["contenu"]) > 180:
+            extrait += "…"
+        image = f'{base}/api/editorial/editos/{e["id"]}/image' if e.get("image") else ""
+        return f"""
+        <a class="carte-edito" href="{base}/lire/{e['id']}">
+          {f'<img src="{image}" alt="">' if image else ''}
+          <div class="carte-edito-corps">
+            <h2>{titre}</h2>
+            <div class="carte-edito-meta">✍️ {auteur} · {date_pub}</div>
+            <p>{extrait}</p>
+          </div>
+        </a>"""
+
+    liste_html = "".join(_carte(e) for e in editos) if editos else \
+        '<p style="color:#8fac97;text-align:center;padding:40px 0;">Aucun édito publié pour l\'instant.</p>'
+
+    return HTMLResponse(f"""<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Éditos publiés — Espace Éditorial Pular IA</title>
+<meta name="description" content="Les articles publiés par la communauté sur la langue, la culture, l'histoire et l'actualité peules.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Éditos publiés — Pular IA">
+<meta property="og:description" content="Les articles publiés par la communauté sur la langue, la culture, l'histoire et l'actualité peules.">
+<meta property="og:url" content="{base}/editos">
+<style>
+  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  body {{
+    background: #0d1f15; color: #e8f5e9; font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+  }}
+  header {{
+    width: 100%; background: linear-gradient(135deg, #0a3d20 0%, #1a6b3c 100%);
+    border-bottom: 2px solid #c8a84b; padding: 14px 20px; text-align: center;
+  }}
+  header a {{ color: #c8a84b; text-decoration: none; font-size: .85rem; font-weight: 600; }}
+  header a:hover {{ text-decoration: underline; }}
+  header h1 {{ font-size: 1.2rem; color: #c8a84b; margin-top: 8px; }}
+  main {{ width: 100%; max-width: 720px; padding: 24px 16px 60px; display: flex; flex-direction: column; gap: 16px; }}
+  .carte-edito {{
+    display: flex; gap: 14px; background: #142b1c; border: 1px solid #1e3d28;
+    border-radius: 12px; padding: 14px; text-decoration: none; color: inherit;
+    transition: border-color .15s;
+  }}
+  .carte-edito:hover {{ border-color: #8b1e5c; }}
+  .carte-edito img {{
+    width: 110px; height: 110px; object-fit: cover; border-radius: 8px; flex-shrink: 0;
+  }}
+  .carte-edito-corps h2 {{ font-size: 1.02rem; color: #c8a84b; margin-bottom: 4px; line-height: 1.3; }}
+  .carte-edito-meta {{ font-size: .75rem; color: #8fac97; margin-bottom: 6px; }}
+  .carte-edito-corps p {{ font-size: .85rem; line-height: 1.5; color: #e8f5e9; }}
+</style>
+</head>
+<body>
+  <header>
+    <a href="{base}/#carte-editorial">← Espace Éditorial Pular IA</a>
+    <h1>✍️ Éditos publiés</h1>
+  </header>
+  <main>{liste_html}</main>
+</body>
+</html>""")
+
 @app.get("/lire/{edito_id}", response_class=HTMLResponse)
 async def page_lire_edito(edito_id: str, request: Request):
     """Page de lecture d'un édito publié — rendue côté serveur (balises Open
