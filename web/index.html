@@ -2236,6 +2236,12 @@ function filtrerPhrases(cat) {
     const fE  = (p.fr || '').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     const enE = (p.en || '').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     const arE = (p.ar || '').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    // Distinct de pE : pE est échappé pour un attribut HTML (value="...") —
+    // dans un onclick="...('...')", le navigateur décode d'abord les entités
+    // HTML puis exécute le JS résultant, donc &#39; redevient une vraie
+    // apostrophe et casse la chaîne JS (ex: "Al-Qur'aana"). Il faut ici un
+    // échappement JS (\') qui survit au décodage HTML intermédiaire.
+    const pJS = p.pular.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     const traductions = { fr: p.fr, en: p.en, ar: p.ar };
     const traductionAffichee = traductions[phraseLangueTraduction] || p.fr || '';
     const traductionRtl = phraseLangueTraduction === 'ar';
@@ -2248,7 +2254,7 @@ function filtrerPhrases(cat) {
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
           <span class="cat">${p.cat}${p.a_verifier ? '<span class="badge-averifier" title="Brouillon généré par IA, pas encore relu par un locuteur natif">⚠️ à vérifier</span>' : ''}</span>
-          <button class="btn-ecouter"  id="btn-tts-${pid}" onclick="event.stopPropagation();ecouterPhrase('${pid}','${pE}')">🔊 Écouter</button>
+          <button class="btn-ecouter"  id="btn-tts-${pid}" onclick="event.stopPropagation();ecouterPhrase('${pid}','${pJS}')">🔊 Écouter</button>
           <button class="btn-corriger" onclick="event.stopPropagation();toggleFormPhrase('${pid}')">✏️ Corriger</button>
         </div>
       </div>
@@ -2273,7 +2279,7 @@ function filtrerPhrases(cat) {
             onclick="event.stopPropagation();toggleClavierArabe('pinput-ar-${pid}')" title="Clavier arabe">🕌</button>
         </div>
         <div class="phrase-form-btns">
-          <button onclick="soumettreCorrection('${pid}','${pE}','${p.cat}')"
+          <button onclick="soumettreCorrection('${pid}','${pJS}','${p.cat}')"
             style="background:var(--vert);color:white;">Envoyer la correction</button>
           <button onclick="toggleFormPhrase('${pid}')"
             style="background:#2a3a2a;color:var(--gris);">Annuler</button>
