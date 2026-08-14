@@ -1474,7 +1474,10 @@ async def api_editorial_webhook(request: Request):
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
         email = (session.get("customer_details") or {}).get("email", "") or session.get("customer_email", "")
-        await asyncio.to_thread(EE.marquer_commande_payee, session["id"], email)
+        if (session.get("metadata") or {}).get("type") == "don":
+            await asyncio.to_thread(EE.marquer_don_paye, session["id"], email)
+        else:
+            await asyncio.to_thread(EE.marquer_commande_payee, session["id"], email)
 
     return JSONResponse({"received": True})
 
@@ -1508,6 +1511,128 @@ async def api_editorial_commande_fichier(commande_id: str, jeton: str = ""):
         raise HTTPException(404, "Fichier introuvable.")
     nom_telecharge = f"{commande['titre']}{chemin.suffix}"
     return FileResponse(chemin, filename=nom_telecharge)
+
+@app.get("/api/dons/meta")
+async def api_dons_meta():
+    return JSONResponse({
+        "montants_suggeres": EE.MONTANTS_DON_SUGGERES,
+        "devises": EE.DEVISES_ACCEPTEES,
+        "total_paye": EE.total_dons_payes(),
+    })
+
+@app.post("/api/dons/checkout")
+async def api_dons_checkout(
+    montant:      float = Form(...),
+    devise:       str = Form("gnf"),
+    origin:       str = Form(...),
+    email:        str = Form(""),
+    nom_donateur: str = Form(""),
+):
+    devise = devise.lower()
+    if devise not in EE.DEVISES_ACCEPTEES:
+        raise HTTPException(400, f"Devise non supportée. Acceptées: {EE.DEVISES_ACCEPTEES}")
+    if montant <= 0:
+        raise HTTPException(400, "Montant invalide.")
+    montant_centimes = EE.calculer_montant_stripe(montant, devise)
+    try:
+        session = await asyncio.to_thread(
+            EE.creer_session_don, montant_centimes, devise, origin, email.strip(), nom_donateur.strip(),
+        )
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except RuntimeError as e:
+        raise HTTPException(503, str(e))
+    except Exception as e:
+        log.error(f"Erreur création session don Stripe: {e}")
+        raise HTTPException(500, "Erreur lors de la création du don.")
+    don = await asyncio.to_thread(
+        EE.enregistrer_don, session, montant_centimes, devise, nom_donateur.strip(),
+    )
+    return JSONResponse({"ok": True, "url": session.url, "don_id": don["id"]})
+
+@app.get("/api/dons/{don_id}/statut")
+async def api_dons_statut(don_id: str, jeton: str = ""):
+    don = EE.obtenir_don(don_id)
+    if not don or not jeton or don.get("jeton") != jeton:
+        raise HTTPException(404, "Don non trouvé.")
+    return JSONResponse({
+        "statut": don["statut"], "montant_centimes": don["montant_centimes"], "devise": don["devise"],
+    })
+
+@app.get("/api/dons")
+async def api_dons_liste(key: str = ""):
+    """Liste des dons — admin uniquement (contient les emails donateurs)."""
+    _check_admin(key)
+    return JSONResponse(EE.charger_dons())
+
+@app.get("/don-merci", response_class=HTMLResponse)
+async def page_don_merci(request: Request, session_id: str = ""):
+    """Page de confirmation après un don Stripe réussi."""
+    base = _base_url(request)
+    don = EE.obtenir_don_par_session(session_id) if session_id else None
+    if not don:
+        return HTMLResponse(f"""<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<title>Don introuvable — Pular IA</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="background:#0d1f15;color:#e8f5e9;font-family:system-ui,sans-serif;
+text-align:center;padding:60px 20px;">
+<h1 style="color:#c8a84b;">Don introuvable</h1>
+<a href="{base}/#carte-dons" style="color:#c8a84b;">← Retour</a>
+</body></html>""", status_code=404)
+
+    nom = html.escape(don.get("nom_donateur") or "Anonyme")
+
+    return HTMLResponse(f"""<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Merci pour ton don — Pular IA</title>
+<style>
+  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  body {{
+    background: #0d1f15; color: #e8f5e9; font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+  }}
+  main {{ width: 100%; max-width: 480px; padding: 40px 20px; text-align: center; }}
+  h1 {{ font-size: 1.5rem; color: #c8a84b; margin-bottom: 10px; }}
+  .sous {{ color: #8fac97; font-size: .9rem; margin-bottom: 26px; }}
+  #statut {{ padding: 18px; border-radius: 10px; border: 1px solid #2d5c3a; background: #142b1c; }}
+  .info {{
+    margin-top: 30px; padding: 16px; border-radius: 10px; background: #142b1c;
+    border: 1px solid #1e3d28; font-size: .8rem; color: #8fac97;
+  }}
+  footer {{ margin-top: 30px; }}
+  footer a {{ color: #c8a84b; text-decoration: none; font-size: .85rem; font-weight: 600; }}
+</style>
+</head>
+<body>
+  <main>
+    <h1>🙏 Merci, {nom} !</h1>
+    <p class="sous">Ton don soutient directement le projet Pular IA.</p>
+    <div id="statut">⏳ Confirmation du paiement en cours...</div>
+    <div class="info">
+      💛 100% de ton don finance le projet : IA qui comprend le pular, restauration du Fouta,
+      et l'entretien de la plateforme.
+    </div>
+    <footer><a href="{base}/#carte-dons">← Retour</a></footer>
+  </main>
+  <script>
+    const DON_ID = {json.dumps(don["id"])};
+    const JETON  = {json.dumps(don["jeton"])};
+    async function verifier() {{
+      try {{
+        const r = await fetch(`/api/dons/${{DON_ID}}/statut?jeton=${{JETON}}`);
+        const d = await r.json();
+        const el = document.getElementById('statut');
+        if (d.statut !== 'paye') {{ setTimeout(verifier, 2500); return; }}
+        el.innerHTML = '✅ Paiement confirmé — merci pour ton soutien !';
+      }} catch (err) {{ setTimeout(verifier, 3000); }}
+    }}
+    verifier();
+  </script>
+</body>
+</html>""")
 
 @app.get("/livre-achete", response_class=HTMLResponse)
 async def page_livre_achete(request: Request, session_id: str = ""):

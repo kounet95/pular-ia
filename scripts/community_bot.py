@@ -13,6 +13,7 @@ Commandes disponibles:
     /duel   — Défier un ami en duel de vocabulaire (+ /duel CODE pour rejoindre)
     /classement — Classement des duels
     /livres — Acheter des livres (numérique ou papier)
+    /don    — Faire un don au projet
     /aide   — Aide complète
 """
 
@@ -164,6 +165,7 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "⚔️ /duel — Défier un ami en duel de vocabulaire\n"
         "🏅 /classement — Classement des duels\n"
         "📚 /livres — Acheter des livres (numérique ou papier)\n"
+        "💛 /don — Faire un don au projet\n"
         "❓ /aide — Aide complète\n\n"
         "_Baŋ-baŋ! 🙏_",
         parse_mode="Markdown",
@@ -215,7 +217,8 @@ async def cmd_aide(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "/duel — crée un duel et partage le lien/code\n"
         "/duel CODE — rejoins le duel d'un ami\n"
         "🏅 /classement — voir qui domine\n\n"
-        "📚 /livres — voir et acheter les livres (numérique ou papier)\n\n"
+        "📚 /livres — voir et acheter les livres (numérique ou papier)\n"
+        "💛 /don — faire un don au projet\n\n"
         "📌 *Conseils pour une bonne qualité:*\n"
         "• Parle clairement, micro proche\n"
         "• Messages de 5 à 60 secondes idéaux\n"
@@ -711,6 +714,73 @@ async def _livrer_commande(ctx: ContextTypes.DEFAULT_TYPE, chat_id: int, command
         f"{rep['projet']}% projet (IA pular, restauration du Fouta...). Merci pour ton soutien 🙏",
     )
 
+# ── Dons ──────────────────────────────────────────────────────────────────────
+# Contrairement aux livres, un don n'a pas d'auteur à rémunérer : 100% va au
+# projet — voir EE.creer_session_don / la mention affichée après paiement.
+
+_DON_DEVISE_BOT = "gnf"  # devise proposée dans le bot (montant libre non géré côté Telegram)
+
+async def cmd_don(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    montants = EE.MONTANTS_DON_SUGGERES.get(_DON_DEVISE_BOT, [])
+    boutons = [[InlineKeyboardButton(
+        f"💛 {_prix_lisible(EE.calculer_montant_stripe(m, _DON_DEVISE_BOT), _DON_DEVISE_BOT.upper())}",
+        callback_data=f"donmontant:{m}",
+    )] for m in montants]
+    await update.message.reply_text(
+        "💛 Faire un don au projet Pular IA\n\n"
+        "100% de ton don finance directement le projet : une IA qui comprend le pular, "
+        "des projets de restauration du Fouta, et l'entretien de la plateforme.\n\n"
+        "Choisis un montant :",
+        reply_markup=InlineKeyboardMarkup(boutons),
+    )
+
+async def handle_don_montant_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    montant = float(query.data.split(":")[1])
+    montant_centimes = EE.calculer_montant_stripe(montant, _DON_DEVISE_BOT)
+
+    chat = update.effective_chat
+    user = update.effective_user
+    try:
+        session = await asyncio.to_thread(
+            EE.creer_session_don, montant_centimes, _DON_DEVISE_BOT, SITE_URL, "", _pseudo_telegram(user),
+        )
+    except RuntimeError as e:
+        await chat.send_message(f"⚠️ Don indisponible : {e}")
+        return
+    except Exception as e:
+        log.error(f"Erreur création session don Stripe (bot): {e}")
+        await chat.send_message("⚠️ Erreur lors de la création du don, réessaie plus tard.")
+        return
+
+    don = await asyncio.to_thread(
+        EE.enregistrer_don, session, montant_centimes, _DON_DEVISE_BOT, _pseudo_telegram(user), user.id,
+    )
+
+    await query.message.reply_text(
+        f"💳 Ouvre ce lien pour faire ton don en toute sécurité (Stripe) :\n{session.url}\n\n"
+        "Reviens ici une fois payé, je te préviens automatiquement ✅"
+    )
+    asyncio.create_task(_surveiller_don(ctx, chat.id, don["id"]))
+
+async def _surveiller_don(ctx: ContextTypes.DEFAULT_TYPE, chat_id: int, don_id: str,
+                           tentatives: int = 240, intervalle: int = 5):
+    """Même logique/limite que _surveiller_paiement (voir sa docstring) :
+    tâche en mémoire, perdue si le bot redémarre, paiement lui-même intact."""
+    for _ in range(tentatives):
+        await asyncio.sleep(intervalle)
+        don = await asyncio.to_thread(EE.obtenir_don, don_id)
+        if not don:
+            return
+        if don["statut"] == "paye":
+            await ctx.bot.send_message(
+                chat_id,
+                "✅ Don confirmé — merci infiniment pour ton soutien ! 🙏\n\n"
+                "💛 100% finance le projet : IA pular, restauration du Fouta, entretien de la plateforme.",
+            )
+            return
+
 # ── Erreurs ───────────────────────────────────────────────────────────────────
 async def handle_error(update: object, ctx: ContextTypes.DEFAULT_TYPE):
     """Filet de sécurité global : sans ça, une exception dans un handler
@@ -748,6 +818,7 @@ def main():
     app.add_handler(CommandHandler("duel",       cmd_duel))
     app.add_handler(CommandHandler("classement", cmd_classement))
     app.add_handler(CommandHandler("livres",     cmd_livres))
+    app.add_handler(CommandHandler("don",        cmd_don))
     app.add_handler(CommandHandler("aide",       cmd_aide))
     app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, handle_voice))
     # Les handlers à motif précis doivent être enregistrés avant le handler
@@ -756,6 +827,7 @@ def main():
     app.add_handler(CallbackQueryHandler(handle_duel_callback, pattern=r"^duel:"))
     app.add_handler(CallbackQueryHandler(handle_livre_format_callback, pattern=r"^livrefmt:"))
     app.add_handler(CallbackQueryHandler(handle_livre_zone_callback, pattern=r"^livrezone:"))
+    app.add_handler(CallbackQueryHandler(handle_don_montant_callback, pattern=r"^donmontant:"))
     app.add_handler(CallbackQueryHandler(handle_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     app.add_error_handler(handle_error)

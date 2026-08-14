@@ -33,6 +33,7 @@ DOSSIER_EDITOS_SOURCES = DOSSIER_EDITORIAL / "editos_sources"
 FICHIER_CATALOGUE = DOSSIER_EDITORIAL / "catalogue.json"
 FICHIER_COMMANDES = DOSSIER_EDITORIAL / "commandes.json"
 FICHIER_EDITOS    = DOSSIER_EDITORIAL / "editos.json"
+FICHIER_DONS      = DOSSIER_EDITORIAL / "dons.json"
 
 for d in [DOSSIER_EDITORIAL, DOSSIER_COUVERTURES, DOSSIER_EDITOS_IMAGES, DOSSIER_EDITOS_SOURCES]:
     d.mkdir(parents=True, exist_ok=True)
@@ -54,6 +55,15 @@ FORMATS_LIVRE = ["numerique", "papier"]
 # manuellement pour l'instant (un vrai partage automatique demanderait Stripe
 # Connect + un compte par auteur, hors périmètre ici).
 REPARTITION_REVENUS = {"auteur": 60, "plateforme": 20, "projet": 20}
+
+# Montants de don suggérés par devise (unité affichée, pas centimes) —
+# purement indicatif côté UI, un montant libre reste toujours possible.
+MONTANTS_DON_SUGGERES = {
+    "gnf": [10000, 25000, 50000, 100000],
+    "xof": [1000, 2500, 5000, 10000],
+    "eur": [5, 10, 25, 50],
+    "usd": [5, 10, 25, 50],
+}
 
 # Devises "zéro décimale" chez Stripe : `unit_amount` est le montant entier
 # tel quel (pas de centimes) — le GNF (Guinée) et le XOF (Franc CFA — BCEAO,
@@ -462,6 +472,96 @@ def obtenir_commande(commande_id: str) -> dict | None:
 
 def obtenir_commande_par_session(session_id: str) -> dict | None:
     return next((c for c in charger_commandes() if c["stripe_session_id"] == session_id), None)
+
+# ── Dons ─────────────────────────────────────────────────────────────────
+# Contrairement aux livres, un don n'a pas d'auteur à rémunérer : 100% va
+# directement financer le projet (voir REPARTITION_REVENUS pour les livres,
+# qui ne s'applique pas ici).
+
+def creer_session_don(
+    montant_centimes: int, devise: str, origin: str, email: str = "", nom_donateur: str = "",
+) -> "stripe.checkout.Session":
+    stripe = stripe_configure()
+    if montant_centimes <= 0:
+        raise ValueError("Le montant du don doit être positif.")
+    origin = origin.rstrip("/")
+    params = dict(
+        mode="payment",
+        line_items=[{
+            "price_data": {
+                "currency": devise,
+                "unit_amount": montant_centimes,
+                "product_data": {
+                    "name": "Don au projet Pular IA",
+                    "description": "Soutien à la préservation de la langue et de la culture peules.",
+                },
+            },
+            "quantity": 1,
+        }],
+        success_url=f"{origin}/don-merci?session_id={{CHECKOUT_SESSION_ID}}",
+        cancel_url=f"{origin}/?edito_paiement=annule",
+        metadata={"type": "don", "nom_donateur": (nom_donateur or "Anonyme").strip()[:80]},
+    )
+    if email:
+        params["customer_email"] = email
+    return stripe.checkout.Session.create(**params)
+
+def charger_dons() -> list[dict]:
+    if FICHIER_DONS.exists():
+        with open(FICHIER_DONS, encoding="utf-8") as f:
+            return json.load(f)
+    return []
+
+def sauver_dons(dons: list[dict]):
+    with open(FICHIER_DONS, "w", encoding="utf-8") as f:
+        json.dump(dons, f, ensure_ascii=False, indent=2)
+
+def enregistrer_don(
+    session, montant_centimes: int, devise: str, nom_donateur: str = "", telegram_id: int | None = None,
+) -> dict:
+    dons = charger_dons()
+    don = {
+        "id":                 str(uuid.uuid4())[:8],
+        "jeton":              secrets.token_urlsafe(16),
+        "stripe_session_id":  session.id,
+        "montant_centimes":   montant_centimes,
+        "devise":             devise,
+        "nom_donateur":       (nom_donateur or "Anonyme").strip()[:80] or "Anonyme",
+        "email":              "",
+        "telegram_id":        telegram_id,
+        "statut":             "en_attente",
+        "date":               datetime.now().isoformat(),
+    }
+    dons.append(don)
+    sauver_dons(dons)
+    return don
+
+def marquer_don_paye(session_id: str, email: str) -> dict | None:
+    dons = charger_dons()
+    for d in dons:
+        if d["stripe_session_id"] == session_id:
+            d["statut"] = "paye"
+            d["email"] = email or d.get("email", "")
+            d["date_paiement"] = datetime.now().isoformat()
+            sauver_dons(dons)
+            log.info(f"Don payé: {d['montant_centimes']} {d['devise']} ({d['nom_donateur']})")
+            return d
+    log.warning(f"Éditorial — webhook don pour session inconnue: {session_id}")
+    return None
+
+def obtenir_don(don_id: str) -> dict | None:
+    return next((d for d in charger_dons() if d["id"] == don_id), None)
+
+def obtenir_don_par_session(session_id: str) -> dict | None:
+    return next((d for d in charger_dons() if d["stripe_session_id"] == session_id), None)
+
+def total_dons_payes() -> dict:
+    """Total des dons payés, groupé par devise (pas de conversion inter-devises)."""
+    totaux: dict[str, int] = {}
+    for d in charger_dons():
+        if d["statut"] == "paye":
+            totaux[d["devise"]] = totaux.get(d["devise"], 0) + d["montant_centimes"]
+    return totaux
 
 # ── Éditos (articles communautaires) ────────────────────────────────────────
 

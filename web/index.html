@@ -660,6 +660,7 @@
   <a href="#carte-editorial">📰 Éditorial</a>
   <a href="/editos">✍️ Éditos</a>
   <a href="/livres">🛒 Librairie</a>
+  <a href="#carte-dons">💛 Soutenir</a>
   <a href="#carte-jeu">🎮 Jeu</a>
   <a href="#carte-prof">🎓 Professeur</a>
   <a href="#carte-aide">📌 Aide</a>
@@ -1235,6 +1236,34 @@
         ">📨 Publier l'édito</button>
       </div>
     </details>
+  </div>
+
+  <!-- ══ SOUTENIR LE PROJET (DONS) ══ -->
+  <div class="carte" id="carte-dons" style="border-color:#c8a84b88;scroll-margin-top:56px;">
+    <h2>💛 Soutenir le projet</h2>
+    <p style="font-size:.82rem;color:var(--gris);margin-bottom:8px;">
+      100% de ton don finance directement le projet Pular IA : une IA qui comprend le pular,
+      des projets de restauration du Fouta, et l'entretien de la plateforme.
+    </p>
+    <p id="dons-total" style="font-size:.78rem;color:var(--or);margin-bottom:14px;"></p>
+
+    <select id="don-devise" style="padding:9px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;color:var(--texte);margin-bottom:10px;cursor:pointer;" onchange="donChargerMontants()">
+      <option value="gnf">GNF (Guinée)</option>
+      <option value="xof">XOF (FCFA)</option>
+      <option value="eur">EUR €</option>
+      <option value="usd">USD $</option>
+    </select>
+
+    <div id="don-montants" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;"></div>
+
+    <input class="input-livre" id="don-montant-libre" type="number" min="1" step="0.01" placeholder="Ou entre un montant libre"/>
+    <input class="input-livre" id="don-nom" type="text" placeholder="Ton nom (optionnel, pour un remerciement public)" maxlength="80"/>
+    <input class="input-livre" id="don-email" type="email" placeholder="Email (optionnel, pour un reçu)" maxlength="120"/>
+
+    <button onclick="donFaireDon()" id="don-btn" style="
+      width:100%;padding:12px;border-radius:8px;border:none;margin-top:6px;
+      background:#c8a84b;color:#1a1a1a;font-weight:700;cursor:pointer;font-size:.92rem;
+    ">💛 Faire un don</button>
   </div>
 
   <!-- ══ JEU DE MOTS ══ -->
@@ -3482,6 +3511,74 @@ async function edAjouterZone() {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════
+// DONS — soutien ponctuel au projet (Stripe Checkout)
+// ═══════════════════════════════════════════════════════════════
+let DON_META = null;
+let donMontantChoisi = null;
+
+async function donChargerMeta() {
+  try {
+    const r = await fetch(`${API}/api/dons/meta`, { headers: H });
+    DON_META = await r.json();
+    const totalEl = document.getElementById('dons-total');
+    if (totalEl) {
+      const morceaux = Object.entries(DON_META.total_paye || {})
+        .map(([dev, centimes]) => edFormaterPrix(centimes, dev));
+      totalEl.textContent = morceaux.length ? `🙏 Déjà reçu : ${morceaux.join(' + ')}` : '';
+    }
+    donChargerMontants();
+  } catch(e) { /* silencieux */ }
+}
+
+function donChargerMontants() {
+  if (!DON_META) return;
+  const devise = document.getElementById('don-devise').value;
+  const montants = DON_META.montants_suggeres[devise] || [];
+  donMontantChoisi = null;
+  const div = document.getElementById('don-montants');
+  div.innerHTML = montants.map(m => `
+    <button type="button" class="filtre-langue" data-montant="${m}" onclick="donChoisirMontant(${m})">
+      ${edFormaterPrix(DEVISES_ZERO_DECIMALE.has(devise) ? m : m*100, devise)}
+    </button>`).join('');
+}
+window.donChargerMontants = donChargerMontants;
+
+function donChoisirMontant(m) {
+  donMontantChoisi = m;
+  document.getElementById('don-montant-libre').value = '';
+  document.querySelectorAll('#don-montants .filtre-langue').forEach(b => {
+    b.classList.toggle('actif', Number(b.dataset.montant) === m);
+  });
+}
+window.donChoisirMontant = donChoisirMontant;
+
+async function donFaireDon() {
+  const devise = document.getElementById('don-devise').value;
+  const libre  = parseFloat(document.getElementById('don-montant-libre').value);
+  const montant = libre > 0 ? libre : donMontantChoisi;
+  if (!montant || montant <= 0) { toast('❌ Choisis ou saisis un montant', true); return; }
+
+  const btn = document.getElementById('don-btn');
+  btn.disabled = true; btn.textContent = '⏳ Redirection...';
+  try {
+    const fd = new FormData();
+    fd.append('montant', montant);
+    fd.append('devise', devise);
+    fd.append('origin', window.location.origin);
+    fd.append('nom_donateur', document.getElementById('don-nom').value.trim());
+    fd.append('email', document.getElementById('don-email').value.trim());
+    const r = await fetch(`${API}/api/dons/checkout`, { method:'POST', body:fd, headers:H });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
+    window.location.href = d.url;
+  } catch(e) {
+    toast('❌ ' + e.message, true);
+    btn.disabled = false; btn.textContent = '💛 Faire un don';
+  }
+}
+window.donFaireDon = donFaireDon;
+
 async function edSupprimerZone(id) {
   const key = edAdminKey();
   try {
@@ -3755,6 +3852,7 @@ document.getElementById('ed-admin-key').value = edAdminKey();
 edChargerLivres();
 edChargerZones();
 edChargerEditos();
+donChargerMeta();
 
 // ═══════════════════════════════════════════════════════════════
 // JEU DE MOTS — QCM · Écrire · Parler · Lire (RAG)
