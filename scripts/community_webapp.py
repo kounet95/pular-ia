@@ -53,6 +53,12 @@ PORT            = int(os.getenv("PORT", os.getenv("WEBAPP_PORT", 8080)))
 DOSSIER_CONTRIB = Path("./corpus-pular/community/contributions")
 DOSSIER_AUDIO   = Path("./corpus-pular/community/audio")
 FICHIER_STATS   = Path("./corpus-pular/community/stats.json")
+# Chemins du scraper Telegram (scripts/telegram_scraper.py) — redéfinis ici
+# plutôt qu'importés pour ne pas charger telethon/whisper dans ce processus,
+# même logique que le partage de fichiers déjà utilisé pour duels.py.
+FICHIER_TELEGRAM_BASE    = Path("./corpus-pular/processed/telegram/base_connaissance.json")
+FICHIER_TELEGRAM_PROGRES = Path("./corpus-pular/processed/telegram/progres.json")
+FICHIER_HISTORIQUE_CROISSANCE = Path("./corpus-pular/dataset/historique_croissance.json")
 WHISPER_MODEL   = os.getenv("WHISPER_MODEL_BOT", "base")
 GROQ_API_KEY    = os.getenv("GROQ_API_KEY", "")
 
@@ -3404,6 +3410,84 @@ async def api_prof_dataset_evolution():
             "taux_ok_global":   round(total_ok / total_n * 100, 1) if total_n else None,
         }
     return JSONResponse(await asyncio.to_thread(_calculer))
+
+
+def _snapshot_sources_corpus() -> dict:
+    """État actuel des trois sources du corpus : contributions vocales
+    (communauté), scraping Telegram, livres indexés dans le RAG."""
+    nb_contrib = len(list(DOSSIER_CONTRIB.glob("*.json"))) if DOSSIER_CONTRIB.exists() else 0
+
+    nb_messages_tg = nb_audio_tg = nb_transcrits_tg = 0
+    if FICHIER_TELEGRAM_BASE.exists():
+        try:
+            messages = json.loads(FICHIER_TELEGRAM_BASE.read_text(encoding="utf-8"))
+            nb_messages_tg   = len(messages)
+            nb_audio_tg      = sum(1 for m in messages if m.get("type") == "audio")
+            nb_transcrits_tg = sum(1 for m in messages if m.get("transcription"))
+        except Exception:
+            pass
+
+    nb_canaux_tg = 0
+    if FICHIER_TELEGRAM_PROGRES.exists():
+        try:
+            progres = json.loads(FICHIER_TELEGRAM_PROGRES.read_text(encoding="utf-8"))
+            nb_canaux_tg = len(progres.get("canaux_termines", []))
+        except Exception:
+            pass
+
+    rag = stats_rag()
+
+    return {
+        "date":                  datetime.now().isoformat(),
+        "contributions_vocales": nb_contrib,
+        "telegram_messages":     nb_messages_tg,
+        "telegram_audio":        nb_audio_tg,
+        "telegram_transcrits":   nb_transcrits_tg,
+        "telegram_canaux":       nb_canaux_tg,
+        "rag_livres":            rag["total_livres"],
+        "rag_chunks":            rag["total_chunks"],
+    }
+
+def _enregistrer_snapshot_croissance() -> dict:
+    """
+    Ajoute un point à l'historique de croissance du corpus, au plus un par
+    jour (le point du jour est mis à jour à chaque consultation plutôt que
+    dupliqué) — construit un vrai suivi dans le temps à partir d'aujourd'hui,
+    sans essayer de reconstituer une historique pour les données déjà là.
+    """
+    FICHIER_HISTORIQUE_CROISSANCE.parent.mkdir(parents=True, exist_ok=True)
+    historique = []
+    if FICHIER_HISTORIQUE_CROISSANCE.exists():
+        try:
+            historique = json.loads(FICHIER_HISTORIQUE_CROISSANCE.read_text(encoding="utf-8"))
+        except Exception:
+            historique = []
+
+    snap = _snapshot_sources_corpus()
+    aujourd_hui = snap["date"][:10]
+    if historique and historique[-1]["date"][:10] == aujourd_hui:
+        historique[-1] = snap
+    else:
+        historique.append(snap)
+
+    historique = historique[-90:]
+    FICHIER_HISTORIQUE_CROISSANCE.write_text(json.dumps(historique, ensure_ascii=False, indent=2), encoding="utf-8")
+    return snap
+
+@app.get("/api/prof/dataset/sources")
+async def api_prof_dataset_sources():
+    """Vue d'ensemble des sources du corpus (contributions vocales, scraping
+    Telegram, livres RAG) + historique de croissance jour par jour."""
+    def _calc():
+        snap = _enregistrer_snapshot_croissance()
+        historique = []
+        if FICHIER_HISTORIQUE_CROISSANCE.exists():
+            try:
+                historique = json.loads(FICHIER_HISTORIQUE_CROISSANCE.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+        return {"actuel": snap, "historique": historique}
+    return JSONResponse(await asyncio.to_thread(_calc))
 
 
 @app.post("/api/prof/dataset/ajouter")

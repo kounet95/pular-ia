@@ -1751,6 +1751,7 @@
           <button id="dtab-donnees"   onclick="dsSetTab('donnees')"   class="ds-tab actif">🔍 Données</button>
           <button id="dtab-ajouter"   onclick="dsSetTab('ajouter')"   class="ds-tab">➕ Ajouter</button>
           <button id="dtab-evolution" onclick="dsSetTab('evolution')" class="ds-tab">📈 Évolution</button>
+          <button id="dtab-sources"   onclick="dsSetTab('sources')"   class="ds-tab">🗂️ Sources</button>
         </div>
 
         <!-- ─ Vue : Données ─ -->
@@ -1829,6 +1830,31 @@
             <div style="font-size:.78rem;color:var(--gris);font-weight:600;margin-bottom:6px;">Derniers jours</div>
             <div id="ds-timeline-table"></div>
           </div>
+        </div>
+
+        <!-- ─ Vue : Sources (scraping + RAG livres) ─ -->
+        <div id="dspanel-sources" class="ds-panel" style="display:none;">
+          <p style="font-size:.78rem;color:var(--gris);margin-bottom:12px;">
+            Vue d'ensemble de toutes les sources qui alimentent le corpus — un point est enregistré
+            chaque jour où tu consultes cet onglet, pour suivre l'augmentation dans le temps.
+          </p>
+          <div class="stat-grid" id="src-kpis" style="margin-bottom:14px;"></div>
+
+          <div style="background:#0a1a0f;border-radius:10px;padding:12px;margin-bottom:12px;">
+            <div style="font-size:.78rem;color:var(--gris);font-weight:600;margin-bottom:8px;">
+              📈 Croissance du corpus (un point par jour)
+            </div>
+            <div id="src-chart-bars" style="display:flex;align-items:flex-end;gap:3px;height:80px;"></div>
+            <div id="src-chart-labels" style="display:flex;gap:3px;margin-top:3px;overflow:hidden;"></div>
+            <div style="display:flex;gap:12px;margin-top:8px;font-size:.7rem;color:var(--gris);flex-wrap:wrap;">
+              <span>🎙️ Contributions</span>
+              <span>📡 Messages Telegram</span>
+              <span>📚 Chunks RAG</span>
+            </div>
+          </div>
+
+          <div style="font-size:.78rem;color:var(--gris);font-weight:600;margin-bottom:6px;">Détail par source</div>
+          <div id="src-detail"></div>
         </div>
 
       </div>
@@ -5510,7 +5536,7 @@ window.profExporterWhisper = profExporterWhisper;
 // ═══════════════════════════════════════════════════════════════
 // DATASET — consulter / ajouter / évolution
 // ═══════════════════════════════════════════════════════════════
-const DS_TABS = ['donnees','ajouter','evolution'];
+const DS_TABS = ['donnees','ajouter','evolution','sources'];
 let dsPageCourante = 1;
 let dsRecentAjouts = [];
 
@@ -5521,6 +5547,7 @@ function dsSetTab(tab) {
   });
   if (tab === 'donnees')   dsChargerDonnees(1);
   if (tab === 'evolution') dsChargerEvolution();
+  if (tab === 'sources')   dsChargerSources();
 }
 window.dsSetTab = dsSetTab;
 
@@ -5716,6 +5743,69 @@ async function dsChargerEvolution() {
   }
 }
 window.dsChargerEvolution = dsChargerEvolution;
+
+// ─ Vue Sources (scraping Telegram + RAG livres) ──────────────────────────────
+async function dsChargerSources() {
+  const kpisEl   = document.getElementById('src-kpis');
+  const chartEl  = document.getElementById('src-chart-bars');
+  const labelsEl = document.getElementById('src-chart-labels');
+  const detailEl = document.getElementById('src-detail');
+  kpisEl.innerHTML = '<div style="color:var(--gris);font-size:.82rem;">⏳ Chargement…</div>';
+  try {
+    const r = await fetch(`${API}/api/prof/dataset/sources`, {headers:H});
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d = await r.json();
+    const a = d.actuel || {};
+    const hist = d.historique || [];
+
+    kpisEl.innerHTML = [
+      {v: a.contributions_vocales ?? 0, l: '🎙️ Contributions vocales'},
+      {v: a.telegram_messages ?? 0,     l: '📡 Messages Telegram'},
+      {v: a.telegram_canaux ?? 0,       l: '📺 Canaux scrapés'},
+      {v: a.rag_livres ?? 0,            l: '📚 Livres indexés'},
+      {v: a.rag_chunks ?? 0,            l: '🧩 Passages RAG'},
+    ].map(x => `<div class="stat-card"><div class="sv">${x.v}</div><div class="sl">${x.l}</div></div>`).join('');
+
+    if (hist.length === 0) {
+      chartEl.innerHTML = '<span style="color:var(--gris);font-size:.78rem;">Pas encore d\'historique — reviens un autre jour pour voir la progression.</span>';
+      labelsEl.innerHTML = '';
+    } else {
+      const maxContrib = Math.max(...hist.map(h => h.contributions_vocales || 0), 1);
+      const maxTg      = Math.max(...hist.map(h => h.telegram_messages || 0), 1);
+      const maxRag     = Math.max(...hist.map(h => h.rag_chunks || 0), 1);
+      chartEl.innerHTML = hist.map(h => {
+        const hc = Math.max(2, Math.round((h.contributions_vocales||0) / maxContrib * 76));
+        const ht = Math.max(2, Math.round((h.telegram_messages||0)     / maxTg      * 76));
+        const hr = Math.max(2, Math.round((h.rag_chunks||0)            / maxRag     * 76));
+        return `<div style="display:flex;gap:1px;align-items:flex-end;flex:1;min-width:10px;" title="${h.date.slice(0,10)}">
+          <div style="flex:1;height:${hc}px;background:var(--vert);border-radius:1px 1px 0 0;"></div>
+          <div style="flex:1;height:${ht}px;background:#2AABEE;border-radius:1px 1px 0 0;"></div>
+          <div style="flex:1;height:${hr}px;background:#c8a84b;border-radius:1px 1px 0 0;"></div>
+        </div>`;
+      }).join('');
+      labelsEl.innerHTML = hist.map((h,i) => {
+        const show = hist.length <= 10 || i % Math.ceil(hist.length/8) === 0;
+        return `<div style="flex:1;font-size:.55rem;color:var(--gris);text-align:center;overflow:hidden;">${show ? h.date.slice(5,10) : ''}</div>`;
+      }).join('');
+    }
+
+    detailEl.innerHTML = `
+      <table style="width:100%;border-collapse:collapse;font-size:.78rem;">
+        <tbody>
+          <tr style="border-top:1px solid #1e3d28;"><td style="padding:5px 6px;color:var(--gris);">🎙️ Contributions vocales (communauté)</td><td style="padding:5px 6px;text-align:right;color:var(--texte);">${a.contributions_vocales ?? 0}</td></tr>
+          <tr style="border-top:1px solid #1e3d28;"><td style="padding:5px 6px;color:var(--gris);">📡 Messages Telegram scrapés</td><td style="padding:5px 6px;text-align:right;color:var(--texte);">${a.telegram_messages ?? 0}</td></tr>
+          <tr style="border-top:1px solid #1e3d28;"><td style="padding:5px 6px;color:var(--gris);">🔊 dont audio/vidéo</td><td style="padding:5px 6px;text-align:right;color:var(--texte);">${a.telegram_audio ?? 0}</td></tr>
+          <tr style="border-top:1px solid #1e3d28;"><td style="padding:5px 6px;color:var(--gris);">✅ dont transcrits</td><td style="padding:5px 6px;text-align:right;color:var(--texte);">${a.telegram_transcrits ?? 0}</td></tr>
+          <tr style="border-top:1px solid #1e3d28;"><td style="padding:5px 6px;color:var(--gris);">📺 Canaux Telegram scrapés</td><td style="padding:5px 6px;text-align:right;color:var(--texte);">${a.telegram_canaux ?? 0}</td></tr>
+          <tr style="border-top:1px solid #1e3d28;"><td style="padding:5px 6px;color:var(--gris);">📚 Livres indexés (RAG)</td><td style="padding:5px 6px;text-align:right;color:var(--texte);">${a.rag_livres ?? 0}</td></tr>
+          <tr style="border-top:1px solid #1e3d28;"><td style="padding:5px 6px;color:var(--gris);">🧩 Passages indexés (chunks RAG)</td><td style="padding:5px 6px;text-align:right;color:var(--texte);">${a.rag_chunks ?? 0}</td></tr>
+        </tbody>
+      </table>`;
+  } catch(e) {
+    kpisEl.innerHTML = `<div style="color:var(--rouge);">❌ ${e.message}</div>`;
+  }
+}
+window.dsChargerSources = dsChargerSources;
 
 // ═══════════════════════════════════════════════════════════════
 // PHRASES — gestion complète (base + custom)

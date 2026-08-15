@@ -1,0 +1,12 @@
+[
+  {
+    "date": "2026-08-15T00:46:32.620181",
+    "contributions_vocales": 5,
+    "telegram_messages": 423,
+    "telegram_audio": 380,
+    "telegram_transcrits": 0,
+    "telegram_canaux": 2,
+    "rag_livres": 2,
+    "rag_chunks": 79
+  }
+]
