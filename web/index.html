@@ -661,6 +661,7 @@
   <a href="/editos">✍️ Éditos</a>
   <a href="/livres">🛒 Librairie</a>
   <a href="#carte-dons">💛 Soutenir</a>
+  <a href="#carte-alertes">🔔 Alertes</a>
   <a href="#carte-jeu">🎮 Jeu</a>
   <a href="#carte-prof">🎓 Professeur</a>
   <a href="#carte-aide">📌 Aide</a>
@@ -1264,6 +1265,20 @@
       width:100%;padding:12px;border-radius:8px;border:none;margin-top:6px;
       background:#c8a84b;color:#1a1a1a;font-weight:700;cursor:pointer;font-size:.92rem;
     ">💛 Faire un don</button>
+  </div>
+
+  <!-- ══ ALERTES (abonnement Telegram) ══ -->
+  <div class="carte" id="carte-alertes" style="border-color:#2AABEE88;scroll-margin-top:56px;">
+    <h2>🔔 Reste informé</h2>
+    <p style="font-size:.82rem;color:var(--gris);margin-bottom:14px;">
+      Abonne-toi sur Telegram pour recevoir un message à chaque nouveau livre mis en vente
+      et à chaque nouvel édito publié.
+    </p>
+    <a id="alertes-lien-tg" href="#" onclick="return alertesOuvrir(event)" style="
+      display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border-radius:8px;
+      border:1px solid #2AABEE;background:transparent;color:#2AABEE;font-weight:700;
+      text-decoration:none;font-size:.9rem;cursor:pointer;
+    ">✈️ S'abonner sur Telegram</a>
   </div>
 
   <!-- ══ JEU DE MOTS ══ -->
@@ -3578,6 +3593,23 @@ async function donFaireDon() {
   }
 }
 window.donFaireDon = donFaireDon;
+
+// ═══════════════════════════════════════════════════════════════
+// ALERTES — abonnement Telegram aux nouveaux livres/éditos
+// ═══════════════════════════════════════════════════════════════
+async function alertesOuvrir(e) {
+  e.preventDefault();
+  try {
+    const r = await fetch(`${API}/api/notifications/lien-abonnement`, { headers: H });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Indisponible');
+    window.open(d.lien, '_blank');
+  } catch(err) {
+    toast('❌ ' + err.message, true);
+  }
+  return false;
+}
+window.alertesOuvrir = alertesOuvrir;
 
 async function edSupprimerZone(id) {
   const key = edAdminKey();

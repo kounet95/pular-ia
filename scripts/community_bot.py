@@ -29,6 +29,7 @@ from dotenv import load_dotenv
 import duels as DU
 import comptes as CP
 import espace_editorial as EE
+import notifications as NOTIF
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application, CommandHandler, MessageHandler,
@@ -150,6 +151,11 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await _connexion_confirmer(update, ctx, ctx.args[0][len("connexion_"):].upper())
         return
 
+    # Lien d'abonnement depuis le site web : https://t.me/<bot>?start=abonner
+    if ctx.args and ctx.args[0] == "abonner":
+        await cmd_abonner(update, ctx)
+        return
+
     nom = update.effective_user.first_name
     await update.message.reply_text(
         f"Assalaamu alaykum {nom}! 🌙\n\n"
@@ -166,6 +172,7 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "🏅 /classement — Classement des duels\n"
         "📚 /livres — Acheter des livres (numérique ou papier)\n"
         "💛 /don — Faire un don au projet\n"
+        "🔔 /abonner — Être averti des nouveaux livres et éditos\n"
         "❓ /aide — Aide complète\n\n"
         "_Baŋ-baŋ! 🙏_",
         parse_mode="Markdown",
@@ -218,7 +225,8 @@ async def cmd_aide(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "/duel CODE — rejoins le duel d'un ami\n"
         "🏅 /classement — voir qui domine\n\n"
         "📚 /livres — voir et acheter les livres (numérique ou papier)\n"
-        "💛 /don — faire un don au projet\n\n"
+        "💛 /don — faire un don au projet\n"
+        "🔔 /abonner — être averti des nouveaux livres et éditos\n\n"
         "📌 *Conseils pour une bonne qualité:*\n"
         "• Parle clairement, micro proche\n"
         "• Messages de 5 à 60 secondes idéaux\n"
@@ -227,6 +235,29 @@ async def cmd_aide(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "_Baŋ-baŋ! 🙏_",
         parse_mode="Markdown",
     )
+
+# ── Notifications (nouveaux livres, nouveaux éditos) ───────────────────────────
+async def cmd_abonner(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id
+    pseudo = _pseudo_telegram(update.effective_user)
+    nouveau = await asyncio.to_thread(NOTIF.abonner, chat_id, pseudo)
+    if nouveau:
+        await update.effective_message.reply_text(
+            "🔔 Abonnement activé ! Tu recevras un message ici à chaque nouveau livre "
+            "ou nouvel édito publié.\n\nTape /desabonner à tout moment pour arrêter."
+        )
+    else:
+        await update.effective_message.reply_text("🔔 Tu es déjà abonné aux nouveautés.")
+
+async def cmd_desabonner(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id
+    retire = await asyncio.to_thread(NOTIF.desabonner, chat_id)
+    if retire:
+        await update.effective_message.reply_text(
+            "🔕 Abonnement désactivé. Tape /abonner pour te réabonner à tout moment."
+        )
+    else:
+        await update.effective_message.reply_text("Tu n'étais pas abonné aux nouveautés.")
 
 # ── Gestion des messages vocaux ───────────────────────────────────────────────
 async def handle_voice(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -819,6 +850,8 @@ def main():
     app.add_handler(CommandHandler("classement", cmd_classement))
     app.add_handler(CommandHandler("livres",     cmd_livres))
     app.add_handler(CommandHandler("don",        cmd_don))
+    app.add_handler(CommandHandler("abonner",    cmd_abonner))
+    app.add_handler(CommandHandler("desabonner", cmd_desabonner))
     app.add_handler(CommandHandler("aide",       cmd_aide))
     app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, handle_voice))
     # Les handlers à motif précis doivent être enregistrés avant le handler

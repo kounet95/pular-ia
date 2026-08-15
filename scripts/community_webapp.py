@@ -996,6 +996,7 @@ async def api_histoire_supprimer_famille(famille_id: str, key: str = ""):
 # ══════════════════════════════════════════════════════════════════════════════
 
 import comptes as CP
+import notifications as NOTIF
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 COOKIE_SESSION      = "pular_session"
@@ -1023,6 +1024,20 @@ async def _bot_username() -> str:
     except Exception as e:
         log.warning(f"Impossible de récupérer le username du bot Telegram: {e}")
     return _bot_username_cache["valeur"]
+
+async def _notifier_nouveaute(texte: str):
+    """Diffuse `texte` à tous les abonnés Telegram, en arrière-plan (ne
+    bloque jamais la réponse HTTP de la création qui déclenche l'envoi)."""
+    if not TELEGRAM_BOT_TOKEN:
+        return
+    await asyncio.to_thread(NOTIF.notifier_tous, TELEGRAM_BOT_TOKEN, texte)
+
+@app.get("/api/notifications/lien-abonnement")
+async def api_notifications_lien():
+    username = await _bot_username()
+    if not username:
+        raise HTTPException(503, "Bot Telegram non configuré.")
+    return JSONResponse({"lien": f"https://t.me/{username}?start=abonner"})
 
 def _poser_cookie_session(request: Request, resp: JSONResponse, token: str):
     https = request.headers.get("x-forwarded-proto", request.url.scheme) == "https"
@@ -1215,6 +1230,12 @@ async def api_editorial_ajouter_livre(
     except ValueError as e:
         raise HTTPException(400, str(e))
     log.info(f"Éditorial — livre ajouté au catalogue: {titre}")
+    texte_notif = (
+        f"📚 Nouveau livre disponible !\n\n{fiche['titre']}\n✍️ {fiche['auteur']}\n\n"
+        "👉 Tape /livres pour voir et acheter\n\n"
+        "(Tape /desabonner pour ne plus recevoir ces messages)"
+    )
+    asyncio.create_task(_notifier_nouveaute(texte_notif))
     return JSONResponse({"ok": True, "livre": fiche})
 
 @app.get("/api/editorial/livres/{livre_id}/couverture")
@@ -1834,6 +1855,12 @@ async def api_editorial_ajouter_edito(
         compte["id"] if compte else None,
     )
     log.info(f"Éditorial — édito soumis: '{titre}' par {auteur_final}")
+    page_url = f"{_base_url(request)}/lire/{edito['id']}"
+    texte_notif = (
+        f"✍️ Nouvel édito publié !\n\n{edito['titre']}\n\n👉 {page_url}\n\n"
+        "(Tape /desabonner pour ne plus recevoir ces messages)"
+    )
+    asyncio.create_task(_notifier_nouveaute(texte_notif))
     return JSONResponse({"ok": True, "edito": edito})
 
 @app.get("/api/editorial/editos/{edito_id}/image")
