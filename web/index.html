@@ -3389,6 +3389,16 @@ function escHtml(s) {
   }[c]));
 }
 
+// Pour un texte inséré comme argument JS DANS un attribut onclick="..('...')" —
+// pas la même chose que escHtml() : le navigateur décode d'abord les entités
+// HTML de l'attribut, PUIS exécute le JS obtenu. Une apostrophe échappée en
+// &#39; redevient donc une vraie apostrophe avant l'exécution et casse la
+// chaîne JS (ex: "Al-Qur'aana", "I'm fine") — il faut un échappement JS (\')
+// qui survit à ce décodage intermédiaire.
+function escJsAttr(s) {
+  return String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
 function edAdminKey() { return localStorage.getItem('edAdminKey') || ''; }
 
 function edSauverAdminKey() {
@@ -4843,7 +4853,7 @@ async function profChargerSuggestions() {
         ${s.en_corrige ? `<div style="margin-bottom:4px;font-size:.8rem;color:var(--gris);">🇬🇧 <em>${s.en_corrige}</em></div>` : ''}
         ${s.ar_corrige ? `<div style="margin-bottom:8px;font-size:.8rem;color:var(--gris);direction:rtl;">🕌 <em>${s.ar_corrige}</em></div>` : ''}
         <div style="display:flex;gap:8px;">
-          <button onclick="profAppliquerSuggestion('${s.fichier}','${s.phrase_id}','${(s.fr_corrige||'').replace(/'/g,"&#39;")}','${(s.en_corrige||'').replace(/'/g,"&#39;")}','${(s.ar_corrige||'').replace(/'/g,"&#39;")}')"
+          <button onclick="profAppliquerSuggestion('${s.fichier}','${s.phrase_id}','${escJsAttr(s.fr_corrige)}','${escJsAttr(s.en_corrige)}','${escJsAttr(s.ar_corrige)}')"
             style="padding:6px 14px;border-radius:7px;border:none;background:var(--vert);color:white;font-weight:700;cursor:pointer;font-size:.8rem;">
             Appliquer</button>
           <button onclick="profIgnorerSuggestion('${s.fichier}')"
@@ -5083,10 +5093,14 @@ async function profChargerContribs() {
           <div class="diff-attendu">✅ Attendu: <strong>${c.texte_final||'?'}</strong></div>
           <div class="diff-transcrit">🤖 Transcrit: ${c.transcription_auto||'(vide)'}</div>
         </div>
-        <input type="text" id="cc-correction-${c.id}" placeholder="Correction (si besoin)"
-          value="${c.texte_final||''}"
-          style="width:100%;padding:7px 10px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:6px;color:var(--texte);font-size:.88rem;outline:none;margin-bottom:6px;"
-          onfocus="this.style.borderColor='var(--or)'" onblur="this.style.borderColor='#2d5c3a'">
+        <div class="champ-adlam-wrap" style="margin-bottom:6px;">
+          <input type="text" id="cc-correction-${c.id}" placeholder="Correction (si besoin)"
+            value="${c.texte_final||''}"
+            style="flex:1;padding:7px 10px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:6px;color:var(--texte);font-size:.88rem;outline:none;"
+            onfocus="this.style.borderColor='var(--or)'" onblur="this.style.borderColor='#2d5c3a'">
+          <button type="button" class="btn-clavier-adlam" onclick="toggleClavierGlobal('cc-correction-${c.id}', null)" title="Clavier Adlam">𞤀𞤣𞤤</button>
+          <button type="button" class="btn-ouvrir-arabe" onclick="toggleClavierArabe('cc-correction-${c.id}')" title="Clavier arabe">🕌</button>
+        </div>
         <div class="contrib-actions">
           <button class="btn-accept" onclick="profValider('${c.id}','valider')">✅ Valider</button>
           <button class="btn-edit-c" onclick="profValider('${c.id}','corriger')">✏️ Corriger</button>
