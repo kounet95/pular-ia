@@ -70,6 +70,10 @@ DOSSIER_AUDIO_TG  = DOSSIER_TELEGRAM / "audio"
 DOSSIER_JSONL     = DOSSIER_TELEGRAM / "jsonl"
 FICHIER_PROGRES   = DOSSIER_TELEGRAM / "progres.json"
 FICHIER_BASE      = DOSSIER_TELEGRAM / "base_connaissance.json"
+# Sous corpus-pular/ (volume persistant sur Railway) plutôt qu'à la racine du
+# projet : sinon la session Telegram (connexion déjà établie) est perdue à
+# chaque redeploy et il faut se reconnecter (téléphone + code) à chaque fois.
+FICHIER_SESSION   = DOSSIER_TELEGRAM / "session_pular"
 
 # ── Whisper ────────────────────────────────────────────────────────────────────
 _whisper_model = None
@@ -394,7 +398,7 @@ async def main(canaux: list, limite: int, sans_audio: bool, whisper_model: str):
     else:
         log.info("✅ Tous les canaux ont déjà été scrapés — passage à la transcription")
 
-    async with TelegramClient("session_pular", API_ID, API_HASH) as client:
+    async with TelegramClient(str(FICHIER_SESSION), API_ID, API_HASH) as client:
         await client.start(phone=PHONE)
         log.info("🔗 Connecté à Telegram")
 
