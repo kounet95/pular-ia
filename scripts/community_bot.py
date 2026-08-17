@@ -14,6 +14,7 @@ Commandes disponibles:
     /classement — Classement des duels
     /livres — Acheter des livres (numérique ou papier)
     /don    — Faire un don au projet
+    /quiz   — Rejoindre un Quiz Live (+ /quiz CODE)
     /aide   — Aide complète
 """
 
@@ -22,6 +23,7 @@ import time
 import json
 import asyncio
 import logging
+import httpx
 from pathlib import Path
 from datetime import datetime
 
@@ -30,6 +32,7 @@ import duels as DU
 import comptes as CP
 import espace_editorial as EE
 import notifications as NOTIF
+import quizlive as QL
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application, CommandHandler, MessageHandler,
@@ -67,6 +70,12 @@ if not SITE_URL:
     SITE_URL = _base[:-4] if _base.endswith("/api") else _base
 if not SITE_URL:
     SITE_URL = "http://localhost:8080"
+
+# Appel interne au webapp (même conteneur, voir start.sh) plutôt que SITE_URL
+# (domaine public) pour les actions Quiz Live qui doivent déclencher une
+# diffusion WebSocket immédiate vers l'écran de l'animateur — inutile de
+# sortir sur Internet pour un appel entre deux processus du même conteneur.
+WEBAPP_LOCAL_URL = f"http://127.0.0.1:{int(os.getenv('PORT', os.getenv('WEBAPP_PORT', 8080)))}"
 
 for d in [DOSSIER_CONTRIB, DOSSIER_AUDIO]:
     d.mkdir(parents=True, exist_ok=True)
@@ -156,6 +165,11 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await cmd_abonner(update, ctx)
         return
 
+    # Lien de partie Quiz Live affiché sur l'écran animateur : https://t.me/<bot>?start=quiz_<code>
+    if ctx.args and ctx.args[0].startswith("quiz_"):
+        await _quizlive_rejoindre(update, ctx, ctx.args[0][len("quiz_"):].upper())
+        return
+
     nom = update.effective_user.first_name
     await update.message.reply_text(
         f"Assalaamu alaykum {nom}! 🌙\n\n"
@@ -172,6 +186,7 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "🏅 /classement — Classement des duels\n"
         "📚 /livres — Acheter des livres (numérique ou papier)\n"
         "💛 /don — Faire un don au projet\n"
+        "🎮 /quiz CODE — Rejoindre un Quiz Live\n"
         "🔔 /abonner — Être averti des nouveaux livres et éditos\n"
         "❓ /aide — Aide complète\n\n"
         "_Baŋ-baŋ! 🙏_",
@@ -226,6 +241,7 @@ async def cmd_aide(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "🏅 /classement — voir qui domine\n\n"
         "📚 /livres — voir et acheter les livres (numérique ou papier)\n"
         "💛 /don — faire un don au projet\n"
+        "🎮 /quiz CODE — rejoindre un Quiz Live animé sur l'écran de quelqu'un\n"
         "🔔 /abonner — être averti des nouveaux livres et éditos\n\n"
         "📌 *Conseils pour une bonne qualité:*\n"
         "• Parle clairement, micro proche\n"
@@ -812,6 +828,180 @@ async def _surveiller_don(ctx: ContextTypes.DEFAULT_TYPE, chat_id: int, don_id: 
             )
             return
 
+# ── Quiz Live (façon Kahoot) — les joueurs répondent depuis Telegram, ─────────
+# l'animateur garde l'écran web pour le partager pendant son live. Le jeu vit
+# dans les mêmes fichiers JSON que le webapp (voir quizlive.py) : ce bot
+# n'a pas de canal temps réel vers l'hôte web, donc il *surveille* la partie
+# (un seul sondage partagé par tous les joueurs Telegram d'une même partie,
+# pas un par joueur) et pousse les mises à jour dans Telegram à chaque
+# changement d'état — même principe que la surveillance de paiement.
+_QUIZLIVE_FORMES = ["▲", "◆", "●", "■"]
+
+async def cmd_quiz(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    if not ctx.args:
+        await update.effective_message.reply_text(
+            "🎮 Pour rejoindre un quiz live, tape /quiz suivi du code affiché "
+            "par l'animateur sur son écran, par exemple : /quiz ABC123"
+        )
+        return
+    await _quizlive_rejoindre(update, ctx, ctx.args[0].upper())
+
+async def _quizlive_rejoindre(update: Update, ctx: ContextTypes.DEFAULT_TYPE, code: str):
+    pseudo = _pseudo_telegram(update.effective_user)
+    chat_id = update.effective_chat.id
+
+    partie = await asyncio.to_thread(QL.obtenir_partie, code)
+    if not partie:
+        await update.effective_message.reply_text("⚠️ Code de partie introuvable.")
+        return
+    if partie["hote"].strip().lower() == pseudo.strip().lower():
+        await update.effective_message.reply_text("⚠️ Tu es l'animateur de cette partie — anime-la depuis l'écran web, pas ici.")
+        return
+
+    deja = any(j["pseudo"] == pseudo for j in partie["joueurs"])
+    if not deja:
+        if partie["statut"] != "attente":
+            await update.effective_message.reply_text("⚠️ Cette partie a déjà démarré — trop tard pour la rejoindre.")
+            return
+        # Passe par l'API HTTP du webapp (pas un appel direct à QL.rejoindre_partie) :
+        # c'est ce process qui possède les connexions WebSocket de l'animateur,
+        # un appel direct ici laisserait son écran sans notification.
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                r = await client.post(f"{WEBAPP_LOCAL_URL}/api/quizlive/{code}/rejoindre", data={"pseudo": pseudo})
+            if r.status_code != 200:
+                await update.effective_message.reply_text("⚠️ Impossible de rejoindre (pseudo déjà pris, ou partie complète/démarrée).")
+                return
+        except Exception as e:
+            log.error(f"Quiz live — rejoindre {code} via HTTP: {e}")
+            await update.effective_message.reply_text("⚠️ Erreur de connexion, réessaie dans un instant.")
+            return
+
+    msg = await update.effective_message.reply_text(
+        f"✅ Tu as rejoint la partie {code} !\n⏳ En attente que l'animateur démarre…"
+    )
+    joueurs_tg = ctx.bot_data.setdefault("quizlive_joueurs", {}).setdefault(code, {})
+    joueurs_tg[pseudo] = {"chat_id": chat_id, "message_id": msg.message_id}
+
+    pollers = ctx.bot_data.setdefault("quizlive_pollers", set())
+    if code not in pollers:
+        pollers.add(code)
+        asyncio.create_task(_quizlive_surveiller(ctx, code))
+
+async def _quizlive_surveiller(ctx: ContextTypes.DEFAULT_TYPE, code: str, max_ticks: int = 2400):
+    """Un seul sondage par partie, partagé par tous ses joueurs Telegram —
+    évite de relire le fichier une fois par joueur par seconde. S'arrête
+    dès que la partie est terminée ou après ~1h (garde-fou)."""
+    try:
+        dernier_etat = None
+        for _ in range(max_ticks):
+            await asyncio.sleep(1.5)
+            partie = await asyncio.to_thread(QL.obtenir_partie, code)
+            if not partie:
+                return
+            etat = (partie["statut"], partie["question_actuelle"])
+            if etat != dernier_etat:
+                dernier_etat = etat
+                await _quizlive_diffuser_telegram(ctx, code, partie)
+            if partie["statut"] == "termine":
+                return
+    finally:
+        ctx.bot_data.get("quizlive_pollers", set()).discard(code)
+
+async def _quizlive_diffuser_telegram(ctx: ContextTypes.DEFAULT_TYPE, code: str, partie: dict):
+    joueurs_tg = ctx.bot_data.get("quizlive_joueurs", {}).get(code, {})
+    etat = QL.etat_public(partie)
+
+    for pseudo, info in list(joueurs_tg.items()):
+        chat_id, message_id = info["chat_id"], info.get("message_id")
+        try:
+            if partie["statut"] == "en_cours":
+                q = etat["question_actuelle"]
+                clavier = InlineKeyboardMarkup([[
+                    InlineKeyboardButton(f, callback_data=f"quizrep:{code}:{q['index']}:{i}")
+                    for i, f in enumerate(_QUIZLIVE_FORMES)
+                ]])
+                texte = f"❓ Question {q['index']+1}/{q['total']} — regarde l'écran de l'animateur et tape la forme qui correspond !"
+                if message_id:
+                    nouveau = await ctx.bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=texte, reply_markup=clavier)
+                else:
+                    nouveau = await ctx.bot.send_message(chat_id, texte, reply_markup=clavier)
+                info["message_id"] = nouveau.message_id
+
+            elif partie["statut"] == "revelation":
+                q = etat["question_actuelle"]
+                joueur = next((j for j in partie["joueurs"] if j["pseudo"] == pseudo), None)
+                derniere = next((r for r in joueur["reponses"] if r["q"] == q["index"]), None) if joueur else None
+                if derniere is None:
+                    texte = f"⌛ Pas de réponse à temps.\nLa bonne réponse était : {q['reponse']}"
+                elif derniere["correct"]:
+                    texte = f"✅ Bonne réponse ! +{derniere['points']} pts\nScore total : {joueur['score']}"
+                else:
+                    texte = f"❌ Mauvaise réponse.\nLa bonne réponse était : {q['reponse']}\nScore total : {joueur['score']}"
+                if message_id:
+                    await ctx.bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=texte)
+                else:
+                    await ctx.bot.send_message(chat_id, texte)
+
+            elif partie["statut"] == "termine":
+                rang = next((i for i, j in enumerate(etat["classement"]) if j["pseudo"] == pseudo), None)
+                score = etat["classement"][rang]["score"] if rang is not None else 0
+                if rang is None:
+                    medaille = "?"
+                elif rang < 3:
+                    medaille = ["🥇", "🥈", "🥉"][rang]
+                else:
+                    medaille = f"#{rang + 1}"
+                await ctx.bot.send_message(
+                    chat_id,
+                    f"🏁 Partie terminée !\n{medaille} — {score} points\n\n"
+                    f"🏆 Palmarès des champions : {SITE_URL}/quizlive/classement",
+                )
+        except Exception as e:
+            log.warning(f"Quiz live Telegram — envoi à {pseudo} ({code}) échoué: {e}")
+
+async def handle_quizlive_reponse_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    _, code, q_index_str, opt_index_str = query.data.split(":")
+    q_index, opt_index = int(q_index_str), int(opt_index_str)
+    pseudo = _pseudo_telegram(update.effective_user)
+
+    partie = await asyncio.to_thread(QL.obtenir_partie, code)
+    if not partie or partie["statut"] != "en_cours" or q_index != partie["question_actuelle"]:
+        await query.answer("⏱️ Trop tard pour cette question !")
+        return
+    options = partie["questions"][q_index]["options"]
+    if opt_index >= len(options):
+        await query.answer()
+        return
+    option = options[opt_index]
+
+    temps_ms = 0
+    if partie.get("question_ouverte_le"):
+        ouverte = datetime.fromisoformat(partie["question_ouverte_le"])
+        temps_ms = max(0, int((datetime.now() - ouverte).total_seconds() * 1000))
+
+    # Même remarque que pour rejoindre : passe par l'API HTTP du webapp pour
+    # que la diffusion WebSocket vers l'écran de l'animateur se déclenche
+    # immédiatement (compteur "X ont répondu", etc.), pas seulement l'écriture.
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.post(
+                f"{WEBAPP_LOCAL_URL}/api/quizlive/{code}/reponse",
+                data={"pseudo": pseudo, "q": q_index, "reponse": option, "temps_ms": temps_ms},
+            )
+        if r.status_code == 200:
+            await query.answer("✅ Réponse envoyée !")
+            try:
+                await query.edit_message_reply_markup(reply_markup=None)  # empêche de re-cliquer
+            except Exception:
+                pass
+        else:
+            await query.answer("⚠️ Réponse non prise en compte (trop tard, ou partie introuvable).")
+    except Exception as e:
+        log.error(f"Quiz live — réponse {code} via HTTP: {e}")
+        await query.answer("⚠️ Erreur de connexion, réessaie.")
+
 # ── Erreurs ───────────────────────────────────────────────────────────────────
 async def handle_error(update: object, ctx: ContextTypes.DEFAULT_TYPE):
     """Filet de sécurité global : sans ça, une exception dans un handler
@@ -850,6 +1040,7 @@ def main():
     app.add_handler(CommandHandler("classement", cmd_classement))
     app.add_handler(CommandHandler("livres",     cmd_livres))
     app.add_handler(CommandHandler("don",        cmd_don))
+    app.add_handler(CommandHandler("quiz",       cmd_quiz))
     app.add_handler(CommandHandler("abonner",    cmd_abonner))
     app.add_handler(CommandHandler("desabonner", cmd_desabonner))
     app.add_handler(CommandHandler("aide",       cmd_aide))
@@ -861,6 +1052,7 @@ def main():
     app.add_handler(CallbackQueryHandler(handle_livre_format_callback, pattern=r"^livrefmt:"))
     app.add_handler(CallbackQueryHandler(handle_livre_zone_callback, pattern=r"^livrezone:"))
     app.add_handler(CallbackQueryHandler(handle_don_montant_callback, pattern=r"^donmontant:"))
+    app.add_handler(CallbackQueryHandler(handle_quizlive_reponse_callback, pattern=r"^quizrep:"))
     app.add_handler(CallbackQueryHandler(handle_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     app.add_error_handler(handle_error)

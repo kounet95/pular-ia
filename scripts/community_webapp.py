@@ -2551,6 +2551,645 @@ async def ws_duel(websocket: WebSocket, code: str, pseudo: str = ""):
         if connexions_duel.get(pseudo) is websocket:
             connexions_duel.pop(pseudo, None)
 
+# ══════════════════════════════════════════════════════════════════════════════
+# QUIZ LIVE — façon Kahoot, animé pendant un live (TikTok...), multijoueur illimité
+# ══════════════════════════════════════════════════════════════════════════════
+
+import quizlive as QL
+
+PARTIES_CONNEXIONS: dict[str, dict[str, WebSocket]] = {}
+
+async def _partie_diffuser(code: str, payload: dict):
+    """Envoie l'état à jour à tous les sockets connectés sur cette partie
+    (animateur inclus — il se connecte comme tout le monde, juste avec des
+    droits supplémentaires côté serveur)."""
+    morts = []
+    for pseudo_connecte, ws in PARTIES_CONNEXIONS.get(code, {}).items():
+        try:
+            await ws.send_json(payload)
+        except Exception:
+            morts.append(pseudo_connecte)
+    for p in morts:
+        PARTIES_CONNEXIONS.get(code, {}).pop(p, None)
+
+@app.post("/api/quizlive/creer")
+async def api_quizlive_creer(
+    request: Request,
+    pseudo:       str = Form(...),
+    theme:        str = Form("Tout"),
+    nb_questions: int = Form(QL.NB_QUESTIONS_DEFAUT),
+):
+    compte = await _compte_courant(request)
+    pseudo = compte["pseudo"] if compte else pseudo.strip()[:40]
+    if not pseudo:
+        raise HTTPException(400, "Choisis un pseudo pour animer la partie.")
+    mots = _mots_jeu_pour_duel()  # même banque de mots que les duels
+    if len(mots) < 4:
+        raise HTTPException(503, "Pas assez de mots dans le jeu pour lancer un quiz.")
+    partie = await asyncio.to_thread(QL.creer_partie, pseudo, mots, theme, nb_questions)
+    log.info(f"Quiz live créé: {partie['code']} par {pseudo} — thème={partie['theme']}, {len(partie['questions'])} questions")
+    return JSONResponse({"ok": True, "partie": partie, "hote": pseudo})
+
+@app.get("/api/quizlive/meta")
+async def api_quizlive_meta():
+    return JSONResponse({"themes": QL.THEMES, "longueurs": QL.LONGUEURS_VALIDES, "formes": QL.FORMES})
+
+@app.get("/api/quizlive/classement/champions")
+async def api_quizlive_champions(limite: int = 20):
+    return JSONResponse(await asyncio.to_thread(QL.classement_champions, limite))
+
+@app.get("/api/quizlive/{code}")
+async def api_quizlive_etat(code: str):
+    partie = await asyncio.to_thread(QL.obtenir_partie, code)
+    if not partie:
+        raise HTTPException(404, "Partie introuvable.")
+    return JSONResponse(QL.etat_public(partie))
+
+# Ces deux routes existent pour les surfaces sans WebSocket (le bot Telegram) :
+# rejoindre/répondre en appelant seulement QL.rejoindre_partie /
+# QL.enregistrer_reponse depuis le bot laisserait l'écran de l'animateur
+# (connecté en WS ici, dans le process webapp) sans aucune notification —
+# la mutation ET la diffusion doivent passer par ce process qui possède le
+# registre des connexions WebSocket.
+@app.post("/api/quizlive/{code}/rejoindre")
+async def api_quizlive_rejoindre_http(code: str, pseudo: str = Form(...)):
+    partie = await asyncio.to_thread(QL.rejoindre_partie, code, pseudo.strip()[:40])
+    if not partie:
+        raise HTTPException(400, "Impossible de rejoindre (code invalide, pseudo déjà pris, ou partie déjà commencée).")
+    await _partie_diffuser(code, {"type": "etat", "partie": QL.etat_public(partie)})
+    return JSONResponse({"ok": True})
+
+@app.post("/api/quizlive/{code}/reponse")
+async def api_quizlive_reponse_http(
+    code: str,
+    pseudo:   str = Form(...),
+    q:        int = Form(...),
+    reponse:  str = Form(""),
+    temps_ms: int = Form(0),
+):
+    partie = await asyncio.to_thread(
+        QL.enregistrer_reponse, code, pseudo, q, reponse or None, temps_ms,
+    )
+    if not partie:
+        raise HTTPException(400, "Réponse non prise en compte.")
+    await _partie_diffuser(code, {"type": "etat", "partie": QL.etat_public(partie)})
+    return JSONResponse({"ok": True})
+
+@app.websocket("/ws/quizlive/{code}")
+async def ws_quizlive(websocket: WebSocket, code: str, pseudo: str = ""):
+    code = code.upper()
+    pseudo = pseudo.strip()[:40]
+    await websocket.accept()
+
+    partie = await asyncio.to_thread(QL.obtenir_partie, code)
+    if not partie or not pseudo:
+        await websocket.send_json({"type": "erreur", "message": "Code de partie invalide."})
+        await websocket.close()
+        return
+
+    connexions = PARTIES_CONNEXIONS.setdefault(code, {})
+    est_hote = pseudo == partie["hote"]
+    deja_present = est_hote or any(j["pseudo"] == pseudo for j in partie["joueurs"])
+
+    if deja_present and pseudo in connexions:
+        await websocket.send_json({"type": "erreur", "message": "Ce pseudo est déjà connecté à cette partie."})
+        await websocket.close()
+        return
+
+    if not est_hote and not deja_present:
+        partie = await asyncio.to_thread(QL.rejoindre_partie, code, pseudo)
+        if not partie:
+            await websocket.send_json({"type": "erreur", "message": "Impossible de rejoindre — partie déjà commencée, ou pseudo déjà pris."})
+            await websocket.close()
+            return
+
+    connexions[pseudo] = websocket
+    await websocket.send_json({"type": "bienvenue", "est_hote": est_hote})
+    await _partie_diffuser(code, {"type": "etat", "partie": QL.etat_public(partie)})
+
+    try:
+        while True:
+            msg = await websocket.receive_json()
+            t = msg.get("type")
+            partie_maj = None
+            if t == "demarrer" and est_hote:
+                partie_maj = await asyncio.to_thread(QL.demarrer_partie, code, pseudo)
+            elif t == "reveler" and est_hote:
+                partie_maj = await asyncio.to_thread(QL.reveler_reponse, code, pseudo)
+            elif t == "suivant" and est_hote:
+                partie_maj = await asyncio.to_thread(QL.question_suivante, code, pseudo)
+            elif t == "reponse" and not est_hote:
+                partie_maj = await asyncio.to_thread(
+                    QL.enregistrer_reponse, code, pseudo,
+                    int(msg.get("q", -1)), msg.get("reponse"), int(msg.get("temps_ms", 0)),
+                )
+            if partie_maj:
+                await _partie_diffuser(code, {"type": "etat", "partie": QL.etat_public(partie_maj)})
+    except WebSocketDisconnect:
+        pass
+    except RuntimeError:
+        # Voir la même remarque dans ws_duel : Starlette peut lever ceci au
+        # lieu d'un WebSocketDisconnect propre quand une diffusion croise une
+        # déconnexion en cours — dans les deux cas la connexion est finie.
+        pass
+    except Exception as e:
+        log.warning(f"Erreur websocket quizlive {code} ({pseudo}): {e}")
+    finally:
+        if connexions.get(pseudo) is websocket:
+            connexions.pop(pseudo, None)
+
+_QUIZLIVE_STYLE = """
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: linear-gradient(135deg, #46178f 0%, #2a1060 100%);
+    color: #fff; font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+  }
+  header { width: 100%; padding: 16px 20px; text-align: center; }
+  header a { color: #fff; opacity: .85; text-decoration: none; font-size: .85rem; font-weight: 600; }
+  header a:hover { opacity: 1; text-decoration: underline; }
+  main { width: 100%; max-width: 480px; padding: 12px 18px 50px; flex: 1; display: flex; flex-direction: column; }
+  .logo { text-align: center; font-size: 2rem; font-weight: 900; margin-bottom: 22px; letter-spacing: -1px; }
+  .carte-choix {
+    display: block; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
+    border-radius: 16px; padding: 22px; margin-bottom: 16px; text-decoration: none; color: #fff;
+    transition: background .15s, transform .1s; cursor: pointer;
+  }
+  .carte-choix:hover { background: rgba(255,255,255,.14); transform: translateY(-2px); }
+  .carte-choix h2 { font-size: 1.15rem; margin-bottom: 4px; }
+  .carte-choix p { font-size: .85rem; opacity: .8; }
+  input, select {
+    width: 100%; padding: 12px 14px; border-radius: 10px; border: none;
+    background: rgba(255,255,255,.95); color: #222; font-size: 1rem; margin-bottom: 10px; outline: none;
+  }
+  .btn {
+    width: 100%; padding: 14px; border-radius: 10px; border: none; font-weight: 800;
+    font-size: 1rem; cursor: pointer; transition: transform .1s;
+  }
+  .btn:active { transform: scale(.98); }
+  .btn-principal { background: #46178f; color: #fff; }
+  .btn-rejoindre { background: #fff; color: #46178f; }
+  .msg-erreur { color: #ffd2d2; font-size: .85rem; margin-top: 8px; text-align: center; }
+"""
+
+@app.get("/quizlive", response_class=HTMLResponse)
+async def page_quizlive_accueil(request: Request):
+    base = _base_url(request)
+    return HTMLResponse(f"""<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Live — Pular IA</title>
+<meta name="description" content="Quiz multijoueur en direct sur le vocabulaire pular — anime une partie pendant ton live, ou rejoins avec un code.">
+<style>{_QUIZLIVE_STYLE}</style>
+</head>
+<body>
+  <header><a href="{base}/#carte-jeu">← Pular IA</a></header>
+  <main>
+    <div class="logo">🎮 Quiz Live Pular</div>
+
+    <div class="carte-choix" id="bloc-rejoindre">
+      <h2>🎮 Rejoindre une partie</h2>
+      <p>Tu as un code PIN ? Entre-le pour jouer depuis ton téléphone.</p>
+      <div style="margin-top:14px;">
+        <input id="join-code" type="text" placeholder="Code PIN" maxlength="6" style="text-align:center;font-size:1.3rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;">
+        <input id="join-pseudo" type="text" placeholder="Ton pseudo" maxlength="40">
+        <button class="btn btn-rejoindre" onclick="quizRejoindre()">Rejoindre</button>
+      </div>
+      <div id="join-erreur" class="msg-erreur"></div>
+    </div>
+
+    <div class="carte-choix" id="bloc-animer">
+      <h2>🎬 Animer un quiz</h2>
+      <p>Crée une partie, partage le code à l'écran pendant ton live, et anime la partie.</p>
+      <div style="margin-top:14px;">
+        <input id="host-pseudo" type="text" placeholder="Ton pseudo (animateur)" maxlength="40">
+        <select id="host-theme"></select>
+        <select id="host-longueur"></select>
+        <button class="btn btn-principal" onclick="quizCreer()">Créer la partie</button>
+      </div>
+      <div id="host-erreur" class="msg-erreur"></div>
+    </div>
+
+    <p style="text-align:center;font-size:.75rem;opacity:.7;margin-top:10px;">
+      <a href="{base}/quizlive/classement" style="color:#fff;">🏆 Voir le palmarès des champions</a>
+    </p>
+  </main>
+  <script>
+    const API = {json.dumps(base)};
+
+    async function chargerMeta() {{
+      try {{
+        const r = await fetch(`${{API}}/api/quizlive/meta`);
+        const d = await r.json();
+        document.getElementById('host-theme').innerHTML = d.themes.map(t => `<option value="${{t}}">${{t === 'Tout' ? '🌍 Tout mélanger' : t}}</option>`).join('');
+        document.getElementById('host-longueur').innerHTML = d.longueurs.map(n => `<option value="${{n}}"${{n===10?' selected':''}}>${{n}} questions</option>`).join('');
+      }} catch(e) {{}}
+    }}
+    chargerMeta();
+
+    async function quizCreer() {{
+      const pseudo = document.getElementById('host-pseudo').value.trim();
+      const erreurEl = document.getElementById('host-erreur');
+      erreurEl.textContent = '';
+      if (!pseudo) {{ erreurEl.textContent = 'Choisis un pseudo.'; return; }}
+      try {{
+        const fd = new FormData();
+        fd.append('pseudo', pseudo);
+        fd.append('theme', document.getElementById('host-theme').value);
+        fd.append('nb_questions', document.getElementById('host-longueur').value);
+        const r = await fetch(`${{API}}/api/quizlive/creer`, {{ method: 'POST', body: fd }});
+        const d = await r.json();
+        if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
+        localStorage.setItem('quizlive_pseudo_' + d.partie.code, d.hote);
+        window.location.href = `${{API}}/quizlive/animer/${{d.partie.code}}`;
+      }} catch(e) {{ erreurEl.textContent = e.message; }}
+    }}
+    window.quizCreer = quizCreer;
+
+    async function quizRejoindre() {{
+      const code = document.getElementById('join-code').value.trim().toUpperCase();
+      const pseudo = document.getElementById('join-pseudo').value.trim();
+      const erreurEl = document.getElementById('join-erreur');
+      erreurEl.textContent = '';
+      if (!code || !pseudo) {{ erreurEl.textContent = 'Entre le code et ton pseudo.'; return; }}
+      try {{
+        const r = await fetch(`${{API}}/api/quizlive/${{code}}`);
+        if (!r.ok) throw new Error('Code introuvable.');
+        localStorage.setItem('quizlive_pseudo_' + code, pseudo);
+        window.location.href = `${{API}}/quizlive/jouer/${{code}}`;
+      }} catch(e) {{ erreurEl.textContent = e.message; }}
+    }}
+    window.quizRejoindre = quizRejoindre;
+  </script>
+</body>
+</html>""")
+
+@app.get("/quizlive/animer/{code}", response_class=HTMLResponse)
+async def page_quizlive_animer(request: Request, code: str):
+    base = _base_url(request)
+    code = code.upper()
+    partie = QL.obtenir_partie(code)
+    if not partie:
+        return HTMLResponse(f"""<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<title>Partie introuvable — Quiz Live</title><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>{_QUIZLIVE_STYLE}</style></head><body><main style="text-align:center;padding-top:60px;">
+<h1>😕 Partie introuvable</h1><p style="margin-top:10px;"><a href="{base}/quizlive" style="color:#fff;">← Retour</a></p>
+</main></body></html>""", status_code=404)
+
+    bot_username = await _bot_username()
+    lien_telegram = f"https://t.me/{bot_username}?start=quiz_{code}" if bot_username else ""
+
+    return HTMLResponse(f"""<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Animer — {code} — Quiz Live</title>
+<style>
+{_QUIZLIVE_STYLE}
+  main {{ max-width: 900px; align-items: center; justify-content: center; text-align: center; }}
+  .pin-affiche {{ font-size: 3.2rem; font-weight: 900; letter-spacing: .12em; background: rgba(255,255,255,.12); border-radius: 16px; padding: 14px 26px; margin: 16px 0; }}
+  .roster {{ display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 18px 0; max-width: 700px; }}
+  .roster span {{ background: rgba(255,255,255,.15); padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: .95rem; }}
+  .question-emoji {{ font-size: 4rem; margin: 10px 0; }}
+  .question-fr {{ font-size: 1.8rem; font-weight: 800; margin-bottom: 18px; }}
+  .grille-options {{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; max-width: 700px; }}
+  .opt {{ padding: 20px 14px; border-radius: 12px; font-size: 1.15rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; position: relative; overflow: hidden; }}
+  .opt .barre {{ position:absolute; left:0; top:0; bottom:0; background: rgba(0,0,0,.25); }}
+  .opt.correcte {{ outline: 4px solid #fff; }}
+  .progress {{ font-size: 1.1rem; opacity: .9; margin: 10px 0; }}
+  .timer-bar {{ width: 100%; max-width: 700px; height: 8px; background: rgba(255,255,255,.2); border-radius: 4px; overflow: hidden; margin: 10px 0 20px; }}
+  .timer-fill {{ height: 100%; background: #fff; transition: width .2s linear; }}
+  .podium {{ display: flex; align-items: flex-end; justify-content: center; gap: 14px; margin: 30px 0; }}
+  .podium-place {{ background: rgba(255,255,255,.15); border-radius: 12px 12px 0 0; padding: 14px; min-width: 100px; }}
+  .podium-1 {{ height: 150px; order: 2; background: #d89e00; }}
+  .podium-2 {{ height: 110px; order: 1; background: rgba(255,255,255,.25); }}
+  .podium-3 {{ height: 90px;  order: 3; background: #8b5a2b; }}
+  .liste-classement {{ width: 100%; max-width: 500px; text-align: left; }}
+  .liste-classement div {{ display: flex; justify-content: space-between; padding: 8px 14px; background: rgba(255,255,255,.08); border-radius: 8px; margin-bottom: 6px; }}
+</style>
+</head>
+<body>
+  <header><a href="{base}/quizlive" style="color:#fff;opacity:.7;">← Quiz Live</a></header>
+  <main id="ecran">
+    <div class="logo">🎮 Quiz Live</div>
+    <p>Chargement…</p>
+  </main>
+  <script>
+    const API   = {json.dumps(base)};
+    const CODE  = {json.dumps(code)};
+    const HOTE  = localStorage.getItem('quizlive_pseudo_' + CODE) || '';
+    const LIEN_TELEGRAM = {json.dumps(lien_telegram)};
+    const COULEURS = ['#e21b3c', '#1368ce', '#d89e00', '#26890c'];
+    const FORMES   = ['▲', '◆', '●', '■'];
+    let ws = null;
+    let dernierEtat = null;
+    let timerInterval = null;
+
+    if (!HOTE) {{
+      document.getElementById('ecran').innerHTML = '<p>Pseudo animateur introuvable. <a href="' + API + '/quizlive" style="color:#fff;">← Retour à l\\'accueil</a></p>';
+    }} else {{
+      connecter();
+    }}
+
+    function connecter() {{
+      const scheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
+      ws = new WebSocket(`${{scheme}}://${{window.location.host}}/ws/quizlive/${{CODE}}?pseudo=${{encodeURIComponent(HOTE)}}`);
+      ws.onmessage = (ev) => {{
+        const msg = JSON.parse(ev.data);
+        if (msg.type === 'erreur') {{
+          document.getElementById('ecran').innerHTML = `<p>⚠️ ${{msg.message}}</p>`;
+          return;
+        }}
+        if (msg.type === 'etat') {{ dernierEtat = msg.partie; rendre(); }}
+      }};
+      ws.onclose = () => setTimeout(connecter, 2000);
+    }}
+
+    function envoyer(obj) {{ if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); }}
+
+    function rendre() {{
+      const p = dernierEtat;
+      const ecran = document.getElementById('ecran');
+      if (timerInterval) {{ clearInterval(timerInterval); timerInterval = null; }}
+
+      if (p.statut === 'attente') {{
+        ecran.innerHTML = `
+          <div class="logo">🎮 Quiz Live Pular</div>
+          ${{LIEN_TELEGRAM ? `
+            <p style="opacity:.9;font-size:1.1rem;margin-top:4px;">📱 Rejoins sur <strong>Telegram</strong> :</p>
+            <p style="font-size:1.3rem;font-weight:800;margin:4px 0;">${{LIEN_TELEGRAM.replace('https://','')}}</p>
+            <p style="opacity:.75;font-size:.85rem;">ou tape <strong>/quiz ${{p.code}}</strong> à notre bot Telegram</p>
+          ` : `<p style="opacity:.85;">Rejoins sur <strong>${{window.location.host}}/quizlive</strong></p>`}}
+          <div class="pin-affiche">${{p.code}}</div>
+          <p style="margin-bottom:6px;">${{p.nb_joueurs}} joueur(s) connecté(s)</p>
+          <div class="roster">${{p.noms_joueurs.map(n => `<span>${{n}}</span>`).join('') || '<span style="opacity:.6;">En attente de joueurs…</span>'}}</div>
+          <button class="btn btn-principal" style="max-width:280px;" ${{p.nb_joueurs===0?'disabled':''}} onclick="envoyer({{type:'demarrer'}})">🚀 Démarrer (${{p.nb_questions}} questions)</button>
+        `;
+      }} else if (p.statut === 'en_cours') {{
+        const q = p.question_actuelle;
+        ecran.innerHTML = `
+          <p style="opacity:.8;">Question ${{q.index+1}} / ${{q.total}}</p>
+          <div class="question-emoji">${{q.emoji}}</div>
+          <div class="question-fr">${{q.fr}}</div>
+          <div class="timer-bar"><div class="timer-fill" id="timer-fill" style="width:100%;"></div></div>
+          <div class="grille-options">
+            ${{q.options.map((o,i) => `<div class="opt" style="background:${{COULEURS[i]}};"><span>${{FORMES[i]}}</span> ${{o}}</div>`).join('')}}
+          </div>
+          <div class="progress">${{p.nb_repondu}} / ${{p.nb_joueurs}} ont répondu</div>
+          <button class="btn btn-rejoindre" style="max-width:280px;" onclick="envoyer({{type:'reveler'}})">⏭️ Révéler la réponse</button>
+        `;
+        demarrerTimer(p.duree_question_ms, p.question_ouverte_le);
+      }} else if (p.statut === 'revelation') {{
+        const q = p.question_actuelle;
+        const maxCompte = Math.max(...q.comptage, 1);
+        ecran.innerHTML = `
+          <p style="opacity:.8;">Question ${{q.index+1}} / ${{q.total}} — réponse</p>
+          <div class="question-emoji">${{q.emoji}}</div>
+          <div class="question-fr">${{q.fr}}</div>
+          <div class="grille-options">
+            ${{q.options.map((o,i) => `
+              <div class="opt ${{o===q.reponse?'correcte':''}}" style="background:${{COULEURS[i]}};opacity:${{o===q.reponse?1:.55}};">
+                <div class="barre" style="width:${{Math.round(q.comptage[i]/maxCompte*100)}}%;"></div>
+                <span style="position:relative;">${{FORMES[i]}}</span> <span style="position:relative;">${{o}} ${{o===q.reponse?'✅':''}} (${{q.comptage[i]}})</span>
+              </div>`).join('')}}
+          </div>
+          <h3 style="margin:20px 0 10px;">🏆 Classement</h3>
+          <div class="liste-classement">
+            ${{p.classement.slice(0,5).map((j,i) => `<div><span>${{['🥇','🥈','🥉'][i]||(i+1)+'.'}} ${{j.pseudo}}</span><strong>${{j.score}}</strong></div>`).join('')}}
+          </div>
+          <button class="btn btn-principal" style="max-width:280px;margin-top:16px;" onclick="envoyer({{type:'suivant'}})">
+            ${{q.index+1 < q.total ? '➡️ Question suivante' : '🏁 Voir le podium final'}}
+          </button>
+        `;
+      }} else if (p.statut === 'termine') {{
+        const top3 = p.classement.slice(0,3);
+        ecran.innerHTML = `
+          <div class="logo">🏁 Partie terminée !</div>
+          <div class="podium">
+            ${{top3.map((j,i) => `
+              <div class="podium-place podium-${{i+1}}">
+                <div style="font-size:1.6rem;">${{['🥇','🥈','🥉'][i]}}</div>
+                <div style="font-weight:700;">${{j.pseudo}}</div>
+                <div style="font-size:.85rem;opacity:.85;">${{j.score}} pts</div>
+              </div>`).join('')}}
+          </div>
+          <h3 style="margin:14px 0 10px;">Classement complet</h3>
+          <div class="liste-classement">
+            ${{p.classement.map((j,i) => `<div><span>${{i+1}}. ${{j.pseudo}}</span><strong>${{j.score}}</strong></div>`).join('')}}
+          </div>
+          <p style="margin-top:20px;"><a href="${{API}}/quizlive" style="color:#fff;">🎬 Lancer une nouvelle partie</a> ·
+             <a href="${{API}}/quizlive/classement" style="color:#fff;">🏆 Palmarès des champions</a></p>
+        `;
+      }}
+    }}
+
+    function demarrerTimer(dureeMs, ouverteLe) {{
+      const fill = document.getElementById('timer-fill');
+      if (!fill || !ouverteLe) return;
+      const fin = new Date(ouverteLe).getTime() + dureeMs;
+      timerInterval = setInterval(() => {{
+        const reste = Math.max(0, fin - Date.now());
+        fill.style.width = Math.round(reste / dureeMs * 100) + '%';
+        if (reste <= 0) {{ clearInterval(timerInterval); envoyer({{type:'reveler'}}); }}
+      }}, 200);
+    }}
+  </script>
+</body>
+</html>""")
+
+@app.get("/quizlive/jouer/{code}", response_class=HTMLResponse)
+async def page_quizlive_jouer(request: Request, code: str):
+    base = _base_url(request)
+    code = code.upper()
+    partie = QL.obtenir_partie(code)
+    if not partie:
+        return HTMLResponse(f"""<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<title>Partie introuvable — Quiz Live</title><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>{_QUIZLIVE_STYLE}</style></head><body><main style="text-align:center;padding-top:60px;">
+<h1>😕 Partie introuvable</h1><p style="margin-top:10px;"><a href="{base}/quizlive" style="color:#fff;">← Retour</a></p>
+</main></body></html>""", status_code=404)
+
+    return HTMLResponse(f"""<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jouer — {code} — Quiz Live</title>
+<style>
+{_QUIZLIVE_STYLE}
+  main {{ justify-content: center; text-align: center; }}
+  .grille-formes {{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; margin-top: 20px; }}
+  .forme-btn {{
+    aspect-ratio: 1; border: none; border-radius: 16px; font-size: 3rem; color: #fff;
+    cursor: pointer; transition: transform .1s, opacity .15s;
+  }}
+  .forme-btn:active {{ transform: scale(.94); }}
+  .forme-btn:disabled {{ opacity: .35; cursor: default; }}
+  .resultat {{ font-size: 1.6rem; font-weight: 800; margin: 20px 0 8px; }}
+  .score-box {{ background: rgba(255,255,255,.1); border-radius: 12px; padding: 16px; margin-top: 14px; }}
+</style>
+</head>
+<body>
+  <header><a href="{base}/quizlive" style="color:#fff;opacity:.7;">← Quiz Live</a></header>
+  <main id="ecran">
+    <div class="logo">🎮 Quiz Live</div>
+    <p>Chargement…</p>
+  </main>
+  <script>
+    const API   = {json.dumps(base)};
+    const CODE  = {json.dumps(code)};
+    const MOI   = localStorage.getItem('quizlive_pseudo_' + CODE) || '';
+    const COULEURS = ['#e21b3c', '#1368ce', '#d89e00', '#26890c'];
+    const FORMES   = ['▲', '◆', '●', '■'];
+    let ws = null;
+    let dernierEtat = null;
+    let questionRepondue = -1;
+    let maReponseIndex = null;
+    let debutQuestion = 0;
+
+    if (!MOI) {{
+      document.getElementById('ecran').innerHTML = '<p>Pseudo introuvable. <a href="' + API + '/quizlive" style="color:#fff;">← Retour à l\\'accueil</a></p>';
+    }} else {{
+      connecter();
+    }}
+
+    function connecter() {{
+      const scheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
+      ws = new WebSocket(`${{scheme}}://${{window.location.host}}/ws/quizlive/${{CODE}}?pseudo=${{encodeURIComponent(MOI)}}`);
+      ws.onmessage = (ev) => {{
+        const msg = JSON.parse(ev.data);
+        if (msg.type === 'erreur') {{
+          document.getElementById('ecran').innerHTML = `<p>⚠️ ${{msg.message}}</p>`;
+          return;
+        }}
+        if (msg.type === 'etat') {{ dernierEtat = msg.partie; rendre(); }}
+      }};
+      ws.onclose = () => setTimeout(connecter, 2000);
+    }}
+
+    function envoyer(obj) {{ if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); }}
+
+    function repondre(index, option) {{
+      if (!dernierEtat || !dernierEtat.question_actuelle) return;
+      const q = dernierEtat.question_actuelle;
+      if (questionRepondue === q.index) return;
+      questionRepondue = q.index;
+      maReponseIndex = index;
+      const tempsMs = Date.now() - debutQuestion;
+      envoyer({{ type: 'reponse', q: q.index, reponse: option, temps_ms: tempsMs }});
+      rendre();
+    }}
+    window.repondre = repondre;
+
+    function rendre() {{
+      const p = dernierEtat;
+      const ecran = document.getElementById('ecran');
+
+      if (p.statut === 'attente') {{
+        ecran.innerHTML = `
+          <div class="logo">🎮 ${{MOI}}</div>
+          <p style="opacity:.85;margin-top:10px;">En attente que l'animateur démarre…</p>
+          <p style="margin-top:14px;font-size:.9rem;opacity:.7;">${{p.nb_joueurs}} joueur(s) dans la salle</p>
+        `;
+      }} else if (p.statut === 'en_cours') {{
+        const q = p.question_actuelle;
+        if (questionRepondue !== q.index) {{ debutQuestion = Date.now(); }}
+        const deraRepondu = questionRepondue === q.index;
+        ecran.innerHTML = `
+          <p style="opacity:.8;">Question ${{q.index+1}} / ${{q.total}}</p>
+          <div class="grille-formes">
+            ${{q.options.map((o,i) => `<button class="forme-btn" style="background:${{COULEURS[i]}};" ${{deraRepondu?'disabled':''}} onclick="repondre(${{i}}, ${{JSON.stringify(o)}})">${{FORMES[i]}}</button>`).join('')}}
+          </div>
+          <p style="margin-top:18px;font-size:1.1rem;">${{deraRepondu ? '✅ Réponse envoyée — en attente des autres…' : '👆 Choisis une forme !'}}</p>
+        `;
+      }} else if (p.statut === 'revelation') {{
+        const q = p.question_actuelle;
+        const correct = maReponseIndex !== null && q.options[maReponseIndex] === q.reponse;
+        const moi = p.classement.find(j => j.pseudo === MOI);
+        const rang = p.classement.findIndex(j => j.pseudo === MOI) + 1;
+        ecran.innerHTML = `
+          <div class="resultat" style="color:${{correct?'#26890c':'#e21b3c'}};">${{correct ? '✅ Bonne réponse !' : (maReponseIndex===null ? '⌛ Pas de réponse' : '❌ Mauvaise réponse')}}</div>
+          <p style="opacity:.85;">La bonne réponse était <strong>${{q.reponse}}</strong></p>
+          <div class="score-box">
+            <div style="font-size:1.4rem;font-weight:800;">${{moi ? moi.score : 0}} pts</div>
+            <div style="opacity:.8;font-size:.85rem;">Rang actuel : ${{rang || '?'}} / ${{p.classement.length}}</div>
+          </div>
+        `;
+        questionRepondue = -1;
+        maReponseIndex = null;
+      }} else if (p.statut === 'termine') {{
+        const rang = p.classement.findIndex(j => j.pseudo === MOI) + 1;
+        const moi = p.classement.find(j => j.pseudo === MOI);
+        const champion = rang === 1;
+        ecran.innerHTML = `
+          <div class="logo">${{champion ? '🏆 CHAMPION !' : '🏁 Partie terminée'}}</div>
+          <div class="resultat">${{champion ? '🥇' : rang===2 ? '🥈' : rang===3 ? '🥉' : '#'+rang}}</div>
+          <p style="font-size:1.1rem;">${{MOI}} — ${{moi ? moi.score : 0}} points</p>
+          <p style="opacity:.8;margin-top:6px;">Rang ${{rang || '?'}} sur ${{p.classement.length}}</p>
+          <p style="margin-top:24px;"><a href="${{API}}/quizlive" style="color:#fff;">🎮 Rejoindre une autre partie</a> ·
+             <a href="${{API}}/quizlive/classement" style="color:#fff;">🏆 Palmarès des champions</a></p>
+        `;
+      }}
+    }}
+  </script>
+</body>
+</html>""")
+
+@app.get("/quizlive/classement", response_class=HTMLResponse)
+async def page_quizlive_classement(request: Request):
+    base = _base_url(request)
+    champions = QL.classement_champions(50)
+
+    def _ligne(i: int, c: dict) -> str:
+        medaille = ["🥇", "🥈", "🥉"][i] if i < 3 else f"{i+1}."
+        return f"""
+        <div class="ligne-champion">
+          <span class="rang">{medaille}</span>
+          <span class="nom">{html.escape(c['pseudo'])}</span>
+          <span class="titres">{c['titres']} 🏆</span>
+          <span class="parties">{c['parties']} partie(s)</span>
+          <span class="points">{c['points']} pts</span>
+        </div>"""
+
+    liste_html = "".join(_ligne(i, c) for i, c in enumerate(champions)) if champions else \
+        '<p style="text-align:center;opacity:.7;padding:30px 0;">Aucune partie terminée pour l\'instant.</p>'
+
+    return HTMLResponse(f"""<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Palmarès des champions — Quiz Live Pular</title>
+<meta name="description" content="Le classement des champions du Quiz Live Pular IA — qui domine le vocabulaire pular ?">
+<style>
+{_QUIZLIVE_STYLE}
+  main {{ max-width: 640px; }}
+  .ligne-champion {{
+    display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.08);
+    border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; font-size: .9rem;
+  }}
+  .rang {{ width: 32px; font-weight: 800; font-size: 1.1rem; }}
+  .nom {{ flex: 1; font-weight: 700; }}
+  .titres {{ color: #ffd166; font-weight: 700; }}
+  .parties {{ opacity: .7; font-size: .78rem; }}
+  .points {{ font-weight: 700; min-width: 60px; text-align: right; }}
+</style>
+</head>
+<body>
+  <header><a href="{base}/quizlive" style="color:#fff;">← Quiz Live</a></header>
+  <main>
+    <div class="logo">🏆 Palmarès des champions</div>
+    <p style="text-align:center;opacity:.8;font-size:.85rem;margin-bottom:20px;">
+      Classement cumulé sur toutes les parties de Quiz Live — 🏆 = nombre de fois 1er.
+    </p>
+    {liste_html}
+  </main>
+</body>
+</html>""")
+
 @app.post("/api/exporter-dataset")
 async def api_exporter_dataset():
     """Exporte le corpus RAG en JSONL pour le fine-tuning LLM."""
