@@ -30,7 +30,8 @@ RUN pip install --no-cache-dir --timeout 300 \
     tqdm==4.66.4 \
     numpy==1.26.4 \
     groq>=0.9.0 \
-    gradio-client>=1.3.0
+    gradio-client>=1.3.0 \
+    qrcode[pil]==7.4.2
 
 # ── 4. ChromaDB + embeddings (lourd, isolé) ───────────────────────────────────
 # onnxruntime requis par chromadb SentenceTransformerEmbeddingFunction

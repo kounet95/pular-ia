@@ -2594,6 +2594,35 @@ async def api_quizlive_creer(
 async def api_quizlive_meta():
     return JSONResponse({"themes": QL.THEMES, "longueurs": QL.LONGUEURS_VALIDES, "formes": QL.FORMES})
 
+@app.get("/api/quizlive/{code}/qr.png")
+async def api_quizlive_qr(code: str):
+    """QR code du lien de démarrage Telegram (?start=quiz_<code>) — généré
+    côté serveur (pas un service tiers) pour rester fiable pendant un live :
+    rien à charger depuis l'extérieur au moment où l'animateur en a besoin."""
+    code = code.upper()
+    if not QL.obtenir_partie(code):
+        raise HTTPException(404, "Partie introuvable.")
+    username = await _bot_username()
+    if not username:
+        raise HTTPException(503, "Bot Telegram non configuré.")
+    lien = f"https://t.me/{username}?start=quiz_{code}"
+
+    def _generer_png() -> bytes:
+        try:
+            import qrcode
+        except ImportError:
+            raise RuntimeError("Génération QR indisponible (paquet 'qrcode' non installé).")
+        img = qrcode.make(lien, box_size=10, border=2)
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        return buf.getvalue()
+
+    try:
+        png = await asyncio.to_thread(_generer_png)
+    except RuntimeError as e:
+        raise HTTPException(503, str(e))
+    return Response(content=png, media_type="image/png", headers={"Cache-Control": "public, max-age=3600"})
+
 @app.get("/api/quizlive/classement/champions")
 async def api_quizlive_champions(limite: int = 20):
     return JSONResponse(await asyncio.to_thread(QL.classement_champions, limite))
@@ -2851,6 +2880,7 @@ async def page_quizlive_animer(request: Request, code: str):
 {_QUIZLIVE_STYLE}
   main {{ max-width: 900px; align-items: center; justify-content: center; text-align: center; }}
   .pin-affiche {{ font-size: 3.2rem; font-weight: 900; letter-spacing: .12em; background: rgba(255,255,255,.12); border-radius: 16px; padding: 14px 26px; margin: 16px 0; }}
+  .qr-telegram {{ background: #fff; padding: 10px; border-radius: 12px; margin: 10px 0; width: 160px; height: 160px; }}
   .roster {{ display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 18px 0; max-width: 700px; }}
   .roster span {{ background: rgba(255,255,255,.15); padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: .95rem; }}
   .question-emoji {{ font-size: 4rem; margin: 10px 0; }}
@@ -2919,8 +2949,9 @@ async def page_quizlive_animer(request: Request, code: str):
         ecran.innerHTML = `
           <div class="logo">🎮 Quiz Live Pular</div>
           ${{LIEN_TELEGRAM ? `
-            <p style="opacity:.9;font-size:1.1rem;margin-top:4px;">📱 Rejoins sur <strong>Telegram</strong> :</p>
-            <p style="font-size:1.3rem;font-weight:800;margin:4px 0;">${{LIEN_TELEGRAM.replace('https://','')}}</p>
+            <p style="opacity:.9;font-size:1.1rem;margin-top:4px;">📱 Scanne pour rejoindre sur <strong>Telegram</strong> :</p>
+            <img class="qr-telegram" src="${{API}}/api/quizlive/${{CODE}}/qr.png" alt="QR code Telegram">
+            <p style="font-size:1.1rem;font-weight:800;margin:4px 0;">${{LIEN_TELEGRAM.replace('https://','')}}</p>
             <p style="opacity:.75;font-size:.85rem;">ou tape <strong>/quiz ${{p.code}}</strong> à notre bot Telegram</p>
           ` : `<p style="opacity:.85;">Rejoins sur <strong>${{window.location.host}}/quizlive</strong></p>`}}
           <div class="pin-affiche">${{p.code}}</div>
