@@ -218,6 +218,29 @@ def supprimer_session(token: str):
     sessions = [s for s in _charger(FICHIER_SESSIONS) if s["token_hash"] != token_hash]
     _sauver(FICHIER_SESSIONS, sessions)
 
+def revoquer_sessions_compte(compte_id: str) -> int:
+    """Supprime toutes les sessions actives d'un compte (déconnexion forcée
+    partout, ex: en cas de compte suspecté compromis). Retourne le nombre de
+    sessions révoquées."""
+    sessions = _charger(FICHIER_SESSIONS)
+    avant = len(sessions)
+    sessions = [s for s in sessions if s["compte_id"] != compte_id]
+    _sauver(FICHIER_SESSIONS, sessions)
+    return avant - len(sessions)
+
+def supprimer_compte(compte_id: str) -> bool:
+    """Supprime un compte (admin) et révoque toutes ses sessions. Le
+    contenu déjà publié par ce compte (éditos, commentaires, duels...)
+    n'est pas supprimé — son `compte_id` devient simplement orphelin,
+    comme pour tout contenu créé anonymement."""
+    comptes = charger_comptes()
+    apres = [c for c in comptes if c["id"] != compte_id]
+    if len(apres) == len(comptes):
+        return False
+    sauver_comptes(apres)
+    revoquer_sessions_compte(compte_id)
+    return True
+
 # ── Connexion via Telegram (réutilise le bot déjà en place) ─────────────
 # Flux : le web génère un code court + lien https://t.me/<bot>?start=connexion_<code> ;
 # l'utilisateur l'ouvre, le bot confirme le code ; le web (qui interroge le

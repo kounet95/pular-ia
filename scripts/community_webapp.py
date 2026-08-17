@@ -1112,6 +1112,23 @@ async def api_comptes_liste(key: str = ""):
     comptes = sorted(comptes, key=lambda c: c.get("date_creation", ""), reverse=True)
     return JSONResponse([CP.compte_admin(c) for c in comptes])
 
+@app.delete("/api/comptes/{compte_id}")
+async def api_comptes_supprimer(compte_id: str, key: str = ""):
+    """Supprime un compte utilisateur — admin uniquement."""
+    _check_admin(key)
+    if not await asyncio.to_thread(CP.supprimer_compte, compte_id):
+        raise HTTPException(404, "Compte non trouvé.")
+    return JSONResponse({"ok": True})
+
+@app.post("/api/comptes/{compte_id}/deconnecter")
+async def api_comptes_deconnecter_partout(compte_id: str, key: str = ""):
+    """Révoque toutes les sessions actives d'un compte — admin uniquement."""
+    _check_admin(key)
+    if not CP.compte_par_id(compte_id):
+        raise HTTPException(404, "Compte non trouvé.")
+    n = await asyncio.to_thread(CP.revoquer_sessions_compte, compte_id)
+    return JSONResponse({"ok": True, "sessions_revoquees": n})
+
 @app.post("/api/comptes/telegram/code")
 async def api_comptes_telegram_code():
     """Génère un code court + lien d'invitation vers le bot pour se

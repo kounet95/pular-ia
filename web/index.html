@@ -1490,7 +1490,7 @@
         <button class="prof-tab" id="ptab-suggestions"          onclick="profSetTab('suggestions')">💡 Suggestions <span id="badge-suggestions" style="display:none;background:#c8a84b;color:#000;border-radius:10px;padding:1px 6px;font-size:.68rem;margin-left:3px;"></span></button>
         <button class="prof-tab" id="ptab-corrections"         onclick="profSetTab('corrections')">🔧 Corrections</button>
         <button class="prof-tab" id="ptab-contributeurs"       onclick="profSetTab('contributeurs')">👥 Contributeurs</button>
-        <button class="prof-tab" id="ptab-utilisateurs"        onclick="profSetTab('utilisateurs')">👤 Utilisateurs</button>
+        <button class="prof-tab" id="ptab-utilisateurs"        onclick="profSetTab('utilisateurs')" style="display:none;">👤 Utilisateurs</button>
         <button class="prof-tab" id="ptab-stats"               onclick="profSetTab('stats')">📊 Stats</button>
         <button class="prof-tab" id="ptab-entrainement"       onclick="profSetTab('entrainement')">🧠 Entraînement</button>
         <button class="prof-tab" id="ptab-dataset"            onclick="profSetTab('dataset')">📁 Dataset</button>
@@ -3421,7 +3421,18 @@ function edSauverAdminKey() {
   localStorage.setItem('edAdminKey', val);
   toast(val ? '🔑 Clé admin enregistrée' : '🔑 Clé admin effacée');
   edChargerEditos();
+  profAppliquerVisibiliteAdmin();
 }
+
+// L'onglet Utilisateurs contient des données personnelles (emails, identifiants
+// Telegram) : le bouton lui-même reste caché tant qu'aucune clé admin n'est
+// enregistrée, en plus de la vérification côté serveur sur chaque appel API.
+function profAppliquerVisibiliteAdmin() {
+  const tab = document.getElementById('ptab-utilisateurs');
+  if (tab) tab.style.display = edAdminKey() ? '' : 'none';
+}
+window.profAppliquerVisibiliteAdmin = profAppliquerVisibiliteAdmin;
+profAppliquerVisibiliteAdmin();
 
 const DEVISE_SYMBOLE = { eur: '€', usd: '$', gnf: 'FG', xof: 'FCFA' };
 const DEVISES_ZERO_DECIMALE = new Set(['gnf', 'xof']);
@@ -5522,8 +5533,37 @@ function usersRendre(liste) {
         🗓️ Inscrit: ${(u.date_creation||'').slice(0,10)||'?'}
         · 🔓 Dernière connexion: ${(u.date_derniere_connexion||'').slice(0,10)||'—'}
       </div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button onclick="usersDeconnecterPartout('${u.id}','${escJsAttr(u.pseudo)}')" style="padding:5px 10px;border-radius:6px;border:1px solid #2d5c3a;background:transparent;color:var(--gris);cursor:pointer;font-size:.72rem;">🔌 Déconnecter partout</button>
+        <button onclick="usersSupprimer('${u.id}','${escJsAttr(u.pseudo)}')" style="padding:5px 10px;border-radius:6px;border:1px solid #5c2d2d;background:transparent;color:#e8a0a0;cursor:pointer;font-size:.72rem;">🗑️ Supprimer le compte</button>
+      </div>
     </div>`).join('');
 }
+
+async function usersDeconnecterPartout(id, pseudo) {
+  const key = edAdminKey();
+  if (!confirm(`Déconnecter "${pseudo}" de toutes ses sessions actives ?`)) return;
+  try {
+    const r = await fetch(`${API}/api/comptes/${id}/deconnecter?key=${encodeURIComponent(key)}`, { method:'POST', headers:H });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
+    toast(`🔌 ${pseudo} déconnecté (${d.sessions_revoquees} session(s))`);
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+window.usersDeconnecterPartout = usersDeconnecterPartout;
+
+async function usersSupprimer(id, pseudo) {
+  const key = edAdminKey();
+  if (!confirm(`Supprimer définitivement le compte de "${pseudo}" ? Son contenu déjà publié (éditos, commentaires...) reste en ligne, mais il perdra son compte.`)) return;
+  try {
+    const r = await fetch(`${API}/api/comptes/${id}?key=${encodeURIComponent(key)}`, { method:'DELETE', headers:H });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
+    toast(`🗑️ Compte de ${pseudo} supprimé`);
+    profChargerUtilisateurs();
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+window.usersSupprimer = usersSupprimer;
 
 function usersFiltrer() {
   const q = document.getElementById('user-recherche').value.trim().toLowerCase();
