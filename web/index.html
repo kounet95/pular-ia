@@ -1490,6 +1490,7 @@
         <button class="prof-tab" id="ptab-suggestions"          onclick="profSetTab('suggestions')">💡 Suggestions <span id="badge-suggestions" style="display:none;background:#c8a84b;color:#000;border-radius:10px;padding:1px 6px;font-size:.68rem;margin-left:3px;"></span></button>
         <button class="prof-tab" id="ptab-corrections"         onclick="profSetTab('corrections')">🔧 Corrections</button>
         <button class="prof-tab" id="ptab-contributeurs"       onclick="profSetTab('contributeurs')">👥 Contributeurs</button>
+        <button class="prof-tab" id="ptab-utilisateurs"        onclick="profSetTab('utilisateurs')">👤 Utilisateurs</button>
         <button class="prof-tab" id="ptab-stats"               onclick="profSetTab('stats')">📊 Stats</button>
         <button class="prof-tab" id="ptab-entrainement"       onclick="profSetTab('entrainement')">🧠 Entraînement</button>
         <button class="prof-tab" id="ptab-dataset"            onclick="profSetTab('dataset')">📁 Dataset</button>
@@ -1739,6 +1740,20 @@
           Classement des contributeurs par nombre de contributions audio.
         </p>
         <div id="prof-liste-contributeurs">
+          <div style="color:var(--gris);font-size:.85rem;">Chargement...</div>
+        </div>
+      </div>
+
+      <!-- ── Panel : Utilisateurs (comptes email/mdp + Telegram) ── -->
+      <div id="ppanel-utilisateurs" class="prof-panel">
+        <p style="font-size:.82rem;color:var(--gris);margin-bottom:10px;">
+          Comptes créés sur le site — connexion par email/mot de passe ou via Telegram.
+        </p>
+        <div class="stat-grid" id="user-kpis" style="margin-bottom:12px;"></div>
+        <input id="user-recherche" type="text" placeholder="🔍 Chercher un pseudo ou un email…"
+          oninput="usersFiltrer()"
+          style="width:100%;padding:8px 10px;background:#0d1f15;border:1px solid #2d5c3a;border-radius:8px;color:var(--texte);font-size:.85rem;outline:none;margin-bottom:10px;">
+        <div id="prof-liste-utilisateurs">
           <div style="color:var(--gris);font-size:.85rem;">Chargement...</div>
         </div>
       </div>
@@ -4797,7 +4812,7 @@ cpteChargerMoi();
 let profOuvert = false;
 let motsProfCache = [];
 
-const PROF_TABS = ['ajouter','corriger','phrases','livres','valider','suggestions','corrections','contributeurs','stats','entrainement','dataset','telegram'];
+const PROF_TABS = ['ajouter','corriger','phrases','livres','valider','suggestions','corrections','contributeurs','utilisateurs','stats','entrainement','dataset','telegram'];
 
 function profTogglePanel() {
   profOuvert = !profOuvert;
@@ -4820,6 +4835,7 @@ function profSetTab(tab) {
   if (tab === 'suggestions')    profChargerSuggestions();
   if (tab === 'corrections')    profChargerCorrections();
   if (tab === 'contributeurs')  profChargerContributeurs();
+  if (tab === 'utilisateurs')   profChargerUtilisateurs();
   if (tab === 'entrainement')   profChargerEntrainement();
   if (tab === 'dataset')        dsSetTab('donnees');
   if (tab === 'telegram')       tgChargerStatus();
@@ -5457,6 +5473,66 @@ async function profChargerContributeurs() {
   }
 }
 window.profChargerContributeurs = profChargerContributeurs;
+
+// ── Utilisateurs (comptes) ─────────────────────────────────────
+let usersCache = [];
+
+async function profChargerUtilisateurs() {
+  const div = document.getElementById('prof-liste-utilisateurs');
+  div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;">⏳ Chargement...</div>';
+  const key = edAdminKey();
+  if (!key) {
+    div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;">🔑 Renseigne la clé admin (dans l\'onglet Éditorial) pour voir les utilisateurs.</div>';
+    return;
+  }
+  try {
+    const r = await fetch(`${API}/api/comptes?key=${encodeURIComponent(key)}`, { headers: H });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Erreur serveur');
+    usersCache = d;
+
+    const nbTelegram = d.filter(u => u.telegram_lie).length;
+    document.getElementById('user-kpis').innerHTML = [
+      {v: d.length,    l: '👤 Comptes au total'},
+      {v: nbTelegram,  l: '✈️ Liés à Telegram'},
+      {v: d.length - nbTelegram, l: '✉️ Email uniquement'},
+    ].map(x => `<div class="stat-card"><div class="sv">${x.v}</div><div class="sl">${x.l}</div></div>`).join('');
+
+    usersRendre(d);
+  } catch(e) {
+    div.innerHTML = `<div style="color:var(--rouge);font-size:.85rem;">❌ ${e.message}</div>`;
+  }
+}
+window.profChargerUtilisateurs = profChargerUtilisateurs;
+
+function usersRendre(liste) {
+  const div = document.getElementById('prof-liste-utilisateurs');
+  if (!liste.length) {
+    div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;text-align:center;padding:20px;">Aucun compte pour l\'instant.</div>';
+    return;
+  }
+  div.innerHTML = liste.map(u => `
+    <div style="background:#0a1a0f;border-radius:8px;padding:10px 14px;margin-bottom:6px;border:1px solid #1e3d28;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="color:var(--texte);font-size:.9rem;font-weight:600;">${escHtml(u.pseudo)}</div>
+        <span style="font-size:.7rem;color:${u.telegram_lie ? '#2AABEE' : 'var(--gris)'};">${u.telegram_lie ? '✈️ Telegram' + (u.telegram_username ? ' (@'+escHtml(u.telegram_username)+')' : '') : '✉️ Email'}</span>
+      </div>
+      <div style="font-size:.78rem;color:var(--gris);margin-top:2px;">${escHtml(u.email || '(pas d\'email)')}</div>
+      <div style="font-size:.7rem;color:var(--gris);margin-top:4px;">
+        🗓️ Inscrit: ${(u.date_creation||'').slice(0,10)||'?'}
+        · 🔓 Dernière connexion: ${(u.date_derniere_connexion||'').slice(0,10)||'—'}
+      </div>
+    </div>`).join('');
+}
+
+function usersFiltrer() {
+  const q = document.getElementById('user-recherche').value.trim().toLowerCase();
+  if (!q) { usersRendre(usersCache); return; }
+  usersRendre(usersCache.filter(u =>
+    (u.pseudo||'').toLowerCase().includes(q) || (u.email||'').toLowerCase().includes(q)
+  ));
+}
+window.usersFiltrer = usersFiltrer;
 
 // ═══════════════════════════════════════════════════════════════
 // ENTRAÎNEMENT — fiabilité + export Whisper

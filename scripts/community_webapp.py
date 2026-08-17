@@ -1104,6 +1104,14 @@ async def api_comptes_moi(request: Request):
         raise HTTPException(401, "Non connecté.")
     return JSONResponse(CP.compte_public(compte))
 
+@app.get("/api/comptes")
+async def api_comptes_liste(key: str = ""):
+    """Liste des comptes utilisateurs (email/mot de passe + Telegram) — admin uniquement."""
+    _check_admin(key)
+    comptes = await asyncio.to_thread(CP.charger_comptes)
+    comptes = sorted(comptes, key=lambda c: c.get("date_creation", ""), reverse=True)
+    return JSONResponse([CP.compte_admin(c) for c in comptes])
+
 @app.post("/api/comptes/telegram/code")
 async def api_comptes_telegram_code():
     """Génère un code court + lien d'invitation vers le bot pour se

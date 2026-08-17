@@ -83,6 +83,20 @@ def compte_public(c: dict) -> dict:
         "date_creation": c.get("date_creation", ""),
     }
 
+def compte_admin(c: dict) -> dict:
+    """Vue pour le panneau admin : quelques détails de plus que compte_public
+    (dernière connexion, username Telegram) — toujours sans le hash du mot
+    de passe, aucune raison légitime pour l'admin de le voir non plus."""
+    return {
+        "id":                      c["id"],
+        "pseudo":                  c["pseudo"],
+        "email":                   c.get("email", ""),
+        "telegram_lie":            bool(c.get("telegram_id")),
+        "telegram_username":       c.get("telegram_username") or "",
+        "date_creation":           c.get("date_creation", ""),
+        "date_derniere_connexion": c.get("date_derniere_connexion", ""),
+    }
+
 def creer_compte(pseudo: str, email: str, mot_de_passe: str) -> dict:
     pseudo = pseudo.strip()[:40]
     email = email.strip().lower()[:120]
