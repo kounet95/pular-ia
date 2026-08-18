@@ -835,7 +835,15 @@ async def _surveiller_don(ctx: ContextTypes.DEFAULT_TYPE, chat_id: int, don_id: 
 # (un seul sondage partagé par tous les joueurs Telegram d'une même partie,
 # pas un par joueur) et pousse les mises à jour dans Telegram à chaque
 # changement d'état — même principe que la surveillance de paiement.
-_QUIZLIVE_FORMES = ["▲", "◆", "●", "■"]
+# Telegram ne permet pas de personnaliser la couleur de fond d'un bouton
+# inline (contrairement au web) — un "▲" texte s'affiche dans la couleur
+# neutre du thème du client, identique pour tous les boutons. Les emojis
+# "forme colorée" ci-dessous sont eux de vraies images colorées standard
+# (même rendu sur tous les clients Telegram), donc le seul moyen de
+# reproduire le repère visuel rouge/bleu/jaune/vert de l'écran animateur.
+# Même ordre que COULEURS/FORMES côté web (triangle=rouge, losange=bleu,
+# cercle=jaune, carré=vert) pour que ça corresponde à l'écran partagé.
+_QUIZLIVE_FORMES = ["🔺", "🔷", "🟡", "🟩"]
 
 async def cmd_quiz(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not ctx.args:
