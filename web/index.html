@@ -740,6 +740,18 @@
         <p>2. Envoie le message pré-rempli</p>
         <p style="margin-top:6px;color:var(--or);">⏳ En attente de confirmation...</p>
       </div>
+
+      <!-- Stripe Connect — vendeur de livres -->
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid #2d5c3a;">
+        <p style="font-size:.82rem;color:var(--gris);margin-bottom:8px;">
+          💳 Tu vends un livre ? Connecte ton compte Stripe pour recevoir ta part automatiquement à chaque achat.
+        </p>
+        <p id="cpte-stripe-statut" style="font-size:.82rem;margin-bottom:8px;"></p>
+        <button id="cpte-stripe-btn" onclick="cpteStripeConnecter()" style="
+          width:100%;padding:9px;border-radius:8px;border:1px solid #635bff;
+          background:transparent;color:#a09aff;font-weight:600;cursor:pointer;font-size:.8rem;
+        ">💳 Connecter mon compte Stripe</button>
+      </div>
     </div>
   </div>
 
@@ -1126,6 +1138,7 @@
       <div style="margin-top:10px;">
         <input class="input-livre" id="ed-liv-titre" type="text" placeholder="Titre du livre *" maxlength="150"/>
         <input class="input-livre" id="ed-liv-auteur" type="text" placeholder="Auteur *" maxlength="120"/>
+        <input class="input-livre" id="ed-liv-auteur-email" type="email" placeholder="Email du compte de l'auteur (optionnel — pour le partage automatique via Stripe)" maxlength="120"/>
         <textarea class="input-livre" id="ed-liv-desc" placeholder="Description / résumé" style="min-height:70px;resize:vertical;" maxlength="1000"></textarea>
         <select class="input-livre" id="ed-liv-devise" style="cursor:pointer;" onchange="edMajDevisePas()">
           <option value="gnf">GNF (Guinée)</option>
@@ -3511,6 +3524,7 @@ async function edAjouterLivre() {
     const fd = new FormData();
     fd.append('titre', titre);
     fd.append('auteur', auteur);
+    fd.append('auteur_email', document.getElementById('ed-liv-auteur-email').value.trim());
     fd.append('description', document.getElementById('ed-liv-desc').value.trim());
     fd.append('devise', document.getElementById('ed-liv-devise').value);
     fd.append('prix_numerique', prixNum);
@@ -3525,7 +3539,7 @@ async function edAjouterLivre() {
     if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
 
     toast(`✅ "${titre}" ajouté au catalogue!`);
-    ['ed-liv-titre','ed-liv-auteur','ed-liv-desc','ed-liv-prix-num','ed-liv-prix-pap'].forEach(id => document.getElementById(id).value = '');
+    ['ed-liv-titre','ed-liv-auteur','ed-liv-auteur-email','ed-liv-desc','ed-liv-prix-num','ed-liv-prix-pap'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('ed-liv-couverture').value = '';
     document.getElementById('ed-liv-fichier-num').value = '';
     edChargerLivres();
@@ -4471,8 +4485,38 @@ function cpteAfficherEtat() {
     document.getElementById('cpte-mon-pseudo').textContent = window.compteActuel.pseudo;
     document.getElementById('cpte-mon-email').textContent = window.compteActuel.email || '(compte lié à Telegram)';
     document.getElementById('cpte-lier-tg-btn').style.display = window.compteActuel.telegram_lie ? 'none' : 'block';
+
+    const statutEl = document.getElementById('cpte-stripe-statut');
+    const btnEl = document.getElementById('cpte-stripe-btn');
+    if (window.compteActuel.stripe_actif) {
+      statutEl.innerHTML = '✅ Compte Stripe actif — tu reçois ta part automatiquement.';
+      statutEl.style.color = '#4caf7d';
+      btnEl.textContent = '💳 Gérer mon compte Stripe';
+    } else if (window.compteActuel.stripe_lie) {
+      statutEl.innerHTML = '⏳ Inscription Stripe incomplète.';
+      statutEl.style.color = 'var(--or)';
+      btnEl.textContent = '💳 Terminer mon inscription Stripe';
+    } else {
+      statutEl.textContent = '';
+      btnEl.textContent = '💳 Connecter mon compte Stripe';
+    }
   }
 }
+
+async function cpteStripeConnecter() {
+  const btn = document.getElementById('cpte-stripe-btn');
+  btn.disabled = true;
+  try {
+    const r = await fetch(`${API}/api/comptes/stripe/connecter`, { method: 'POST', headers: H });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Erreur serveur');
+    window.location.href = d.lien;
+  } catch(e) {
+    toast('❌ ' + e.message, true);
+    btn.disabled = false;
+  }
+}
+window.cpteStripeConnecter = cpteStripeConnecter;
 
 async function cpteChargerMoi() {
   try {

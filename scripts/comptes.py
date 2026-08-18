@@ -80,6 +80,8 @@ def compte_public(c: dict) -> dict:
         "pseudo":        c["pseudo"],
         "email":         c.get("email", ""),
         "telegram_lie":  bool(c.get("telegram_id")),
+        "stripe_lie":    bool(c.get("stripe_account_id")),
+        "stripe_actif":  bool(c.get("stripe_actif")),
         "date_creation": c.get("date_creation", ""),
     }
 
@@ -93,6 +95,8 @@ def compte_admin(c: dict) -> dict:
         "email":                   c.get("email", ""),
         "telegram_lie":            bool(c.get("telegram_id")),
         "telegram_username":       c.get("telegram_username") or "",
+        "stripe_lie":              bool(c.get("stripe_account_id")),
+        "stripe_actif":            bool(c.get("stripe_actif")),
         "date_creation":           c.get("date_creation", ""),
         "date_derniere_connexion": c.get("date_derniere_connexion", ""),
     }
@@ -119,6 +123,8 @@ def creer_compte(pseudo: str, email: str, mot_de_passe: str) -> dict:
         "mot_de_passe_hash":       _hacher_mot_de_passe(mot_de_passe),
         "telegram_id":             None,
         "telegram_username":       None,
+        "stripe_account_id":       None,
+        "stripe_actif":            False,
         "date_creation":           maintenant,
         "date_derniere_connexion": maintenant,
     }
@@ -144,6 +150,32 @@ def compte_par_id(compte_id: str) -> dict | None:
 def compte_par_telegram(telegram_id: int) -> dict | None:
     return next((c for c in charger_comptes() if c.get("telegram_id") == telegram_id), None)
 
+def compte_par_email(email: str) -> dict | None:
+    email = email.strip().lower()
+    return next((c for c in charger_comptes() if c.get("email") == email), None)
+
+def definir_stripe_account(compte_id: str, stripe_account_id: str) -> bool:
+    """Associe un compte Stripe Connect (Express) au compte utilisateur —
+    stripe_actif repart à False, à confirmer ensuite via l'API Stripe une
+    fois l'auteur revenu de l'onboarding hébergé par Stripe."""
+    comptes = charger_comptes()
+    for c in comptes:
+        if c["id"] == compte_id:
+            c["stripe_account_id"] = stripe_account_id
+            c["stripe_actif"] = False
+            sauver_comptes(comptes)
+            return True
+    return False
+
+def definir_stripe_actif(compte_id: str, actif: bool) -> bool:
+    comptes = charger_comptes()
+    for c in comptes:
+        if c["id"] == compte_id:
+            c["stripe_actif"] = actif
+            sauver_comptes(comptes)
+            return True
+    return False
+
 def creer_compte_telegram(pseudo: str, telegram_id: int, telegram_username: str | None) -> dict:
     """Crée un compte sans mot de passe pour un utilisateur qui se connecte
     directement via Telegram (pas encore de compte email lié)."""
@@ -161,6 +193,8 @@ def creer_compte_telegram(pseudo: str, telegram_id: int, telegram_username: str 
         "mot_de_passe_hash":       "",
         "telegram_id":             telegram_id,
         "telegram_username":       telegram_username,
+        "stripe_account_id":       None,
+        "stripe_actif":            False,
         "date_creation":           maintenant,
         "date_derniere_connexion": maintenant,
     }

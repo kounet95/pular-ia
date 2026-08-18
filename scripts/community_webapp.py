@@ -1104,6 +1104,61 @@ async def api_comptes_moi(request: Request):
         raise HTTPException(401, "Non connecté.")
     return JSONResponse(CP.compte_public(compte))
 
+# ── Stripe Connect (vendeurs de livres) ─────────────────────────────────────
+# Un compte connecté (Express) par utilisateur — Stripe héberge toute
+# l'inscription (identité, IBAN...), ce serveur ne voit jamais ces données,
+# juste l'id du compte Stripe et si l'onboarding est terminé.
+
+@app.post("/api/comptes/stripe/connecter")
+async def api_comptes_stripe_connecter(request: Request):
+    """Crée (si besoin) le compte Stripe Connect de l'utilisateur connecté
+    et renvoie un lien d'inscription hébergé par Stripe."""
+    compte = await _compte_courant(request)
+    if not compte:
+        raise HTTPException(401, "Connecte-toi d'abord.")
+    base = _base_url(request)
+    try:
+        stripe_account_id = compte.get("stripe_account_id")
+        if not stripe_account_id:
+            stripe_account_id = await asyncio.to_thread(EE.creer_compte_stripe_connecte, compte.get("email", ""))
+            await asyncio.to_thread(CP.definir_stripe_account, compte["id"], stripe_account_id)
+        lien = await asyncio.to_thread(
+            EE.creer_lien_onboarding_stripe, stripe_account_id,
+            f"{base}/stripe/retour", f"{base}/stripe/retour",
+        )
+    except RuntimeError as e:
+        raise HTTPException(503, str(e))
+    except Exception as e:
+        log.error(f"Erreur création/onboarding Stripe Connect pour {compte['id']}: {e}")
+        raise HTTPException(500, "Erreur lors de la connexion à Stripe.")
+    return JSONResponse({"ok": True, "lien": lien})
+
+@app.get("/stripe/retour", response_class=HTMLResponse)
+async def page_stripe_retour(request: Request):
+    """Page de retour après l'inscription Stripe hébergée — revérifie le
+    statut auprès de Stripe (l'auteur a pu quitter avant la fin) puis
+    redirige vers le site."""
+    base = _base_url(request)
+    compte = await _compte_courant(request)
+    statut_html = "⚠️ Connecte-toi pour voir le statut de ton compte Stripe."
+    if compte and compte.get("stripe_account_id"):
+        try:
+            actif = await asyncio.to_thread(EE.verifier_compte_stripe_actif, compte["stripe_account_id"])
+            await asyncio.to_thread(CP.definir_stripe_actif, compte["id"], actif)
+            statut_html = "✅ Ton compte Stripe est actif — tu peux recevoir des paiements !" if actif else \
+                "⏳ Inscription incomplète — reviens sur « Mon compte » pour la terminer."
+        except Exception as e:
+            log.warning(f"Vérification statut Stripe Connect {compte['id']}: {e}")
+            statut_html = "⚠️ Impossible de vérifier le statut pour l'instant, réessaie dans un instant."
+    return HTMLResponse(f"""<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<title>Compte Stripe — Pular IA</title><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="background:#0d1f15;color:#e8f5e9;font-family:system-ui,sans-serif;
+text-align:center;padding:60px 20px;">
+<h1 style="color:#c8a84b;">💳 Compte Stripe</h1>
+<p style="margin-top:14px;">{statut_html}</p>
+<p style="margin-top:24px;"><a href="{base}/#carte-compte" style="color:#c8a84b;">← Retour à Mon compte</a></p>
+</body></html>""")
+
 @app.get("/api/comptes")
 async def api_comptes_liste(key: str = ""):
     """Liste des comptes utilisateurs (email/mot de passe + Telegram) — admin uniquement."""
@@ -1200,6 +1255,7 @@ async def api_editorial_livres():
 async def api_editorial_ajouter_livre(
     titre:              str = Form(...),
     auteur:             str = Form(""),
+    auteur_email:       str = Form(""),
     description:        str = Form(""),
     devise:             str = Form("gnf"),
     prix_numerique:     str = Form(""),   # chaîne vide = format non proposé
@@ -1208,10 +1264,21 @@ async def api_editorial_ajouter_livre(
     couverture:         UploadFile | None = File(None),
     fichier_numerique:  UploadFile | None = File(None),
 ):
-    """Ajoute un livre au catalogue de vente (admin uniquement)."""
+    """Ajoute un livre au catalogue de vente (admin uniquement).
+    `auteur_email` (optionnel) : si elle correspond à un compte existant,
+    relie le livre à ce compte pour le partage automatique des revenus une
+    fois son Stripe Connect actif — sinon la vente fonctionne pareil, sans
+    partage automatique (répartition manuelle, comme avant)."""
     _check_admin(key)
     if not titre.strip():
         raise HTTPException(400, "Titre requis.")
+
+    auteur_compte_id = None
+    if auteur_email.strip():
+        compte_auteur = await asyncio.to_thread(CP.compte_par_email, auteur_email.strip())
+        if not compte_auteur:
+            raise HTTPException(400, "Aucun compte trouvé avec cet email — l'auteur doit d'abord créer un compte sur le site.")
+        auteur_compte_id = compte_auteur["id"]
     devise = devise.lower()
     if devise not in EE.DEVISES_ACCEPTEES:
         raise HTTPException(400, f"Devise non supportée. Acceptées: {EE.DEVISES_ACCEPTEES}")
@@ -1256,7 +1323,7 @@ async def api_editorial_ajouter_livre(
     try:
         fiche = await asyncio.to_thread(
             EE.ajouter_livre, titre.strip(), auteur.strip(), description.strip(), devise,
-            couverture_nom, prix_num_centimes, prix_pap_centimes, fichier_nom,
+            couverture_nom, prix_num_centimes, prix_pap_centimes, fichier_nom, auteur_compte_id,
         )
     except ValueError as e:
         raise HTTPException(400, str(e))
@@ -1496,9 +1563,19 @@ async def api_editorial_checkout(
         zone = next((z for z in zones if z["id"] == zone_id.strip()), None)
         if not zone:
             raise HTTPException(404, "Zone de livraison non trouvée.")
+
+    # Partage automatique des revenus si l'auteur a un compte Stripe Connect
+    # actif — sinon la vente se fait pareil, sans partage (comme avant).
+    stripe_account_id = None
+    if livre.get("auteur_compte_id"):
+        compte_auteur = await asyncio.to_thread(CP.compte_par_id, livre["auteur_compte_id"])
+        if compte_auteur and compte_auteur.get("stripe_actif") and compte_auteur.get("stripe_account_id"):
+            stripe_account_id = compte_auteur["stripe_account_id"]
+
     try:
         session = await asyncio.to_thread(
             EE.creer_session_paiement, livre, format_achete, zone, origin, email.strip(),
+            stripe_account_id,
         )
     except ValueError as e:
         raise HTTPException(400, str(e))

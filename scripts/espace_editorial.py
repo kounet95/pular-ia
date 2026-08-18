@@ -107,6 +107,7 @@ def prix_format(livre: dict, format_achete: str) -> int | None:
 
 def creer_session_paiement(
     livre: dict, format_achete: str, zone: dict | None, origin: str, email: str = "",
+    stripe_account_id: str | None = None,
 ) -> "stripe.checkout.Session":
     """
     Crée une session de paiement Stripe Checkout pour un format précis d'un
@@ -114,6 +115,14 @@ def creer_session_paiement(
     pour le papier) ajoute une ligne de frais de livraison séparée — la
     livraison reste possible sans zone définie (retrait / à organiser),
     auquel cas aucun frais n'est ajouté.
+
+    `stripe_account_id` : si l'auteur a un compte Stripe Connect actif, la
+    part qui lui revient (REPARTITION_REVENUS["auteur"]) est transférée
+    automatiquement vers son compte via une "destination charge" — calculée
+    uniquement sur le prix du livre, jamais sur les frais de livraison (qui
+    couvrent un coût réel, pas un revenu à partager). Sans compte connecté
+    (ou compte pas encore actif), la totalité reste sur le compte de la
+    plateforme, comme avant — la répartition se fait alors manuellement.
     """
     stripe = stripe_configure()
     if format_achete not in FORMATS_LIVRE:
@@ -158,7 +167,50 @@ def creer_session_paiement(
     )
     if email:
         params["customer_email"] = email
+    if stripe_account_id:
+        part_auteur = round(prix * REPARTITION_REVENUS["auteur"] / 100)
+        params["payment_intent_data"] = {
+            "transfer_data": {"destination": stripe_account_id, "amount": part_auteur},
+        }
     return stripe.checkout.Session.create(**params)
+
+# ── Stripe Connect (comptes vendeurs) ───────────────────────────────────────
+# Chaque auteur/vendeur connecte son propre compte Stripe Express : Stripe
+# héberge entièrement l'inscription (identité, coordonnées bancaires — KYC),
+# ce projet n'a jamais accès à ces données. Une fois le compte actif
+# (charges_enabled), les achats liés à cet auteur sont automatiquement
+# partagés via creer_session_paiement ci-dessus.
+
+def creer_compte_stripe_connecte(email: str = "") -> str:
+    """Crée un compte Stripe Express vide, à faire finaliser par l'auteur via
+    un lien d'onboarding (creer_lien_onboarding_stripe). Retourne l'id du
+    compte Stripe (à sauvegarder sur le compte utilisateur)."""
+    stripe = stripe_configure()
+    params = {"type": "express"}
+    if email:
+        params["email"] = email
+    compte = stripe.Account.create(**params)
+    return compte.id
+
+def creer_lien_onboarding_stripe(stripe_account_id: str, return_url: str, refresh_url: str) -> str:
+    """Lien hébergé par Stripe où l'auteur complète (ou reprend) son
+    inscription. À usage unique et de courte durée — en générer un nouveau
+    à chaque fois plutôt que de le garder en cache."""
+    stripe = stripe_configure()
+    lien = stripe.AccountLink.create(
+        account=stripe_account_id,
+        return_url=return_url,
+        refresh_url=refresh_url,
+        type="account_onboarding",
+    )
+    return lien.url
+
+def verifier_compte_stripe_actif(stripe_account_id: str) -> bool:
+    """True si l'auteur a fini son inscription et peut recevoir des
+    paiements (Stripe a validé son identité/ses coordonnées bancaires)."""
+    stripe = stripe_configure()
+    compte = stripe.Account.retrieve(stripe_account_id)
+    return bool(compte.charges_enabled)
 
 def verifier_signature_webhook(payload: bytes, sig_header: str):
     """Vérifie la signature d'un événement webhook Stripe. Lève une exception si invalide."""
@@ -340,12 +392,17 @@ def ajouter_livre(
     prix_numerique_centimes: int | None = None,
     prix_papier_centimes: int | None = None,
     fichier_numerique_nom: str = "",
+    auteur_compte_id: str | None = None,
 ) -> dict:
     """
     Un livre peut être proposé en numérique, en papier, ou les deux — chacun
     avec son propre prix (`None` = format non proposé pour ce livre).
     `fichier_numerique_nom` : fichier PDF/EPUB livré automatiquement après
     paiement pour le format numérique.
+    `auteur_compte_id` : compte utilisateur (comptes.py) de l'auteur, si
+    connu — sert à retrouver son compte Stripe Connect au moment du
+    paiement pour partager automatiquement les revenus. Optionnel : sans
+    ça, la vente fonctionne pareil, juste sans partage automatique.
     """
     if prix_numerique_centimes is None and prix_papier_centimes is None:
         raise ValueError("Choisis au moins un format (numérique ou papier) avec un prix.")
@@ -356,6 +413,7 @@ def ajouter_livre(
         "id":                      str(uuid.uuid4())[:8],
         "titre":                   titre,
         "auteur":                  auteur or "Auteur inconnu",
+        "auteur_compte_id":        auteur_compte_id,
         "description":             description,
         "devise":                  devise,
         "couverture":              couverture_nom,
