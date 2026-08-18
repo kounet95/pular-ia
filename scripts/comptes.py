@@ -35,6 +35,7 @@ DOSSIER_COMPTES.mkdir(parents=True, exist_ok=True)
 
 DUREE_SESSION        = timedelta(days=30)
 DUREE_CODE_TELEGRAM  = timedelta(minutes=10)
+DUREE_RESET_MDP      = timedelta(minutes=30)
 
 REGEX_EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -261,6 +262,60 @@ def revoquer_sessions_compte(compte_id: str) -> int:
     sessions = [s for s in sessions if s["compte_id"] != compte_id]
     _sauver(FICHIER_SESSIONS, sessions)
     return avant - len(sessions)
+
+# ── Mot de passe oublié ──────────────────────────────────────────────────
+# Jeton stocké haché sur le compte lui-même (comme les sessions) — un seul
+# jeton actif à la fois par compte, le précédent devient invalide dès qu'un
+# nouveau est demandé.
+
+def generer_token_reset(email: str) -> tuple[dict, str] | None:
+    """Génère un jeton de réinitialisation pour le compte associé à cet
+    email. None si aucun compte avec un mot de passe pour cet email
+    (compte inexistant, ou compte 100% Telegram sans mot de passe) —
+    l'appelant ne doit jamais révéler cette distinction au client, pour ne
+    pas laisser deviner quels emails sont enregistrés."""
+    compte = compte_par_email(email)
+    if not compte or not compte.get("mot_de_passe_hash"):
+        return None
+    jeton = secrets.token_urlsafe(32)
+    comptes = charger_comptes()
+    for c in comptes:
+        if c["id"] == compte["id"]:
+            c["reset_token_hash"]   = hashlib.sha256(jeton.encode()).hexdigest()
+            c["reset_token_expire"] = (datetime.now() + DUREE_RESET_MDP).isoformat()
+            sauver_comptes(comptes)
+            compte = c
+            break
+    return compte, jeton
+
+def compte_par_reset_token(jeton: str) -> dict | None:
+    token_hash = hashlib.sha256(jeton.encode()).hexdigest()
+    maintenant = datetime.now().isoformat()
+    return next(
+        (c for c in charger_comptes()
+         if c.get("reset_token_hash") == token_hash and c.get("reset_token_expire", "") > maintenant),
+        None,
+    )
+
+def reinitialiser_mot_de_passe(jeton: str, nouveau_mdp: str) -> bool:
+    """Change le mot de passe si le jeton est valide, le consomme (usage
+    unique), et déconnecte le compte de toutes ses sessions actives —
+    précaution standard après un changement de mot de passe."""
+    if len(nouveau_mdp) < 6:
+        raise ValueError("Mot de passe trop court (6 caractères minimum).")
+    compte = compte_par_reset_token(jeton)
+    if not compte:
+        return False
+    comptes = charger_comptes()
+    for c in comptes:
+        if c["id"] == compte["id"]:
+            c["mot_de_passe_hash"] = _hacher_mot_de_passe(nouveau_mdp)
+            c.pop("reset_token_hash", None)
+            c.pop("reset_token_expire", None)
+            sauver_comptes(comptes)
+            break
+    revoquer_sessions_compte(compte["id"])
+    return True
 
 def supprimer_compte(compte_id: str) -> bool:
     """Supprime un compte (admin) et révoque toutes ses sessions. Le

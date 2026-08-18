@@ -691,6 +691,22 @@
           width:100%;padding:10px;border-radius:8px;border:none;margin-top:4px;
           background:#8b1e5c;color:white;font-weight:700;cursor:pointer;font-size:.88rem;
         ">Se connecter</button>
+        <p style="text-align:right;margin-top:6px;">
+          <a href="#" onclick="cpteMdpOublieOuvrir();return false;" style="font-size:.75rem;color:var(--gris);">Mot de passe oublié ?</a>
+        </p>
+      </div>
+
+      <div id="cpte-form-mdp-oublie" style="display:none;">
+        <p style="font-size:.8rem;color:var(--gris);margin-bottom:8px;">Entre ton email, on t'envoie un lien de réinitialisation.</p>
+        <input class="input-livre" id="cpte-mo-email" type="email" placeholder="Email" maxlength="120"/>
+        <button onclick="cpteMdpOublieEnvoyer()" style="
+          width:100%;padding:10px;border-radius:8px;border:none;margin-top:4px;
+          background:#8b1e5c;color:white;font-weight:700;cursor:pointer;font-size:.88rem;
+        ">Envoyer le lien</button>
+        <p style="text-align:center;margin-top:8px;">
+          <a href="#" onclick="cpteMdpOublieFermer();return false;" style="font-size:.75rem;color:var(--gris);">← Retour à la connexion</a>
+        </p>
+        <p id="cpte-mo-msg" style="display:none;font-size:.78rem;margin-top:8px;"></p>
       </div>
 
       <div id="cpte-form-inscription" style="display:none;">
@@ -4561,6 +4577,41 @@ async function cpteConnexion() {
     toast('✅ Connecté — bienvenue ' + d.compte.pseudo + ' !');
   } catch(e) { cpteErreur(e.message); }
 }
+
+function cpteMdpOublieOuvrir() {
+  document.getElementById('cpte-form-connexion').style.display = 'none';
+  document.getElementById('cpte-form-mdp-oublie').style.display = 'block';
+  document.getElementById('cpte-mo-email').value = document.getElementById('cpte-co-email').value.trim();
+  document.getElementById('cpte-mo-msg').style.display = 'none';
+}
+window.cpteMdpOublieOuvrir = cpteMdpOublieOuvrir;
+
+function cpteMdpOublieFermer() {
+  document.getElementById('cpte-form-mdp-oublie').style.display = 'none';
+  document.getElementById('cpte-form-connexion').style.display = 'block';
+}
+window.cpteMdpOublieFermer = cpteMdpOublieFermer;
+
+async function cpteMdpOublieEnvoyer() {
+  const email = document.getElementById('cpte-mo-email').value.trim();
+  const msg = document.getElementById('cpte-mo-msg');
+  if (!email) { msg.style.display = 'block'; msg.style.color = '#e05a5a'; msg.textContent = 'Entre ton email.'; return; }
+  try {
+    const fd = new FormData();
+    fd.append('email', email);
+    const r = await fetch(`${API}/api/comptes/mot-de-passe-oublie`, { method: 'POST', body: fd, headers: H });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Erreur serveur');
+    msg.style.display = 'block';
+    msg.style.color = '#4caf7d';
+    msg.textContent = d.message;
+  } catch(e) {
+    msg.style.display = 'block';
+    msg.style.color = '#e05a5a';
+    msg.textContent = '❌ ' + e.message;
+  }
+}
+window.cpteMdpOublieEnvoyer = cpteMdpOublieEnvoyer;
 
 async function cpteDeconnexion() {
   try { await fetch(`${API}/api/comptes/deconnexion`, { method: 'POST', headers: H }); } catch(e) {}

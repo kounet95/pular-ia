@@ -1003,6 +1003,7 @@ async def api_histoire_supprimer_famille(famille_id: str, key: str = ""):
 
 import comptes as CP
 import notifications as NOTIF
+import courriel as MAIL
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 COOKIE_SESSION      = "pular_session"
@@ -1087,6 +1088,125 @@ async def api_comptes_connexion(
     resp = JSONResponse({"ok": True, "compte": CP.compte_public(compte)})
     _poser_cookie_session(request, resp, token)
     return resp
+
+@app.post("/api/comptes/mot-de-passe-oublie")
+async def api_comptes_mdp_oublie(request: Request, email: str = Form(...)):
+    """
+    Toujours la même réponse générique, qu'un compte existe ou non avec cet
+    email — évite de laisser deviner quels emails sont enregistrés. Le
+    contenu réel (email envoyé ou pas) ne dépend que de ce qui se passe en
+    coulisse, jamais de la réponse HTTP elle-même.
+    """
+    base = _base_url(request)
+    resultat = await asyncio.to_thread(CP.generer_token_reset, email.strip())
+    if resultat:
+        compte, jeton = resultat
+        lien = f"{base}/reinitialiser-mot-de-passe?token={jeton}"
+        corps_texte = (
+            f"Bonjour {compte['pseudo']},\n\n"
+            f"Tu as demandé à réinitialiser ton mot de passe sur Pular IA.\n"
+            f"Clique sur ce lien pour en choisir un nouveau (valable 30 minutes) :\n{lien}\n\n"
+            f"Si tu n'es pas à l'origine de cette demande, ignore simplement ce message."
+        )
+        corps_html = (
+            f"<p>Bonjour {html.escape(compte['pseudo'])},</p>"
+            f"<p>Tu as demandé à réinitialiser ton mot de passe sur <strong>Pular IA</strong>.</p>"
+            f"<p><a href=\"{lien}\">Clique ici pour choisir un nouveau mot de passe</a> (lien valable 30 minutes).</p>"
+            f"<p>Si tu n'es pas à l'origine de cette demande, ignore simplement ce message.</p>"
+        )
+        await asyncio.to_thread(
+            MAIL.envoyer_email, compte["email"], "Réinitialise ton mot de passe — Pular IA",
+            corps_texte, corps_html,
+        )
+    return JSONResponse({
+        "ok": True,
+        "message": "📩 Si un compte existe avec cet email, un lien de réinitialisation vient d'être envoyé.",
+    })
+
+@app.post("/api/comptes/reinitialiser-mot-de-passe")
+async def api_comptes_reinitialiser(token: str = Form(...), mot_de_passe: str = Form(...)):
+    try:
+        ok = await asyncio.to_thread(CP.reinitialiser_mot_de_passe, token, mot_de_passe)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    if not ok:
+        raise HTTPException(400, "Lien invalide ou expiré — redemande un nouveau lien.")
+    return JSONResponse({"ok": True})
+
+@app.get("/reinitialiser-mot-de-passe", response_class=HTMLResponse)
+async def page_reinitialiser_mdp(request: Request, token: str = ""):
+    base = _base_url(request)
+    valide = bool(token) and CP.compte_par_reset_token(token) is not None
+    if not valide:
+        return HTMLResponse(f"""<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<title>Lien invalide — Pular IA</title><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="background:#0d1f15;color:#e8f5e9;font-family:system-ui,sans-serif;
+text-align:center;padding:60px 20px;">
+<h1 style="color:#c8a84b;">⚠️ Lien invalide ou expiré</h1>
+<p style="margin-top:10px;color:#8fac97;">Redemande un lien de réinitialisation depuis la page de connexion.</p>
+<p style="margin-top:24px;"><a href="{base}/#carte-compte" style="color:#c8a84b;">← Retour à Mon compte</a></p>
+</body></html>""", status_code=400)
+
+    return HTMLResponse(f"""<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nouveau mot de passe — Pular IA</title>
+<style>
+  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  body {{
+    background: #0d1f15; color: #e8f5e9; font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 20px;
+  }}
+  main {{ width: 100%; max-width: 380px; text-align: center; }}
+  h1 {{ font-size: 1.3rem; color: #c8a84b; margin-bottom: 18px; }}
+  input {{
+    width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid #2d5c3a;
+    background: #142b1c; color: #e8f5e9; font-size: 1rem; margin-bottom: 10px; outline: none;
+  }}
+  button {{
+    width: 100%; padding: 12px; border-radius: 8px; border: none; background: #8b1e5c;
+    color: #fff; font-weight: 700; font-size: .95rem; cursor: pointer;
+  }}
+  #msg {{ margin-top: 12px; font-size: .85rem; }}
+</style>
+</head>
+<body>
+  <main>
+    <h1>🔑 Choisis un nouveau mot de passe</h1>
+    <input id="mdp1" type="password" placeholder="Nouveau mot de passe (6 caractères min.)" maxlength="200">
+    <input id="mdp2" type="password" placeholder="Confirme le mot de passe" maxlength="200">
+    <button onclick="valider()">Réinitialiser</button>
+    <p id="msg"></p>
+  </main>
+  <script>
+    const TOKEN = {json.dumps(token)};
+    async function valider() {{
+      const m1 = document.getElementById('mdp1').value;
+      const m2 = document.getElementById('mdp2').value;
+      const msg = document.getElementById('msg');
+      if (m1.length < 6) {{ msg.style.color = '#e05a5a'; msg.textContent = 'Mot de passe trop court (6 caractères minimum).'; return; }}
+      if (m1 !== m2) {{ msg.style.color = '#e05a5a'; msg.textContent = 'Les deux mots de passe ne correspondent pas.'; return; }}
+      try {{
+        const fd = new FormData();
+        fd.append('token', TOKEN);
+        fd.append('mot_de_passe', m1);
+        const r = await fetch('/api/comptes/reinitialiser-mot-de-passe', {{ method: 'POST', body: fd }});
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.detail || 'Erreur serveur');
+        msg.style.color = '#4caf7d';
+        msg.textContent = '✅ Mot de passe changé ! Tu peux te connecter avec le nouveau.';
+        document.querySelector('button').disabled = true;
+      }} catch(e) {{
+        msg.style.color = '#e05a5a';
+        msg.textContent = '❌ ' + e.message;
+      }}
+    }}
+  </script>
+</body>
+</html>""")
 
 @app.post("/api/comptes/deconnexion")
 async def api_comptes_deconnexion(request: Request):
