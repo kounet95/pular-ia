@@ -1291,6 +1291,11 @@
     <input class="input-livre" id="don-nom" type="text" placeholder="Ton nom (optionnel, pour un remerciement public)" maxlength="80"/>
     <input class="input-livre" id="don-email" type="email" placeholder="Email (optionnel, pour un reçu)" maxlength="120"/>
 
+    <div id="don-methode" style="display:flex;gap:6px;margin-bottom:10px;">
+      <button type="button" class="filtre-langue actif" data-methode="carte" onclick="donChoisirMethode('carte')" style="flex:1;">💳 Carte</button>
+      <button type="button" class="filtre-langue" data-methode="mobile_money" onclick="donChoisirMethode('mobile_money')" style="flex:1;">📱 Mobile Money</button>
+    </div>
+
     <button onclick="donFaireDon()" id="don-btn" style="
       width:100%;padding:12px;border-radius:8px;border:none;margin-top:6px;
       background:#c8a84b;color:#1a1a1a;font-weight:700;cursor:pointer;font-size:.92rem;
@@ -3624,6 +3629,23 @@ async function edAjouterZone() {
 // ═══════════════════════════════════════════════════════════════
 let DON_META = null;
 let donMontantChoisi = null;
+let donMethodeChoisie = 'carte';
+
+function donChoisirMethode(methode) {
+  donMethodeChoisie = methode;
+  document.querySelectorAll('#don-methode .filtre-langue').forEach(b => {
+    b.classList.toggle('actif', b.dataset.methode === methode);
+  });
+}
+window.donChoisirMethode = donChoisirMethode;
+
+function donMettreAJourMethodesDisponibles() {
+  const devise = document.getElementById('don-devise').value;
+  const btnMobile = document.querySelector('#don-methode [data-methode="mobile_money"]');
+  const disponible = devise === 'gnf' || devise === 'xof';
+  btnMobile.style.display = disponible ? '' : 'none';
+  if (!disponible && donMethodeChoisie === 'mobile_money') donChoisirMethode('carte');
+}
 
 async function donChargerMeta() {
   try {
@@ -3649,6 +3671,7 @@ function donChargerMontants() {
     <button type="button" class="filtre-langue" data-montant="${m}" onclick="donChoisirMontant(${m})">
       ${edFormaterPrix(DEVISES_ZERO_DECIMALE.has(devise) ? m : m*100, devise)}
     </button>`).join('');
+  donMettreAJourMethodesDisponibles();
 }
 window.donChargerMontants = donChargerMontants;
 
@@ -3676,6 +3699,7 @@ async function donFaireDon() {
     fd.append('origin', window.location.origin);
     fd.append('nom_donateur', document.getElementById('don-nom').value.trim());
     fd.append('email', document.getElementById('don-email').value.trim());
+    fd.append('methode', donMethodeChoisie);
     const r = await fetch(`${API}/api/dons/checkout`, { method:'POST', body:fd, headers:H });
     const d = await r.json();
     if (!d.ok) throw new Error(d.detail || 'Erreur serveur');

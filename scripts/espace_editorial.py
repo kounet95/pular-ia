@@ -15,6 +15,7 @@ doit être défini dans l'environnement pour activer la vente ; sans elle,
 proprement au lieu de planter.
 """
 
+import hashlib
 import json
 import logging
 import os
@@ -221,6 +222,111 @@ def verifier_signature_webhook(payload: bytes, sig_header: str):
     if not secret:
         raise RuntimeError("STRIPE_WEBHOOK_SECRET_EDITORIAL manquant — impossible de vérifier le webhook.")
     return stripe.Webhook.construct_event(payload, sig_header, secret)
+
+# ── FedaPay (mobile money : Orange Money, MTN, etc.) ────────────────────────
+# Alternative à Stripe pour les acheteurs qui paient par mobile money plutôt
+# que par carte bancaire — FedaPay héberge sa propre page de paiement (même
+# principe que Stripe Checkout, le serveur ne touche jamais les identifiants
+# mobile money). Ne couvre que XOF et GNF (pas de mobile money en EUR/USD) ;
+# ces devises restent aussi payables par carte via Stripe en parallèle.
+#
+# Contrairement à Stripe Connect, FedaPay n'offre pas de partage automatique
+# des revenus vers un compte auteur : un achat FedaPay encaisse 100% sur le
+# compte FedaPay de la plateforme, la répartition (REPARTITION_REVENUS) se
+# fait alors manuellement — comme les ventes Stripe avant Stripe Connect.
+
+FEDAPAY_DEVISES = {"xof", "gnf"}
+
+def fedapay_configure() -> tuple[str, str]:
+    """Retourne (clé secrète, URL de base de l'API). FEDAPAY_ENV="live" pour
+    la production réelle ; sandbox par défaut — pour éviter qu'une clé de
+    test oubliée en "live" par erreur ne bascule silencieusement en argent
+    réel (même logique de sécurité par défaut que ailleurs dans ce fichier)."""
+    cle = os.getenv("FEDAPAY_SECRET_KEY", "")
+    if not cle:
+        raise RuntimeError("Paiement mobile money non configuré (FEDAPAY_SECRET_KEY manquante).")
+    env = os.getenv("FEDAPAY_ENV", "sandbox").strip().lower()
+    base = "https://api.fedapay.com/v1" if env == "live" else "https://sandbox-api.fedapay.com/v1"
+    return cle, base
+
+def _fedapay_requete(methode: str, chemin: str, **kwargs) -> dict:
+    import httpx
+    cle, base = fedapay_configure()
+    headers = {"Authorization": f"Bearer {cle}", "Content-Type": "application/json"}
+    r = httpx.request(methode, f"{base}{chemin}", headers=headers, timeout=20, **kwargs)
+    if r.status_code >= 400:
+        try:
+            detail = r.json().get("message") or r.text
+        except Exception:
+            detail = r.text
+        raise RuntimeError(f"FedaPay a refusé la requête : {detail}")
+    return r.json()
+
+def creer_transaction_fedapay(
+    montant: int, devise: str, description: str, callback_url: str, email: str = "",
+) -> dict:
+    """
+    Crée une transaction FedaPay puis génère son lien de paiement hébergé —
+    deux appels à leur API, comme Stripe crée une Session puis renvoie son
+    `.url`. Retourne {"id": <id transaction>, "url": <lien de paiement>}.
+    `montant` : entier dans l'unité native de la devise (XOF/GNF n'ont pas de
+    sous-unité, comme les devises zéro-décimale côté Stripe).
+    """
+    devise = devise.lower()
+    if devise not in FEDAPAY_DEVISES:
+        raise ValueError(f"Le paiement mobile money n'est disponible qu'en XOF ou GNF (reçu : {devise}).")
+    if montant <= 0:
+        raise ValueError("Montant invalide.")
+    corps = {
+        "description": description[:250],
+        "amount": montant,
+        "currency": {"iso": devise.upper()},
+        "callback_url": callback_url,
+    }
+    if email:
+        corps["customer"] = {"email": email}
+    transaction = _fedapay_requete("POST", "/transactions", json=corps)
+    lien = _fedapay_requete("POST", f"/transactions/{transaction['id']}/token")
+    return {"id": transaction["id"], "url": lien["url"]}
+
+def verifier_signature_webhook_fedapay(payload: bytes, sig_header: str) -> dict:
+    """
+    Vérifie la signature d'un webhook FedaPay et retourne l'événement décodé.
+    Format de l'en-tête `X-FEDAPAY-SIGNATURE` : `t=<timestamp>,s=<signature>` ;
+    signature attendue = HMAC-SHA256(secret, f"{timestamp}.{payload}") — même
+    principe que Stripe. Tolérance de 5 minutes contre le rejeu d'un webhook
+    capturé.
+    """
+    secret = os.getenv("FEDAPAY_WEBHOOK_SECRET", "")
+    if not secret:
+        raise RuntimeError("FEDAPAY_WEBHOOK_SECRET manquant — impossible de vérifier le webhook.")
+    parties = dict(p.strip().split("=", 1) for p in sig_header.split(",") if "=" in p)
+    timestamp, signature = parties.get("t"), parties.get("s")
+    if not timestamp or not signature:
+        raise ValueError("En-tête de signature FedaPay invalide ou absent.")
+    import hmac
+    import time
+    attendu = hmac.new(
+        secret.encode(), f"{timestamp}.{payload.decode('utf-8')}".encode(), hashlib.sha256,
+    ).hexdigest()
+    if not hmac.compare_digest(attendu, signature):
+        raise ValueError("Signature FedaPay invalide.")
+    if abs(time.time() - int(timestamp)) > 300:
+        raise ValueError("Webhook FedaPay expiré.")
+    return json.loads(payload)
+
+def fedapay_extraire_objet(event: dict) -> dict:
+    """
+    Le placement exact de la transaction dans le payload webhook FedaPay
+    n'est pas garanti à 100% par leur documentation publique — on essaie
+    plusieurs emplacements plausibles plutôt que de supposer un seul format
+    et de planter en production sur une variation non documentée.
+    """
+    for candidat in (event.get("entity"), (event.get("data") or {}).get("object"),
+                     event.get("transaction"), event):
+        if isinstance(candidat, dict) and candidat.get("id"):
+            return candidat
+    return {}
 
 # ── Assistant IA (Claude) — brouillon d'édito ───────────────────────────────
 
@@ -531,6 +637,66 @@ def obtenir_commande(commande_id: str) -> dict | None:
 def obtenir_commande_par_session(session_id: str) -> dict | None:
     return next((c for c in charger_commandes() if c["stripe_session_id"] == session_id), None)
 
+def enregistrer_commande_fedapay(
+    livre: dict, format_achete: str, zone: dict | None = None, telegram_id: int | None = None,
+) -> dict:
+    """
+    Équivalent de enregistrer_commande() pour un paiement FedaPay — créée
+    AVANT même l'appel à FedaPay (contrairement au flux Stripe). FedaPay
+    exige le callback_url dès la création de la transaction, et ce
+    callback_url doit contenir le commande_id + jeton pour que la page de
+    confirmation retrouve la bonne commande : FedaPay ne propose pas de
+    placeholder du type {CHECKOUT_SESSION_ID} de Stripe, donc l'identifiant
+    doit être le nôtre, connu à l'avance. Voir
+    associer_transaction_fedapay_commande() pour l'étape suivante.
+    """
+    commandes = charger_commandes()
+    commande = {
+        "id":                       str(uuid.uuid4())[:8],
+        "jeton":                    secrets.token_urlsafe(16),
+        "fournisseur":              "fedapay",
+        "fedapay_transaction_id":   "",
+        "livre_id":                 livre["id"],
+        "titre":                    livre["titre"],
+        "auteur":                   livre.get("auteur", ""),
+        "format":                   format_achete,
+        "zone":                     zone,
+        "prix_centimes":            prix_format(livre, format_achete) or 0,
+        "frais_livraison_centimes": zone["frais_centimes"] if zone else 0,
+        "devise":                   livre["devise"],
+        "fichier_numerique":        livre.get("fichier_numerique", "") if format_achete == "numerique" else "",
+        "email":                    "",
+        "telegram_id":              telegram_id,
+        "statut":                   "en_attente",
+        "date":                     datetime.now().isoformat(),
+    }
+    commandes.append(commande)
+    sauver_commandes(commandes)
+    return commande
+
+def associer_transaction_fedapay_commande(commande_id: str, transaction_id: str):
+    """Complète une commande FedaPay avec l'id de transaction réel, une fois
+    connu (voir enregistrer_commande_fedapay)."""
+    commandes = charger_commandes()
+    for c in commandes:
+        if c["id"] == commande_id:
+            c["fedapay_transaction_id"] = transaction_id
+            sauver_commandes(commandes)
+            return
+
+def marquer_commande_payee_fedapay(transaction_id: str, email: str) -> dict | None:
+    commandes = charger_commandes()
+    for c in commandes:
+        if c.get("fedapay_transaction_id") and c["fedapay_transaction_id"] == transaction_id:
+            c["statut"] = "paye"
+            c["email"] = email or c.get("email", "")
+            c["date_paiement"] = datetime.now().isoformat()
+            sauver_commandes(commandes)
+            log.info(f"Éditorial — commande FedaPay payée: {c['titre']} ({c['format']})")
+            return c
+    log.warning(f"Éditorial — webhook FedaPay pour transaction inconnue: {transaction_id}")
+    return None
+
 # ── Dons ─────────────────────────────────────────────────────────────────
 # Contrairement aux livres, un don n'a pas d'auteur à rémunérer : 100% va
 # directement financer le projet (voir REPARTITION_REVENUS pour les livres,
@@ -612,6 +778,52 @@ def obtenir_don(don_id: str) -> dict | None:
 
 def obtenir_don_par_session(session_id: str) -> dict | None:
     return next((d for d in charger_dons() if d["stripe_session_id"] == session_id), None)
+
+def enregistrer_don_fedapay(
+    montant_centimes: int, devise: str, nom_donateur: str = "", telegram_id: int | None = None,
+) -> dict:
+    """Équivalent de enregistrer_don() pour un paiement FedaPay — voir
+    enregistrer_commande_fedapay() pour l'explication de l'ordre (créée
+    avant l'appel à FedaPay, complétée ensuite via
+    associer_transaction_fedapay_don())."""
+    dons = charger_dons()
+    don = {
+        "id":                     str(uuid.uuid4())[:8],
+        "jeton":                  secrets.token_urlsafe(16),
+        "fournisseur":            "fedapay",
+        "fedapay_transaction_id": "",
+        "montant_centimes":       montant_centimes,
+        "devise":                 devise,
+        "nom_donateur":           (nom_donateur or "Anonyme").strip()[:80] or "Anonyme",
+        "email":                  "",
+        "telegram_id":            telegram_id,
+        "statut":                 "en_attente",
+        "date":                   datetime.now().isoformat(),
+    }
+    dons.append(don)
+    sauver_dons(dons)
+    return don
+
+def associer_transaction_fedapay_don(don_id: str, transaction_id: str):
+    dons = charger_dons()
+    for d in dons:
+        if d["id"] == don_id:
+            d["fedapay_transaction_id"] = transaction_id
+            sauver_dons(dons)
+            return
+
+def marquer_don_paye_fedapay(transaction_id: str, email: str) -> dict | None:
+    dons = charger_dons()
+    for d in dons:
+        if d.get("fedapay_transaction_id") and d["fedapay_transaction_id"] == transaction_id:
+            d["statut"] = "paye"
+            d["email"] = email or d.get("email", "")
+            d["date_paiement"] = datetime.now().isoformat()
+            sauver_dons(dons)
+            log.info(f"Don FedaPay payé: {d['montant_centimes']} {d['devise']} ({d['nom_donateur']})")
+            return d
+    log.warning(f"Éditorial — webhook FedaPay don pour transaction inconnue: {transaction_id}")
+    return None
 
 def total_dons_payes() -> dict:
     """Total des dons payés, groupé par devise (pas de conversion inter-devises)."""

@@ -1530,7 +1530,7 @@ async def page_livres(request: Request):
         boutons = []
         if l.get("prix_numerique_centimes") is not None:
             boutons.append(
-                f'<button class="livre-achat-btn" onclick="livreAcheter(\'{l["id"]}\',\'numerique\',null)">'
+                f'<button class="livre-achat-btn" onclick="livreChoisirFormat(\'{l["id"]}\',\'numerique\',\'\')">'
                 f'📱 Numérique — {_prix_html(l["prix_numerique_centimes"], devise)}</button>'
             )
         if l.get("prix_papier_centimes") is not None:
@@ -1540,7 +1540,7 @@ async def page_livres(request: Request):
             )
 
         return f"""
-        <div class="livre-carte" id="livre-{l['id']}">
+        <div class="livre-carte" id="livre-{l['id']}" data-devise="{devise}">
           {f'<img class="livre-couv" src="{image}" alt="">' if image else '<div class="livre-couv livre-couv-vide">📖</div>'}
           <div class="livre-corps">
             <h2>{titre}</h2>
@@ -1632,19 +1632,33 @@ async def page_livres(request: Request):
       const zones = await chargerZones();
       const div = document.getElementById(`zone-choix-${{livreId}}`);
       const boutons = zones.map(z =>
-        `<button class="zone-btn" onclick="livreAcheter('${{livreId}}','papier','${{z.id}}')">📍 ${{z.nom}}</button>`
+        `<button class="zone-btn" onclick="livreChoisirFormat('${{livreId}}','papier','${{z.id}}')">📍 ${{z.nom}}</button>`
       ).join('');
       div.innerHTML = `<p style="font-size:.78rem;color:#8fac97;">Choisis ta zone de livraison :</p>` + boutons +
-        `<button class="zone-btn" onclick="livreAcheter('${{livreId}}','papier',null)">🤝 Retrait / à organiser (sans frais)</button>`;
+        `<button class="zone-btn" onclick="livreChoisirFormat('${{livreId}}','papier','')">🤝 Retrait / à organiser (sans frais)</button>`;
       div.style.display = 'flex';
     }}
 
-    async function livreAcheter(livreId, format, zoneId) {{
+    function livreChoisirFormat(livreId, format, zoneId) {{
+      const devise = document.getElementById(`livre-${{livreId}}`).dataset.devise;
+      if (devise === 'gnf' || devise === 'xof') {{
+        const div = document.getElementById(`zone-choix-${{livreId}}`);
+        div.innerHTML = `<p style="font-size:.78rem;color:#8fac97;">Comment veux-tu payer ?</p>
+          <button class="zone-btn" onclick="livreAcheter('${{livreId}}','${{format}}','${{zoneId}}','carte')">💳 Carte bancaire</button>
+          <button class="zone-btn" onclick="livreAcheter('${{livreId}}','${{format}}','${{zoneId}}','mobile_money')">📱 Mobile Money (Orange, MTN...)</button>`;
+        div.style.display = 'flex';
+      }} else {{
+        livreAcheter(livreId, format, zoneId, 'carte');
+      }}
+    }}
+
+    async function livreAcheter(livreId, format, zoneId, methode) {{
       try {{
         const fd = new FormData();
         fd.append('livre_id', livreId);
         fd.append('format', format);
         fd.append('origin', window.location.origin);
+        fd.append('methode', methode || 'carte');
         if (zoneId) fd.append('zone_id', zoneId);
         const r = await fetch(`${{API}}/api/editorial/checkout`, {{ method: 'POST', body: fd }});
         const d = await r.json();
@@ -1672,6 +1686,7 @@ async def api_editorial_checkout(
     origin:        str = Form(...),
     zone_id:       str = Form(""),
     email:         str = Form(""),
+    methode:       str = Form("carte"),
 ):
     livres = EE.charger_catalogue()
     livre = next((l for l in livres if l["id"] == livre_id), None)
@@ -1684,6 +1699,40 @@ async def api_editorial_checkout(
         if not zone:
             raise HTTPException(404, "Zone de livraison non trouvée.")
 
+    if methode == "mobile_money":
+        prix = EE.prix_format(livre, format_achete)
+        if prix is None:
+            raise HTTPException(400, "Ce format n'est pas disponible pour ce livre.")
+        if livre["devise"].lower() not in EE.FEDAPAY_DEVISES:
+            raise HTTPException(400, "Le paiement mobile money n'est disponible qu'en XOF ou GNF.")
+        montant_total = prix + (zone["frais_centimes"] if zone else 0)
+        nom_format = "Numérique" if format_achete == "numerique" else "Papier"
+        # La commande est enregistrée AVANT l'appel à FedaPay : contrairement
+        # à Stripe (placeholder {CHECKOUT_SESSION_ID}), FedaPay exige le
+        # callback_url dès la création de la transaction, et ce callback_url
+        # doit déjà contenir le commande_id + jeton — voir enregistrer_commande_fedapay.
+        commande = await asyncio.to_thread(
+            EE.enregistrer_commande_fedapay, livre, format_achete, zone,
+        )
+        callback_url = f"{origin.rstrip('/')}/livre-achete?commande_id={commande['id']}&jeton={commande['jeton']}"
+        try:
+            transaction = await asyncio.to_thread(
+                EE.creer_transaction_fedapay, montant_total, livre["devise"],
+                f"{livre['titre']} ({nom_format})", callback_url, email.strip(),
+            )
+        except ValueError as e:
+            raise HTTPException(400, str(e))
+        except RuntimeError as e:
+            raise HTTPException(503, str(e))
+        except Exception as e:
+            log.error(f"Erreur création transaction FedaPay: {e}")
+            raise HTTPException(500, "Erreur lors de la création du paiement.")
+        await asyncio.to_thread(
+            EE.associer_transaction_fedapay_commande, commande["id"], str(transaction["id"]),
+        )
+        return JSONResponse({"ok": True, "url": transaction["url"], "commande_id": commande["id"]})
+
+    # ── Carte bancaire (Stripe Checkout) ──
     # Partage automatique des revenus si l'auteur a un compte Stripe Connect
     # actif — sinon la vente se fait pareil, sans partage (comme avant).
     stripe_account_id = None
@@ -1727,6 +1776,39 @@ async def api_editorial_webhook(request: Request):
             await asyncio.to_thread(EE.marquer_don_paye, session["id"], email)
         else:
             await asyncio.to_thread(EE.marquer_commande_payee, session["id"], email)
+
+    return JSONResponse({"received": True})
+
+@app.post("/api/editorial/webhook/fedapay")
+async def api_editorial_webhook_fedapay(request: Request):
+    """
+    Webhook FedaPay : confirme le paiement une fois la transaction approuvée.
+    Contrairement au webhook Stripe, on ne sait pas d'avance si une
+    transaction FedaPay correspond à une commande de livre ou à un don — on
+    tente les deux (marquer_commande_payee_fedapay puis, si rien trouvé,
+    marquer_don_paye_fedapay), ce qui évite de dépendre d'un emplacement de
+    métadonnées non garanti par leur documentation publique.
+    """
+    payload = await request.body()
+    sig_header = request.headers.get("x-fedapay-signature", "")
+    try:
+        event = await asyncio.to_thread(EE.verifier_signature_webhook_fedapay, payload, sig_header)
+    except RuntimeError as e:
+        raise HTTPException(503, str(e))
+    except Exception as e:
+        log.warning(f"Webhook FedaPay rejeté: {e}")
+        raise HTTPException(400, "Signature invalide.")
+
+    if event.get("name") == "transaction.approved":
+        objet = EE.fedapay_extraire_objet(event)
+        transaction_id = str(objet.get("id") or "")
+        email = (objet.get("customer") or {}).get("email", "") if isinstance(objet.get("customer"), dict) else ""
+        if transaction_id:
+            commande = await asyncio.to_thread(EE.marquer_commande_payee_fedapay, transaction_id, email)
+            if not commande:
+                await asyncio.to_thread(EE.marquer_don_paye_fedapay, transaction_id, email)
+        else:
+            log.warning(f"Webhook FedaPay 'transaction.approved' sans id exploitable — clés reçues: {list(event.keys())}")
 
     return JSONResponse({"received": True})
 
@@ -1776,6 +1858,7 @@ async def api_dons_checkout(
     origin:       str = Form(...),
     email:        str = Form(""),
     nom_donateur: str = Form(""),
+    methode:      str = Form("carte"),
 ):
     devise = devise.lower()
     if devise not in EE.DEVISES_ACCEPTEES:
@@ -1783,6 +1866,34 @@ async def api_dons_checkout(
     if montant <= 0:
         raise HTTPException(400, "Montant invalide.")
     montant_centimes = EE.calculer_montant_stripe(montant, devise)
+
+    if methode == "mobile_money":
+        if devise not in EE.FEDAPAY_DEVISES:
+            raise HTTPException(400, "Le paiement mobile money n'est disponible qu'en XOF ou GNF.")
+        # Le don est enregistré avant l'appel à FedaPay pour la même raison
+        # que pour les commandes (voir enregistrer_commande_fedapay).
+        don = await asyncio.to_thread(
+            EE.enregistrer_don_fedapay, montant_centimes, devise, nom_donateur.strip(),
+        )
+        callback_url = f"{origin.rstrip('/')}/don-merci?don_id={don['id']}&jeton={don['jeton']}"
+        try:
+            transaction = await asyncio.to_thread(
+                EE.creer_transaction_fedapay, montant_centimes, devise,
+                "Don au projet Pular IA", callback_url, email.strip(),
+            )
+        except ValueError as e:
+            raise HTTPException(400, str(e))
+        except RuntimeError as e:
+            raise HTTPException(503, str(e))
+        except Exception as e:
+            log.error(f"Erreur création transaction don FedaPay: {e}")
+            raise HTTPException(500, "Erreur lors de la création du don.")
+        await asyncio.to_thread(
+            EE.associer_transaction_fedapay_don, don["id"], str(transaction["id"]),
+        )
+        return JSONResponse({"ok": True, "url": transaction["url"], "don_id": don["id"]})
+
+    # ── Carte bancaire (Stripe Checkout) ──
     try:
         session = await asyncio.to_thread(
             EE.creer_session_don, montant_centimes, devise, origin, email.strip(), nom_donateur.strip(),
@@ -1815,10 +1926,20 @@ async def api_dons_liste(key: str = ""):
     return JSONResponse(EE.charger_dons())
 
 @app.get("/don-merci", response_class=HTMLResponse)
-async def page_don_merci(request: Request, session_id: str = ""):
-    """Page de confirmation après un don Stripe réussi."""
+async def page_don_merci(request: Request, session_id: str = "", don_id: str = "", jeton: str = ""):
+    """
+    Page de confirmation après un don réussi (Stripe ou FedaPay). Stripe
+    revient avec `session_id` (placeholder rempli par Stripe lui-même) ;
+    FedaPay revient avec `don_id`+`jeton` (embarqués nous-même dans le
+    callback_url à la création, voir enregistrer_don_fedapay).
+    """
     base = _base_url(request)
-    don = EE.obtenir_don_par_session(session_id) if session_id else None
+    if don_id and jeton:
+        don = EE.obtenir_don(don_id)
+        if don and don.get("jeton") != jeton:
+            don = None
+    else:
+        don = EE.obtenir_don_par_session(session_id) if session_id else None
     if not don:
         return HTMLResponse(f"""<!doctype html><html lang="fr"><head><meta charset="utf-8">
 <title>Don introuvable — Pular IA</title>
@@ -1884,12 +2005,24 @@ text-align:center;padding:60px 20px;">
 </html>""")
 
 @app.get("/livre-achete", response_class=HTMLResponse)
-async def page_livre_achete(request: Request, session_id: str = ""):
-    """Page de confirmation après un paiement Stripe réussi — affiche le
-    téléchargement (numérique) ou les infos de livraison (papier), avec un
-    rappel de la répartition des revenus."""
+async def page_livre_achete(
+    request: Request, session_id: str = "", commande_id: str = "", jeton: str = "",
+):
+    """
+    Page de confirmation après un paiement réussi (Stripe ou FedaPay) —
+    affiche le téléchargement (numérique) ou les infos de livraison
+    (papier), avec un rappel de la répartition des revenus. Stripe revient
+    avec `session_id` (placeholder rempli par Stripe) ; FedaPay revient avec
+    `commande_id`+`jeton` (embarqués nous-même dans le callback_url, voir
+    enregistrer_commande_fedapay).
+    """
     base = _base_url(request)
-    commande = EE.obtenir_commande_par_session(session_id) if session_id else None
+    if commande_id and jeton:
+        commande = EE.obtenir_commande(commande_id)
+        if commande and commande.get("jeton") != jeton:
+            commande = None
+    else:
+        commande = EE.obtenir_commande_par_session(session_id) if session_id else None
     if not commande:
         return HTMLResponse(f"""<!doctype html><html lang="fr"><head><meta charset="utf-8">
 <title>Commande introuvable — Pular IA</title>
