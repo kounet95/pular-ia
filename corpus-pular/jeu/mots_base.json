@@ -10,14 +10,14 @@
     "id": "m1",
     "emoji": "🐑",
     "fr": "Mouton",
-    "pular": "mbabba",
+    "pular": "baalii",
     "cat": "Animaux"
   },
   {
     "id": "m2",
     "emoji": "🐐",
     "fr": "Chèvre",
-    "pular": "mbewa",
+    "pular": "mbeewa",
     "cat": "Animaux"
   },
   {
@@ -45,35 +45,35 @@
     "id": "m6",
     "emoji": "🐈",
     "fr": "Chat",
-    "pular": "muuse",
+    "pular": "gomooru",
     "cat": "Animaux"
   },
   {
     "id": "m7",
     "emoji": "🦁",
     "fr": "Lion",
-    "pular": "liingu",
+    "pular": "fuyaari",
     "cat": "Animaux"
   },
   {
     "id": "m8",
     "emoji": "🐊",
     "fr": "Caïman",
-    "pular": "baylo",
+    "pular": "noora",
     "cat": "Animaux"
   },
   {
     "id": "m9",
     "emoji": "🦅",
     "fr": "Aigle",
-    "pular": "galeejo",
+    "pular": "bibiire",
     "cat": "Animaux"
   },
   {
     "id": "m10",
     "emoji": "🐍",
     "fr": "Serpent",
-    "pular": "mbeewa",
+    "pular": "mboddi",
     "cat": "Animaux"
   },
   {
@@ -81,7 +81,8 @@
     "emoji": "🦋",
     "fr": "Papillon",
     "pular": "lekki",
-    "cat": "Animaux"
+    "cat": "Animaux",
+    "a_verifier": true
   },
   {
     "id": "m12",
@@ -101,7 +102,7 @@
     "id": "m14",
     "emoji": "🔥",
     "fr": "Feu",
-    "pular": "jaango",
+    "pular": "yiite",
     "cat": "Objets"
   },
   {
@@ -122,7 +123,7 @@
     "id": "m17",
     "emoji": "🌳",
     "fr": "Arbre",
-    "pular": "ledde",
+    "pular": "leggal",
     "cat": "Objets"
   },
   {
@@ -136,7 +137,7 @@
     "id": "m19",
     "emoji": "🍚",
     "fr": "Riz",
-    "pular": "nyiiri",
+    "pular": "maaro",
     "cat": "Objets"
   },
   {
@@ -150,21 +151,21 @@
     "id": "m21",
     "emoji": "🥁",
     "fr": "Tambour",
-    "pular": "tammbari",
+    "pular": "tabalde",
     "cat": "Objets"
   },
   {
     "id": "m22",
     "emoji": "🔪",
     "fr": "Couteau",
-    "pular": "lahal",
+    "pular": "laɓi",
     "cat": "Objets"
   },
   {
     "id": "m23",
     "emoji": "🪣",
     "fr": "Calebasse",
-    "pular": "hoore",
+    "pular": "horde",
     "cat": "Objets"
   },
   {
@@ -192,7 +193,7 @@
     "id": "m27",
     "emoji": "👄",
     "fr": "Bouche",
-    "pular": "hunuko",
+    "pular": "hunnduko",
     "cat": "Corps"
   },
   {
@@ -213,21 +214,21 @@
     "id": "m30",
     "emoji": "🦷",
     "fr": "Dents",
-    "pular": "ñiiɓe",
+    "pular": "ñiire",
     "cat": "Corps"
   },
   {
     "id": "m31",
     "emoji": "💪",
     "fr": "Bras",
-    "pular": "hakke",
+    "pular": "sookewo",
     "cat": "Corps"
   },
   {
     "id": "m32",
     "emoji": "🌧️",
     "fr": "Pluie",
-    "pular": "ndungu",
+    "pular": "toɓo",
     "cat": "Nature"
   },
   {
@@ -248,28 +249,28 @@
     "id": "m35",
     "emoji": "🌿",
     "fr": "Herbe",
-    "pular": "gaawri",
+    "pular": "huɗo",
     "cat": "Nature"
   },
   {
     "id": "m36",
     "emoji": "⛰️",
     "fr": "Montagne",
-    "pular": "tugal",
+    "pular": "fello",
     "cat": "Nature"
   },
   {
     "id": "m37",
     "emoji": "🌬️",
     "fr": "Vent",
-    "pular": "hendu",
+    "pular": "henndu",
     "cat": "Nature"
   },
   {
     "id": "m38",
     "emoji": "🌑",
     "fr": "Nuit",
-    "pular": "jamma",
+    "pular": "jemma",
     "cat": "Nature"
   },
   {
@@ -283,7 +284,7 @@
     "id": "m40",
     "emoji": "👩",
     "fr": "Mère",
-    "pular": "yinaande",
+    "pular": "yumma",
     "cat": "Famille"
   },
   {
@@ -297,21 +298,21 @@
     "id": "m42",
     "emoji": "👴",
     "fr": "Grand-père",
-    "pular": "kaawu",
+    "pular": "maama",
     "cat": "Famille"
   },
   {
     "id": "m43",
     "emoji": "👵",
     "fr": "Grand-mère",
-    "pular": "mawndoo",
+    "pular": "neene",
     "cat": "Famille"
   },
   {
     "id": "m44",
     "emoji": "👫",
     "fr": "Époux",
-    "pular": "gorko",
+    "pular": "genndiraawo",
     "cat": "Famille"
   },
   {

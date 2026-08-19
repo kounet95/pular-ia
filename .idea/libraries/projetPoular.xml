@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="projetPoular">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/scripts_pular.zip!/" />
+      <root url="jar://$PROJECT_DIR$/dataset_translit.zip!/" />
+      <root url="jar://$PROJECT_DIR$/corpus-pular.zip!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
