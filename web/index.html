@@ -2690,6 +2690,7 @@ chargerClavierAdlam();
 // ── Clavier Adlam global (Espace Créateur + corrections) ──────────────────
 let _clavierGlobalAdlamId = null;
 let _clavierGlobalLatinId = null;
+let _clavierGlobalInputEl = null;
 
 function toggleClavierGlobal(adlamId, latinId) {
   const clavier  = document.getElementById('clavier-adlam-global');
@@ -2712,6 +2713,13 @@ function toggleClavierGlobal(adlamId, latinId) {
     const left = Math.max(4, Math.min(rect.left, window.innerWidth - 320));
     clavier.style.top  = Math.min(top, window.innerHeight - 290) + 'px';
     clavier.style.left = left + 'px';
+
+    // Le backdrop plein écran (z-index 9999) passerait sinon au-dessus du
+    // champ et intercepterait le clic destiné à écrire/positionner le
+    // curseur, refermant le clavier au lieu de le laisser ouvert.
+    input.style.position = 'relative';
+    input.style.zIndex   = '10001';
+    _clavierGlobalInputEl = input;
   }
 
   clavier.classList.add('visible');
@@ -2728,6 +2736,11 @@ function fermerClavierGlobal() {
   if (c) c.classList.remove('visible');
   if (b) b.style.display = 'none';
   document.querySelectorAll('.btn-clavier-adlam').forEach(b => b.classList.remove('actif'));
+  if (_clavierGlobalInputEl) {
+    _clavierGlobalInputEl.style.position = '';
+    _clavierGlobalInputEl.style.zIndex   = '';
+    _clavierGlobalInputEl = null;
+  }
   _clavierGlobalAdlamId = null;
   _clavierGlobalLatinId = null;
 }
@@ -2749,6 +2762,7 @@ function insererAdlamGlobal(char) {
 // insère directement les caractères arabes dans le champ ciblé, sans
 // tentative de conversion automatique — comme un clavier arabe physique.
 let _clavierArabeChampId = null;
+let _clavierArabeChampEl = null;
 
 async function chargerClavierArabe() {
   try {
@@ -2800,6 +2814,13 @@ function toggleClavierArabe(champId) {
     const left = Math.max(8, Math.min(rect.left, window.innerWidth - 320));
     clavier.style.top  = Math.min(top, window.innerHeight - 290) + 'px';
     clavier.style.left = left + 'px';
+
+    // Même correctif que pour le clavier Adlam : sans ça, le backdrop
+    // plein écran repasse au-dessus du champ et le clic pour écrire/
+    // positionner le curseur referme le clavier au lieu d'y écrire.
+    champ.style.position = 'relative';
+    champ.style.zIndex   = '10001';
+    _clavierArabeChampEl = champ;
     champ.focus();
   }
   clavier.classList.add('visible');
@@ -2816,6 +2837,11 @@ function fermerClavierArabe() {
   c?.classList.remove('visible');
   if (b) b.style.display = 'none';
   document.querySelectorAll('.btn-ouvrir-arabe').forEach(b => b.classList.remove('actif'));
+  if (_clavierArabeChampEl) {
+    _clavierArabeChampEl.style.position = '';
+    _clavierArabeChampEl.style.zIndex   = '';
+    _clavierArabeChampEl = null;
+  }
   _clavierArabeChampId = null;
 }
 window.fermerClavierArabe = fermerClavierArabe;
