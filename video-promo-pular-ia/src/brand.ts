@@ -1,0 +1,16 @@
+export const BRAND = {
+  bgDark: '#0d1f15',
+  green: '#144a2c',
+  greenLight: '#2d5c3a',
+  gold: '#e0a83c',
+  goldLight: '#f4d488',
+  magenta: '#8b1e5c',
+  magentaLight: '#c04a86',
+  text: '#f2ecd8',
+  gris: '#9db3a5',
+  fontTitle: '"Poppins", "Segoe UI", sans-serif',
+  fontBody: '"Inter", "Segoe UI", sans-serif',
+  logoText: 'Pular IA',
+  tagline: "Fuuta Jaloo — Corpus communautaire",
+  website: 'pular-ia.app',
+};
