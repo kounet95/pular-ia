@@ -38,6 +38,54 @@ FICHIER_PROGRES  = Path("./corpus-pular/metadata/progres_transcription.json")
 # Pular/Fula ("ff") n'est pas supporté par Whisper → détection automatique
 LANGUE_PULAR = None
 
+DOSSIER_VOCAB_RAG = Path("./corpus-pular/livres/metadata")
+PROMPT_WHISPER_BASE = "Pular fulfulde fulani langue africaine du Fuuta Djallon."
+
+
+# ── Prompt Whisper enrichi avec le vocabulaire réel (dictionnaire + RAG) ───────
+def construire_prompt_whisper(max_chars: int = 800) -> str:
+    """
+    Construit le prompt initial de Whisper à partir des vocabulaires générés
+    par rag_livres.indexer_livre() (corpus-pular/livres/metadata/*_vocab.json)
+    lors de l'ingestion du dictionnaire et des traductions coraniques.
+    Un prompt rempli de vrais mots pular biaise bien mieux la reconnaissance
+    qu'une simple phrase générique — surtout pour une langue non supportée
+    nativement par Whisper.
+    """
+    if not DOSSIER_VOCAB_RAG.exists():
+        return PROMPT_WHISPER_BASE
+
+    # Le dictionnaire passe en premier : ses mots sont les plus fiables (canoniques).
+    fichiers = sorted(
+        DOSSIER_VOCAB_RAG.glob("*_vocab.json"),
+        key=lambda p: 0 if p.stem.startswith("dictionnaire") else 1,
+    )
+
+    mots, vus = [], set()
+    for fichier in fichiers:
+        try:
+            with open(fichier, encoding="utf-8") as f:
+                for mot in json.load(f):
+                    if mot not in vus:
+                        vus.add(mot)
+                        mots.append(mot)
+        except Exception:
+            continue
+
+    if not mots:
+        return PROMPT_WHISPER_BASE
+
+    import random
+    random.Random(42).shuffle(mots)  # échantillon fixe, reproductible d'un run à l'autre
+
+    prompt = PROMPT_WHISPER_BASE
+    for mot in mots:
+        candidat = f"{prompt} {mot}"
+        if len(candidat) > max_chars:
+            break
+        prompt = candidat
+    return prompt
+
 
 # ── Chargement modèle (une seule fois, partagé entre threads) ──────────────────
 _whisper_model = None
@@ -70,7 +118,7 @@ def sauvegarder_progres(traites: set):
 
 
 # ── Transcription d'un fichier unique ─────────────────────────────────────────
-def transcrire_fichier(chemin: Path, model_name: str) -> dict:
+def transcrire_fichier(chemin: Path, model_name: str, prompt: str = PROMPT_WHISPER_BASE) -> dict:
     """
     Transcrit un fichier audio et retourne un dict avec le texte et les segments.
     Retourne None si le fichier est déjà traité ou s'il y a une erreur.
@@ -99,7 +147,7 @@ def transcrire_fichier(chemin: Path, model_name: str) -> dict:
             condition_on_previous_text=False,
             compression_ratio_threshold=2.4,
             no_speech_threshold=0.3,
-            initial_prompt="Pular fulfulde fulani langue africaine.",
+            initial_prompt=prompt,
             fp16=sur_gpu,
         )
 
@@ -196,6 +244,9 @@ def lancer_transcription(fichiers: list[Path], model_name: str, workers: int):
         log.info("✅ Tous les fichiers ont déjà été traités !")
         return
 
+    prompt = construire_prompt_whisper()
+    log.info(f"Prompt Whisper ({len(prompt)} car.) : {prompt[:120]}...")
+
     stats = {"ok": 0, "erreur": 0, "deja_traite": 0}
     debut_global = time.time()
     traites = set(deja_traites)
@@ -205,7 +256,7 @@ def lancer_transcription(fichiers: list[Path], model_name: str, workers: int):
     # Avec workers>1, utiliser CPU uniquement.
     with ThreadPoolExecutor(max_workers=workers) as executor:
         futures = {
-            executor.submit(transcrire_fichier, f, model_name): f
+            executor.submit(transcrire_fichier, f, model_name, prompt): f
             for f in a_traiter
         }
 

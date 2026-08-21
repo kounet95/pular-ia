@@ -18,5 +18,13 @@
     "nb_chunks": 55,
     "nb_chars": 21166,
     "date": "2026-06-04T17:44:04.245514"
+  },
+  {
+    "livre_id": "dictionnaire_pular",
+    "titre": "Dictionnaire Pular-Français",
+    "auteur": "Corpus Pular",
+    "langue": "ff",
+    "source": "corpus-pular/dataset/wordlist.json",
+    "date_ajout": "2026-08-21T18:00:04"
   }
 ]
