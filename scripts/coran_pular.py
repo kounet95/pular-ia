@@ -26,6 +26,20 @@ FICHIER_INDEX    = DOSSIER_META / "coran_versets_index.json"
 _index_liste: list[dict] | None = None
 _index_dict:  dict[tuple, dict] | None = None
 
+# Diacritiques arabes (harakat, tanwin, sukun, shadda...) — les retirer permet
+# de retrouver un verset même si le texte collé par l'utilisateur n'a pas
+# exactement les mêmes signes diacritiques que la source quranenc.com.
+_DIACRITIQUES_RE = re.compile(r"[ؐ-ًؚ-ٰٟۖ-ۭ]")
+
+
+def _normaliser_arabe(texte: str) -> str:
+    if not texte:
+        return ""
+    texte = _DIACRITIQUES_RE.sub("", texte)
+    texte = texte.replace("أ", "ا").replace("إ", "ا").replace("آ", "ا").replace("ٱ", "ا")
+    texte = texte.replace("ى", "ي").replace("ة", "ه")
+    return texte.strip()
+
 
 def _charger_bruts(fichier: Path) -> dict[tuple, dict]:
     if not fichier.exists():
@@ -100,10 +114,13 @@ def rechercher_versets(q: str, n: int = 10) -> list[dict]:
         return [v] if v else []
 
     index_liste, _ = _charger()
+    q_norm = _normaliser_arabe(q)
     q_lower = q.lower()
     resultats = []
     for v in index_liste:
-        if q_lower in v["traduction"].lower() or q_lower in v["explication"].lower():
+        if (q_lower in v["traduction"].lower()
+                or q_lower in v["explication"].lower()
+                or (q_norm and q_norm in _normaliser_arabe(v["arabe"]))):
             resultats.append(v)
             if len(resultats) >= n:
                 break
