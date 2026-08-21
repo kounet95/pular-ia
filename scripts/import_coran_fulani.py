@@ -62,11 +62,23 @@ DOSSIER_RAW_TXT  = Path("./corpus-pular/livres/raw")
 DOSSIER_RAW_JSON = Path("./corpus-pular/livres/metadata")
 
 
+HEADERS = {
+    # Le serveur renvoie 403 sur le User-Agent par défaut d'urllib —
+    # un User-Agent de navigateur classique passe sans problème.
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Accept": "application/json",
+}
+
+
 def recuperer_sourate(cle: str, numero: int, essais: int = 3) -> list[dict]:
     url = f"{API_BASE}/{cle}/{numero}"
     for tentative in range(1, essais + 1):
         try:
-            with urllib.request.urlopen(url, timeout=20) as r:
+            requete = urllib.request.Request(url, headers=HEADERS)
+            with urllib.request.urlopen(requete, timeout=20) as r:
                 data = json.loads(r.read().decode("utf-8"))
             resultat = data.get("result", [])
             return resultat if isinstance(resultat, list) else [resultat]

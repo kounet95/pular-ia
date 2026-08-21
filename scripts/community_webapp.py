@@ -748,6 +748,38 @@ async def api_rag_stats():
     return JSONResponse(await asyncio.to_thread(stats_rag))
 
 # ══════════════════════════════════════════════════════════════════════════════
+# CORAN EN PULAR — recherche de versets (traduction + explication)
+# ══════════════════════════════════════════════════════════════════════════════
+
+from coran_pular import rechercher_versets as coran_rechercher, stats_coran
+
+@app.get("/api/coran/rechercher")
+async def api_coran_rechercher(q: str, n: int = 10):
+    """
+    Recherche des versets coraniques en pular.
+    - "2:255" → verset précis.
+    - texte libre → recherche par mots-clés dans la traduction et l'explication.
+    """
+    if not q or not q.strip():
+        raise HTTPException(400, "Requête vide.")
+    resultats = await asyncio.to_thread(coran_rechercher, q, n)
+    return JSONResponse({"ok": True, "query": q, "resultats": resultats})
+
+@app.get("/api/coran/verset/{sourate}/{verset}")
+async def api_coran_verset(sourate: int, verset: int):
+    """Retourne un verset précis (arabe + traduction fulani_rwwad + explication fulani_mokhtasar)."""
+    from coran_pular import obtenir_verset
+    v = await asyncio.to_thread(obtenir_verset, sourate, verset)
+    if not v:
+        raise HTTPException(404, "Verset introuvable — le corpus Coran n'est peut-être pas encore importé.")
+    return JSONResponse({"ok": True, "verset": v})
+
+@app.get("/api/coran/stats")
+async def api_coran_stats():
+    """Statistiques du corpus coranique en pular."""
+    return JSONResponse(await asyncio.to_thread(stats_coran))
+
+# ══════════════════════════════════════════════════════════════════════════════
 # ESPACE HISTOIRE & PATRIMOINE — manuscrits familiaux, thèses, poèmes, familles
 # ══════════════════════════════════════════════════════════════════════════════
 

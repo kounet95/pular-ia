@@ -26,5 +26,21 @@
     "langue": "ff",
     "source": "corpus-pular/dataset/wordlist.json",
     "date_ajout": "2026-08-21T18:00:04"
+  },
+  {
+    "livre_id": "fulani_rwwad",
+    "titre": "Coran — Traduction fulani (Rowwad Translation Center)",
+    "auteur": "Rowwad Translation Center / IslamHouse.com",
+    "langue": "ff",
+    "source": "quranenc.com",
+    "date_ajout": "2026-08-21T18:19:42"
+  },
+  {
+    "livre_id": "fulani_mokhtasar",
+    "titre": "Coran — Tafsir Al-Mukhtasar en fulani (exégèse)",
+    "auteur": "Tafsir Center for Quranic Studies / IslamHouse.com",
+    "langue": "ff",
+    "source": "quranenc.com",
+    "date_ajout": "2026-08-21T18:26:29"
   }
 ]

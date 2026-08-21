@@ -656,6 +656,7 @@
   <a href="#carte-corriger">✏️ Corriger</a>
   <a href="#carte-livres">📚 Livres</a>
   <a href="#carte-histoire">🏛️ Histoire</a>
+  <a href="#carte-coran">🕌 Coran</a>
   <a href="#carte-compte">👤 Mon compte</a>
   <a href="#carte-editorial">📰 Éditorial</a>
   <a href="/editos">✍️ Éditos</a>
@@ -1119,6 +1120,23 @@
       ">➕ Enregistrer la famille</button>
       <div id="fam-liste" style="margin-top:14px;"></div>
     </div>
+  </div>
+
+  <!-- ══ CORAN EN PULAR ══ -->
+  <div class="carte" id="carte-coran" style="border-color:#2AABEE88;">
+    <h2>🕌 Coran en pular</h2>
+    <p style="font-size:.82rem;color:var(--gris);margin-bottom:14px;">
+      Cherche un verset par mots-clés en pular, ou directement par référence (ex: <code>2:255</code>).
+      Chaque résultat affiche le verset arabe, la traduction pular (Rowwad) puis une explication plus détaillée (Tafsir Al-Mukhtasar).
+    </p>
+    <div style="display:flex;gap:8px;">
+      <input class="input-livre" id="coran-query" type="text" placeholder="Ex: 2:255, ou un mot en pular..." style="margin:0;flex:1;" onkeydown="if(event.key==='Enter')coranRechercher()">
+      <button onclick="coranRechercher()" style="
+        padding:9px 14px;border-radius:8px;border:none;
+        background:#2AABEE;color:white;cursor:pointer;font-size:.9rem;
+      ">🔍</button>
+    </div>
+    <div id="coran-resultats" style="margin-top:12px;"></div>
   </div>
 
   <!-- ══ ESPACE ÉDITORIAL ══ -->
@@ -3397,6 +3415,30 @@ async function histRechercher() {
           ${CONF_ICONS[res.confidentialite]||'🌐'} ${res.titre} · ${res.royaume} · ${res.auteur_detenteur}
           <span class="rag-score" style="float:right">⭐ ${(res.score*100).toFixed(0)}%</span>
         </div>
+      </div>`).join('');
+  } catch(e) {
+    div.innerHTML = `<div style="color:var(--rouge);font-size:.85rem;">❌ ${e.message}</div>`;
+  }
+}
+
+async function coranRechercher() {
+  const q = document.getElementById('coran-query').value.trim();
+  if (!q) return;
+  const div = document.getElementById('coran-resultats');
+  div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;">🔍 Recherche...</div>';
+  try {
+    const r = await fetch(`${API}/api/coran/rechercher?q=${encodeURIComponent(q)}&n=8`, { headers: H });
+    const d = await r.json();
+    if (!d.resultats?.length) {
+      div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;">Aucun résultat — essaie un autre mot, ou une référence comme 2:255.</div>';
+      return;
+    }
+    div.innerHTML = d.resultats.map(v => `
+      <div class="rag-result">
+        <div class="rag-meta" style="margin-bottom:6px;">📖 Sourate ${v.sourate}, verset ${v.verset}</div>
+        ${v.arabe ? `<div dir="rtl" style="font-size:1.05rem;line-height:1.9;margin-bottom:8px;color:var(--texte);">${v.arabe}</div>` : ''}
+        ${v.traduction ? `<div style="margin-bottom:8px;"><strong style="color:var(--or);font-size:.75rem;">Traduction pular :</strong><br>${v.traduction}</div>` : ''}
+        ${v.explication ? `<div><strong style="color:#2AABEE;font-size:.75rem;">Explication (Tafsir) :</strong><br>${v.explication}</div>` : ''}
       </div>`).join('');
   } catch(e) {
     div.innerHTML = `<div style="color:var(--rouge);font-size:.85rem;">❌ ${e.message}</div>`;
