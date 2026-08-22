@@ -262,15 +262,20 @@ def transcrire_messages(messages: list[dict], model_name: str) -> list[dict]:
     log.info(f"🎙️  Transcription de {len(a_transcrire)} fichiers avec Whisper {model_name}")
     model = get_whisper(model_name)
 
-    for entree in tqdm(a_transcrire, desc="Transcription"):
+    for i, entree in enumerate(tqdm(a_transcrire, desc="Transcription"), 1):
         try:
             result = model.transcribe(
                 entree["fichier_local"],
                 language=None,       # détection automatique de langue
                 task="transcribe",
-                beam_size=5,
-                best_of=5,
+                # beam_size=1 = décodage glouton : les canaux Telegram islamiques
+                # postent souvent de longs prêches (audios de plusieurs dizaines de
+                # minutes) — beam_size=5/best_of=5 y est beaucoup trop lent sur CPU
+                # (constaté : >100s pour 1 seul fichier avec le modèle tiny). Même
+                # config que scripts/transcription.py, 3-5x plus rapide.
+                beam_size=1,
                 temperature=0.0,
+                condition_on_previous_text=False,
             )
             texte_transcrit = result["text"].strip()
             entree["transcription"] = texte_transcrit
@@ -280,6 +285,11 @@ def transcrire_messages(messages: list[dict], model_name: str) -> list[dict]:
             if texte_transcrit:
                 entree["hash"]    = hash_texte(texte_transcrit)
                 entree["domaine"] = detecter_domaine(texte_transcrit)
+
+            # Sauvegarde périodique : un backlog de centaines de longs audios peut
+            # prendre des heures, on ne veut pas tout reperdre si ça s'interrompt.
+            if i % 20 == 0:
+                sauvegarder_base(messages)
 
             log.debug(f"  ✅ [{entree['langue_detect']}] {entree['message_id']}")
 
