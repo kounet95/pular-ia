@@ -21,6 +21,10 @@ Usage:
     python scripts/import_coran_fulani.py
     python scripts/import_coran_fulani.py --seulement fulani_rwwad
     python scripts/import_coran_fulani.py --sleep 0.3
+    python scripts/import_coran_fulani.py --sans-rag   # juste télécharger + fusionner,
+                                                         # sans indexation RAG (rapide,
+                                                         # léger — utilisé au démarrage
+                                                         # du serveur, cf. start.sh)
 """
 
 import sys
@@ -32,7 +36,6 @@ import urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from scripts import rag_livres
 
 logging.basicConfig(
     level=logging.INFO,
@@ -108,7 +111,7 @@ def telecharger_traduction(cle: str, pause: float) -> tuple[str, list[dict]]:
     return "\n\n".join(blocs), tous_versets
 
 
-def importer(cle: str, meta: dict, pause: float, forcer: bool):
+def importer(cle: str, meta: dict, pause: float, forcer: bool, sans_rag: bool = False):
     DOSSIER_RAW_TXT.mkdir(parents=True, exist_ok=True)
     DOSSIER_RAW_JSON.mkdir(parents=True, exist_ok=True)
 
@@ -136,6 +139,13 @@ def importer(cle: str, meta: dict, pause: float, forcer: bool):
     if not texte.strip():
         log.error(f"{cle} — texte vide, indexation annulée")
         return
+
+    if sans_rag:
+        log.info(f"{cle} — --sans-rag : téléchargement seul, pas d'indexation RAG/ChromaDB.")
+        return
+
+    # Import tardif : évite de charger chromadb/sentence-transformers en mode --sans-rag
+    from scripts import rag_livres
 
     # Enregistrer dans l'index des livres (même format que l'espace "Livres" du site)
     livres = rag_livres.charger_index()
@@ -166,13 +176,20 @@ def main():
                          help="Pause entre requêtes API (secondes)")
     parser.add_argument("--forcer", action="store_true",
                          help="Retélécharger même si déjà en cache")
+    parser.add_argument("--sans-rag", action="store_true",
+                         help="Télécharger + fusionner seulement, sans indexation RAG/ChromaDB")
     args = parser.parse_args()
 
     Path("logs").mkdir(exist_ok=True)
 
     cibles = {args.seulement: TRADUCTIONS[args.seulement]} if args.seulement else TRADUCTIONS
     for cle, meta in cibles.items():
-        importer(cle, meta, pause=args.sleep, forcer=args.forcer)
+        importer(cle, meta, pause=args.sleep, forcer=args.forcer, sans_rag=args.sans_rag)
+
+    if args.sans_rag:
+        from scripts.coran_pular import construire_index
+        construire_index(forcer=True)
+        log.info("✅ Index de recherche des versets reconstruit (coran_versets_index.json).")
 
     log.info("✅ Import Coran fulani terminé. "
              "Prochaine étape : python scripts/import_dictionnaire.py")
