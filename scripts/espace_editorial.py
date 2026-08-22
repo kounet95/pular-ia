@@ -291,8 +291,12 @@ def creer_transaction_fedapay(
     }
     if email:
         corps["customer"] = {"email": email}
-    transaction = _fedapay_requete("POST", "/transactions", json=corps)
-    lien = _fedapay_requete("POST", f"/transactions/{transaction['id']}/token")
+    # L'API FedaPay enveloppe ses réponses dans une clé du type
+    # "v1/transaction" / "v1/token" plutôt que de renvoyer l'objet à plat.
+    reponse = _fedapay_requete("POST", "/transactions", json=corps)
+    transaction = reponse.get("v1/transaction", reponse)
+    reponse_lien = _fedapay_requete("POST", f"/transactions/{transaction['id']}/token")
+    lien = reponse_lien.get("v1/token", reponse_lien)
     return {"id": transaction["id"], "url": lien["url"]}
 
 def verifier_signature_webhook_fedapay(payload: bytes, sig_header: str) -> dict:
