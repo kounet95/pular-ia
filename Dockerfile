@@ -29,8 +29,8 @@ RUN pip install --no-cache-dir --timeout 300 \
     python-docx==1.1.2 \
     tqdm==4.66.4 \
     numpy==1.26.4 \
-    groq>=0.9.0 \
-    gradio-client>=1.3.0 \
+    "groq>=0.9.0" \
+    "gradio-client>=1.3.0" \
     qrcode[pil]==7.4.2
 
 # ── 4. ChromaDB + embeddings (lourd, isolé) ───────────────────────────────────
@@ -42,16 +42,16 @@ RUN pip install --no-cache-dir --timeout 300 \
 
 # ── 5. Espace Éditorial — Stripe / Claude / DALL·E ────────────────────────────
 RUN pip install --no-cache-dir --timeout 300 \
-    stripe>=9.0.0 \
-    anthropic>=0.90.0 \
-    openai>=2.0.0
+    "stripe>=9.0.0" \
+    "anthropic>=0.90.0" \
+    "openai>=2.0.0"
 
 # ── 6. Bot Telegram (community_bot.py, lancé avec le serveur web) ────────────
 # + Telethon (telegram_scraper.py — scraping des canaux communautaires, API
 # MTProto compte utilisateur, différente de l'API Bot ci-dessus)
 RUN pip install --no-cache-dir --timeout 300 \
-    python-telegram-bot>=20.0 \
-    telethon>=1.34.0
+    "python-telegram-bot>=20.0" \
+    "telethon>=1.34.0"
 
 # ── 7. Forcer numpy 1.26.4 + numba 0.59 compatibles ─────────────────────────
 # chromadb/sentence-transformers tirent numpy 2.x ET numba compilé pour numpy 2.x.
