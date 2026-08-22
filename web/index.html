@@ -3435,10 +3435,10 @@ async function coranRechercher() {
     }
     div.innerHTML = d.resultats.map(v => `
       <div class="rag-result">
-        <div class="rag-meta" style="margin-bottom:6px;">📖 Sourate ${v.sourate}, verset ${v.verset}</div>
+        <div class="rag-meta" style="margin-bottom:6px;">📖 Sourate ${v.sourate}${v.sourate_nom ? ' — ' + v.sourate_nom : ''}, verset ${v.verset}</div>
         ${v.arabe ? `<div dir="rtl" style="font-size:1.05rem;line-height:1.9;margin-bottom:8px;color:var(--texte);">${v.arabe}</div>` : ''}
-        ${v.traduction ? `<div style="margin-bottom:8px;"><strong style="color:var(--or);font-size:.75rem;">Traduction pular :</strong><br>${v.traduction}</div>` : ''}
-        ${v.explication ? `<div><strong style="color:#2AABEE;font-size:.75rem;">Explication (Tafsir) :</strong><br>${v.explication}</div>` : ''}
+        ${v.traduction ? `<div style="margin-bottom:8px;"><strong style="color:var(--or);font-size:.75rem;">Traduction — ${v.traduction_source || 'Rowwad'} :</strong><br>${v.traduction}</div>` : ''}
+        ${v.explication ? `<div><strong style="color:#2AABEE;font-size:.75rem;">Explication — ${v.explication_source || 'Tafsir Al-Mukhtasar'} :</strong><br>${v.explication}</div>` : ''}
       </div>`).join('');
   } catch(e) {
     div.innerHTML = `<div style="color:var(--rouge);font-size:.85rem;">❌ ${e.message}</div>`;
