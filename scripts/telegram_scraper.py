@@ -115,7 +115,7 @@ def charger_progres() -> dict:
     if FICHIER_PROGRES.exists():
         with open(FICHIER_PROGRES, encoding="utf-8") as f:
             return json.load(f)
-    return {"canaux_termines": [], "messages_ids": {}}
+    return {"messages_ids": {}, "dernier_id": {}}
 
 
 def sauvegarder_progres(progres: dict):
@@ -154,15 +154,22 @@ async def scraper_canal(
     canal: str,
     limite: int,
     ids_deja_vus: set,
+    min_id: int = 0,
 ) -> list[dict]:
-    log.info(f"⬇️  Scraping @{canal} (limite={limite or 'tous'})")
+    """
+    min_id > 0 : ne récupère que les messages plus récents que le dernier vu
+    lors d'un run précédent (scraping incrémental — voir main()). Sans ça,
+    chaque run re-parcourrait tout l'historique du canal juste pour ignorer
+    les messages déjà connus.
+    """
+    log.info(f"⬇️  Scraping @{canal} (limite={limite or 'tous'}, min_id={min_id or 'aucun'})")
     messages = []
 
     try:
         entity    = await client.get_entity(canal)
         nom_canal = getattr(entity, "title", canal)
 
-        async for msg in client.iter_messages(entity, limit=limite):
+        async for msg in client.iter_messages(entity, limit=limite, min_id=min_id):
             if msg.id in ids_deja_vus:
                 continue
 
@@ -384,29 +391,25 @@ async def main(canaux: list, limite: int, sans_audio: bool, whisper_model: str):
     for d in [DOSSIER_TELEGRAM, DOSSIER_AUDIO_TG, DOSSIER_JSONL]:
         d.mkdir(parents=True, exist_ok=True)
 
-    progres      = charger_progres()
-    deja_termines = set(progres.get("canaux_termines", []))
+    progres       = charger_progres()
     ids_par_canal = progres.get("messages_ids", {})
+    dernier_id    = progres.get("dernier_id", {})
     tous_messages = charger_base()
 
-    canaux_restants = [c for c in canaux if c not in deja_termines]
-
-    if deja_termines:
-        log.info(f"🔄 Reprise — déjà terminés : {list(deja_termines)}")
-    if canaux_restants:
-        log.info(f"📋 À scraper : {canaux_restants}")
-    else:
-        log.info("✅ Tous les canaux ont déjà été scrapés — passage à la transcription")
+    log.info(f"📋 Canaux (scan incrémental, {len(canaux)}) : {canaux}")
 
     async with TelegramClient(str(FICHIER_SESSION), API_ID, API_HASH) as client:
         await client.start(phone=PHONE)
         log.info("🔗 Connecté à Telegram")
 
-        for canal in canaux_restants:
+        for canal in canaux:
             ids_vus = set(ids_par_canal.get(canal, []))
+            min_id  = dernier_id.get(canal, 0)
 
-            # 1. Scraping textes
-            nouveaux = await scraper_canal(client, canal, limite, ids_vus)
+            # 1. Scraping textes — uniquement les messages plus récents que
+            #    dernier_id (scraping incrémental : chaque run ne récupère
+            #    que ce qui a été posté depuis le run précédent)
+            nouveaux = await scraper_canal(client, canal, limite, ids_vus, min_id=min_id)
 
             # 2. Téléchargement audio (sauf si --sans-audio)
             if not sans_audio:
@@ -415,14 +418,15 @@ async def main(canaux: list, limite: int, sans_audio: bool, whisper_model: str):
             # Fusion avec la base existante
             tous_messages.extend(nouveaux)
             ids_par_canal[canal] = list(ids_vus | {m["message_id"] for m in nouveaux})
+            if nouveaux:
+                dernier_id[canal] = max([min_id] + [m["message_id"] for m in nouveaux])
 
             # Sauvegarde immédiate
-            deja_termines.add(canal)
-            progres["canaux_termines"] = list(deja_termines)
-            progres["messages_ids"]    = ids_par_canal
+            progres["messages_ids"] = ids_par_canal
+            progres["dernier_id"]   = dernier_id
             sauvegarder_progres(progres)
             sauvegarder_base(tous_messages)
-            log.info(f"💾 Progression sauvegardée après @{canal}")
+            log.info(f"💾 {len(nouveaux)} nouveau(x) message(s) sur @{canal} — progression sauvegardée")
 
     # 3. Transcription de tous les audios (y compris anciens non transcrits)
     if not sans_audio:
@@ -454,12 +458,12 @@ if __name__ == "__main__":
         help="Ne pas télécharger ni transcrire les fichiers audio",
     )
     parser.add_argument(
-        "--whisper-model", default="large-v3",
-        help="Modèle Whisper : tiny/base/small/medium/large-v3 (défaut: large-v3)",
+        "--whisper-model", default=os.getenv("WHISPER_MODEL_BOT", "large-v3"),
+        help="Modèle Whisper : tiny/base/small/medium/large-v3 (défaut: $WHISPER_MODEL_BOT ou large-v3)",
     )
     parser.add_argument(
         "--reset", action="store_true",
-        help="Recommencer depuis zéro (ignore la progression sauvegardée)",
+        help="Réinitialiser la progression (le prochain run re-scrape tout depuis le début)",
     )
     args = parser.parse_args()
 
