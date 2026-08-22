@@ -242,11 +242,17 @@ def fedapay_configure() -> tuple[str, str]:
     la production réelle ; sandbox par défaut — pour éviter qu'une clé de
     test oubliée en "live" par erreur ne bascule silencieusement en argent
     réel (même logique de sécurité par défaut que ailleurs dans ce fichier)."""
-    cle = os.getenv("FEDAPAY_SECRET_KEY", "")
+    cle = os.getenv("FEDAPAY_SECRET_KEY", "").strip()
     if not cle:
         raise RuntimeError("Paiement mobile money non configuré (FEDAPAY_SECRET_KEY manquante).")
     env = os.getenv("FEDAPAY_ENV", "sandbox").strip().lower()
     base = "https://api.fedapay.com/v1" if env == "live" else "https://sandbox-api.fedapay.com/v1"
+    # Diagnostic sûr : jamais la clé complète, juste de quoi repérer un
+    # mauvais préfixe / une longueur suspecte (copié tronqué) / un
+    # environnement mal réglé — visible uniquement dans les logs Railway.
+    log.info(
+        f"FedaPay config — clé: {cle[:11]}...({len(cle)} car.) | env: {env!r} | base: {base}"
+    )
     return cle, base
 
 def _fedapay_requete(methode: str, chemin: str, **kwargs) -> dict:
