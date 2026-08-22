@@ -47,8 +47,11 @@ RUN pip install --no-cache-dir --timeout 300 \
     openai>=2.0.0
 
 # ── 6. Bot Telegram (community_bot.py, lancé avec le serveur web) ────────────
+# + Telethon (telegram_scraper.py — scraping des canaux communautaires, API
+# MTProto compte utilisateur, différente de l'API Bot ci-dessus)
 RUN pip install --no-cache-dir --timeout 300 \
-    python-telegram-bot>=20.0
+    python-telegram-bot>=20.0 \
+    telethon>=1.34.0
 
 # ── 7. Forcer numpy 1.26.4 + numba 0.59 compatibles ─────────────────────────
 # chromadb/sentence-transformers tirent numpy 2.x ET numba compilé pour numpy 2.x.
