@@ -262,6 +262,15 @@ def transcrire_messages(messages: list[dict], model_name: str) -> list[dict]:
     log.info(f"🎙️  Transcription de {len(a_transcrire)} fichiers avec Whisper {model_name}")
     model = get_whisper(model_name)
 
+    # Même prompt enrichi (dictionnaire + Coran fulani) que scripts/transcription.py —
+    # sans ça, tout le vocabulaire importé pour améliorer Whisper ne servait qu'au
+    # pipeline principal, jamais au scraping Telegram. Import tardif : évite de
+    # dupliquer la logique et de perturber le logging (transcription.py appelle
+    # aussi logging.basicConfig() au chargement).
+    from transcription import construire_prompt_whisper
+    prompt = construire_prompt_whisper()
+    log.info(f"Prompt Whisper ({len(prompt)} car.) : {prompt[:120]}...")
+
     for i, entree in enumerate(tqdm(a_transcrire, desc="Transcription"), 1):
         try:
             result = model.transcribe(
@@ -276,6 +285,7 @@ def transcrire_messages(messages: list[dict], model_name: str) -> list[dict]:
                 beam_size=1,
                 temperature=0.0,
                 condition_on_previous_text=False,
+                initial_prompt=prompt,
             )
             texte_transcrit = result["text"].strip()
             entree["transcription"] = texte_transcrit

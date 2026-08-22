@@ -4175,6 +4175,38 @@ async def api_telegram_status():
         except Exception: pass
     return JSONResponse(base)
 
+@app.get("/api/prof/telegram/echantillon")
+async def api_telegram_echantillon(n: int = 10, canal: str = None):
+    """Échantillon des derniers messages scrapés+transcrits, pour écoute/vérification dans le frontend."""
+    fichier_base = _TELEGRAM_DOSSIER / "base_connaissance.json"
+    if not fichier_base.exists():
+        return JSONResponse({"ok": True, "messages": []})
+
+    def _lire():
+        with open(fichier_base, encoding="utf-8") as f:
+            data = json.load(f)
+        filtres = [
+            m for m in data
+            if m.get("transcription") and m.get("fichier_local")
+            and (not canal or m.get("canal") == canal)
+        ]
+        filtres.sort(key=lambda m: m.get("date") or "", reverse=True)
+        return [
+            {
+                "canal":         m.get("canal"),
+                "canal_nom":     m.get("canal_nom"),
+                "message_id":    m.get("message_id"),
+                "date":          m.get("date"),
+                "transcription": m.get("transcription"),
+                "langue_detect": m.get("langue_detect"),
+                "audio_nom":     Path(m["fichier_local"]).name,
+            }
+            for m in filtres[:n]
+        ]
+
+    messages = await asyncio.to_thread(_lire)
+    return JSONResponse({"ok": True, "messages": messages})
+
 @app.post("/api/prof/telegram/lancer")
 async def api_telegram_lancer(
     canaux:     str  = Form(""),

@@ -2025,6 +2025,18 @@
           ⏳ Scraping en cours… <span class="loader" style="vertical-align:middle;"></span>
           <div style="font-size:.72rem;color:var(--gris);margin-top:4px;">Peut prendre 10–60 minutes. Tu peux fermer ce panel.</div>
         </div>
+
+        <!-- Échantillon écoutable : audio + transcription côte à côte -->
+        <div style="margin-top:16px;border-top:1px solid #1e3d28;padding-top:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <span style="font-size:.85rem;font-weight:600;color:var(--or);">🎧 Tester les audios scrapés</span>
+            <button onclick="tgChargerEchantillon()" style="
+              padding:6px 12px;border-radius:8px;border:1px solid #2d5c3a;
+              background:transparent;color:var(--texte);cursor:pointer;font-size:.78rem;
+            ">🔄 Rafraîchir</button>
+          </div>
+          <div id="tg-echantillon"></div>
+        </div>
       </div>
 
       <!-- ── Panel : Entraînement ── -->
@@ -5105,7 +5117,7 @@ function profSetTab(tab) {
   if (tab === 'utilisateurs')   profChargerUtilisateurs();
   if (tab === 'entrainement')   profChargerEntrainement();
   if (tab === 'dataset')        dsSetTab('donnees');
-  if (tab === 'telegram')       tgChargerStatus();
+  if (tab === 'telegram')       { tgChargerStatus(); tgChargerEchantillon(); }
   if (tab === 'ajouter')        profChargerTousMots();
 }
 window.profSetTab = profSetTab;
@@ -6430,6 +6442,31 @@ async function tgLancer() {
   }
 }
 window.tgLancer = tgLancer;
+
+async function tgChargerEchantillon() {
+  const div = document.getElementById('tg-echantillon');
+  if (!div) return;
+  div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;">🔍 Chargement...</div>';
+  try {
+    const r = await fetch(`${API}/api/prof/telegram/echantillon?n=10`, {headers:H});
+    const d = await r.json();
+    if (!d.messages?.length) {
+      div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;">Aucun audio transcrit pour l\'instant — lance un scraping d\'abord.</div>';
+      return;
+    }
+    div.innerHTML = d.messages.map(m => `
+      <div class="rag-result" style="margin-bottom:10px;">
+        <div class="rag-meta" style="margin-bottom:6px;">
+          📡 @${m.canal} · ${m.date ? m.date.slice(0,16).replace('T',' ') : '?'} · langue détectée: ${m.langue_detect || '?'}
+        </div>
+        <audio controls src="${API}/audio/${encodeURIComponent(m.audio_nom)}" style="width:100%;margin-bottom:8px;border-radius:8px;"></audio>
+        <div style="font-size:.85rem;line-height:1.5;">${m.transcription}</div>
+      </div>`).join('');
+  } catch(e) {
+    div.innerHTML = `<div style="color:var(--rouge);font-size:.85rem;">❌ ${e.message}</div>`;
+  }
+}
+window.tgChargerEchantillon = tgChargerEchantillon;
 
 // Charger les mots custom et phrases custom au démarrage
 chargerMotsCustom();
