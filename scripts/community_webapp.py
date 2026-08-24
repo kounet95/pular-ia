@@ -310,6 +310,17 @@ async def index():
         status_code=200,
     )
 
+# ── Logo poutorou ── référencé en chemin relatif par index.html
+# (<img src="poutorou.jpg">) — pas de dossier statique monté pour web/,
+# donc il faut une route dédiée, sinon le navigateur demande /poutorou.jpg
+# qui ne correspond à rien.
+@app.get("/poutorou.jpg")
+async def poutorou_image():
+    chemin = PROJET_ROOT / "web" / "poutorou.jpg"
+    if not chemin.exists():
+        raise HTTPException(404, "poutorou.jpg introuvable")
+    return FileResponse(str(chemin))
+
 # ── API: Transcription ─────────────────────────────────────────────────────────
 @app.post("/api/transcrire")
 async def api_transcrire(audio: UploadFile = File(...)):
