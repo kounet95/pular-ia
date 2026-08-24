@@ -159,11 +159,27 @@
 
     /* ── Carte ── */
     .carte {
+      position: relative;
       background: var(--carte);
       border: 1px solid #1e3d28;
       border-radius: var(--radius);
-      padding: 20px;
+      padding: 24px 20px 20px;
       scroll-margin-top: 56px;
+    }
+    /* ── Bordure tissée poutorou ── petit bandeau en chevrons répétés,
+       écho discret du tissage du bonnet peul sur chaque carte du site. */
+    .carte::before {
+      content: "";
+      position: absolute;
+      top: -1px;
+      left: 14px;
+      right: 14px;
+      height: 5px;
+      border-radius: 0 0 3px 3px;
+      background:
+        repeating-linear-gradient(135deg,
+          var(--or) 0 5px, transparent 5px 10px,
+          var(--vert) 10px 15px, transparent 15px 20px);
     }
     .carte h2 { font-size: 1rem; color: var(--or); margin-bottom: 12px; }
     /* ── Badges "classe du poutorou" ── voir carte-histoire pour le contexte
