@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pular Du Fouta Djallon IA — Contribue au corpus </title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌙</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 90'><path d='M15,52 Q15,12 50,10 Q85,12 85,52 Z' fill='%23e8d4a0'/><rect x='12' y='48' width='76' height='10' fill='%231a6b3c'/><rect x='10' y='58' width='80' height='10' fill='%238b1e1e'/><rect x='8' y='68' width='84' height='16' rx='2' fill='%231a1a1a'/></svg>">
   <style>
     :root {
       --vert:   #1a6b3c;
@@ -111,7 +111,21 @@
       font-size: 1.05rem;
       padding: 4px 10px 18px;
       letter-spacing: .3px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
+    /* ── Logo poutorou (bonnet peul du Fouta Djallon) ──
+       Motif inspiré du bonnet traditionnel peul : bandes vert/rouge/noir
+       sur fond couleur fibre naturelle, losanges — voir carte-histoire. */
+    .logo-poutorou {
+      width: 28px;
+      height: 25px;
+      flex-shrink: 0;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,.4));
+    }
+    header h1 { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+    header .logo-poutorou { width: 38px; height: 34px; }
     #sidebar a {
       display: flex;
       align-items: center;
@@ -152,6 +166,19 @@
       scroll-margin-top: 56px;
     }
     .carte h2 { font-size: 1rem; color: var(--or); margin-bottom: 12px; }
+    /* ── Badges "classe du poutorou" ── voir carte-histoire pour le contexte
+       culturel (gando/landho/djion djaoudi/maoudho gorol). */
+    .badge-classe {
+      display: inline-block;
+      font-size: .62rem;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 999px;
+      color: #16150f;
+      vertical-align: middle;
+      margin-left: 8px;
+      letter-spacing: .02em;
+    }
 
     /* ── Pseudo ── */
     #pseudo-input {
@@ -693,7 +720,7 @@
 <div id="sidebar-backdrop" onclick="fermerSidebar()"></div>
 
 <nav id="sidebar">
-  <div id="sidebar-logo">🌙 Pular IA</div>
+  <div id="sidebar-logo"><svg class="logo-poutorou" viewBox="0 0 100 90" aria-hidden="true"><path d="M15,52 Q15,12 50,10 Q85,12 85,52 Z" fill="#e8d4a0"/><rect x="12" y="48" width="76" height="10" fill="#1a6b3c"/><polygon points="12,48 20,58 28,48 36,58 44,48 52,58 60,48 68,58 76,48 84,58 88,48" fill="none" stroke="#e8d4a0" stroke-width="1.6"/><rect x="10" y="58" width="80" height="10" fill="#8b1e1e"/><g fill="#e8d4a0"><polygon points="20,60 24,63 20,66 16,63"/><polygon points="40,60 44,63 40,66 36,63"/><polygon points="60,60 64,63 60,66 56,63"/><polygon points="80,60 84,63 80,66 76,63"/></g><rect x="8" y="68" width="84" height="8" rx="2" fill="#1a1a1a"/></svg> Pular IA</div>
   <a href="#carte-enregistrer">🎙️ <span>Enregistrer</span></a>
   <a href="#carte-corriger">✏️ <span>Corriger</span></a>
   <a href="#carte-livres">📚 <span>Livres</span></a>
@@ -714,7 +741,7 @@
 <div id="page-content">
 
 <header>
-  <h1>🌙 Pular fuuta Jaloo IA — Corpus communautaire</h1>
+  <h1><svg class="logo-poutorou" viewBox="0 0 100 90" aria-hidden="true"><path d="M15,52 Q15,12 50,10 Q85,12 85,52 Z" fill="#e8d4a0"/><rect x="12" y="48" width="76" height="10" fill="#1a6b3c"/><polygon points="12,48 20,58 28,48 36,58 44,48 52,58 60,48 68,58 76,48 84,58 88,48" fill="none" stroke="#e8d4a0" stroke-width="1.6"/><rect x="10" y="58" width="80" height="10" fill="#8b1e1e"/><g fill="#e8d4a0"><polygon points="20,60 24,63 20,66 16,63"/><polygon points="40,60 44,63 40,66 36,63"/><polygon points="60,60 64,63 60,66 56,63"/><polygon points="80,60 84,63 80,66 76,63"/></g><rect x="8" y="68" width="84" height="8" rx="2" fill="#1a1a1a"/></svg> Pular fuuta Jaloo IA — Corpus communautaire</h1>
   <p>Aide-nous à construire le premier modèle d'IA pour la langue pular</p>
 </header>
 
@@ -1089,8 +1116,9 @@
   </div>
 
   <!-- ══ ESPACE HISTOIRE & PATRIMOINE PEUL ══ -->
-  <div class="carte" id="carte-histoire" style="border-color:#8b5a2b88;">
-    <h2>🏛️ Espace Histoire & Patrimoine peul</h2>
+  <div class="carte" id="carte-histoire" style="border-color:#b23a2e88;">
+    <h2>🏛️ Espace Histoire & Patrimoine peul <span class="badge-classe" style="background:#c0392b;">👑 Landho</span></h2>
+    <p style="font-size:.68rem;color:var(--gris);margin-top:-8px;margin-bottom:10px;">Bande rouge du poutorou — mémoire des chefferies et du royaume théocratique du Fouta Djallon.</p>
     <p style="font-size:.82rem;color:var(--gris);margin-bottom:14px;">
       Manuscrits familiaux, traditions orales, chroniques, thèses, articles, poèmes — sur Macina, Fouta Djallon, Fouta Toro et les autres foyers peuls.
       Tu choisis le niveau de confidentialité : ce n'est pas obligé d'être public.
@@ -1178,8 +1206,9 @@
   </div>
 
   <!-- ══ CORAN EN PULAR ══ -->
-  <div class="carte" id="carte-coran" style="border-color:#2AABEE88;">
-    <h2>🕌 Coran en pular</h2>
+  <div class="carte" id="carte-coran" style="border-color:#1a6b3c88;">
+    <h2>🕌 Coran en pular <span class="badge-classe" style="background:#2d8659;">🎓 Gando</span></h2>
+    <p style="font-size:.68rem;color:var(--gris);margin-top:-8px;margin-bottom:10px;">Bande verte du poutorou — le savoir et l'enseignement religieux.</p>
     <p style="font-size:.82rem;color:var(--gris);margin-bottom:14px;">
       Cherche un verset par mots-clés en pular, ou directement par référence (ex: <code>2:255</code>).
       Chaque résultat affiche le verset arabe, la traduction pular (Rowwad) puis une explication plus détaillée (Tafsir Al-Mukhtasar).
@@ -1195,8 +1224,9 @@
   </div>
 
   <!-- ══ ESPACE ÉDITORIAL ══ -->
-  <div class="carte" id="carte-editorial" style="border-color:#8b1e5c88;">
-    <h2>📰 Espace Éditorial</h2>
+  <div class="carte" id="carte-editorial" style="border-color:#e8d4a088;">
+    <h2>📰 Espace Éditorial <span class="badge-classe" style="background:#e8d4a0;">🗣️ Maoudho Gorol</span></h2>
+    <p style="font-size:.68rem;color:var(--gris);margin-top:-8px;margin-bottom:10px;">Couleur fibre naturelle du poutorou — la parole publique et communautaire.</p>
     <p style="font-size:.82rem;color:var(--gris);margin-bottom:14px;">
       Le livre de l'auteur, et des éditos écrits par la communauté sur la langue, la culture et l'histoire peule.
     </p>
@@ -1344,7 +1374,7 @@
 
   <!-- ══ SOUTENIR LE PROJET (DONS) ══ -->
   <div class="carte" id="carte-dons" style="border-color:#c8a84b88;scroll-margin-top:56px;">
-    <h2>💛 Soutenir le projet</h2>
+    <h2>💛 Soutenir le projet <span class="badge-classe" style="background:var(--or);">💰 Djion Djaoudi</span></h2>
     <p style="font-size:.82rem;color:var(--gris);margin-bottom:8px;">
       100% de ton don finance directement le projet Pular IA : une IA qui comprend le pular,
       des projets de restauration du Fouta, et l'entretien de la plateforme.
@@ -1573,11 +1603,11 @@
   </div>
 
   <!-- ══ ESPACE CRÉATEUR / PROFESSEUR ══ -->
-  <div class="carte" id="carte-prof" style="border-color:#c8a84b44;">
+  <div class="carte" id="carte-prof" style="border-color:#1a6b3c66;">
 
     <!-- Header cliquable pour ouvrir/fermer -->
     <div class="prof-header" onclick="profTogglePanel()">
-      <h2 style="flex:1;">🎓 Espace Créateur / Professeur</h2>
+      <h2 style="flex:1;">🎓 Espace Créateur / Professeur <span class="badge-classe" style="background:#2d8659;">🎓 Gando</span></h2>
       <span id="prof-nb-pending" class="badge-pending" style="display:none;">0 en attente</span>
       <span class="prof-lock" id="prof-lock">▼</span>
     </div>
