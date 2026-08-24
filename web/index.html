@@ -4,17 +4,22 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pular Du Fouta Djallon IA — Contribue au corpus </title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 96'><path d='M15,30 Q15,8 50,6 Q85,8 85,30 Z' fill='%23173a1f'/><rect x='10' y='26' width='80' height='14' fill='%23d9721c'/><rect x='8' y='40' width='84' height='16' fill='%23141414'/><rect x='6' y='56' width='88' height='14' fill='%231a6b3c'/><rect x='4' y='70' width='92' height='12' rx='3' fill='%23c0447a'/></svg>">
+  <link rel="icon" href="poutorou.jpg">
   <style>
     :root {
-      --vert:   #1a6b3c;
-      --or:     #c8a84b;
-      --fond:   #0d1f15;
-      --carte:  #142b1c;
-      --texte:  #e8f5e9;
-      --gris:   #8fac97;
-      --rouge:  #e53935;
-      --radius: 14px;
+      /* Palette extraite directement de web/poutorou.jpg (tissage réel) */
+      --vert:      #2f8a22;  /* vert poutorou */
+      --vert-fonce:#3d5c38;  /* vert sauge, tons plus sombres du tissage */
+      --or:        #cc6a4f;  /* terracotta/orange poutorou (remplace l'or) */
+      --navy:      #2b2540;  /* indigo poutorou */
+      --rouge-p:   #c4203f;  /* rouge/cramoisi poutorou */
+      --sable:     #c88f68;  /* fibre naturelle / beige tissé */
+      --fond:      #12160f;
+      --carte:     #1b2118;
+      --texte:     #efe9dc;
+      --gris:      #9a9384;
+      --rouge:     #c4203f;
+      --radius:    14px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -119,13 +124,16 @@
        Motif inspiré du bonnet traditionnel peul : bandes vert/rouge/noir
        sur fond couleur fibre naturelle, losanges — voir carte-histoire. */
     .logo-poutorou {
-      width: 28px;
-      height: 25px;
+      width: 34px;
+      height: 34px;
       flex-shrink: 0;
-      filter: drop-shadow(0 1px 2px rgba(0,0,0,.4));
+      object-fit: cover;
+      border-radius: 50%;
+      border: 2px solid var(--or);
+      filter: drop-shadow(0 1px 3px rgba(0,0,0,.5));
     }
     header h1 { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
-    header .logo-poutorou { width: 38px; height: 34px; }
+    header .logo-poutorou { width: 52px; height: 52px; }
     #sidebar a {
       display: flex;
       align-items: center;
@@ -178,8 +186,8 @@
       border-radius: 0 0 3px 3px;
       background:
         repeating-linear-gradient(135deg,
-          var(--or) 0 5px, transparent 5px 10px,
-          var(--vert) 10px 15px, transparent 15px 20px);
+          var(--or) 0 5px, var(--vert) 5px 10px,
+          var(--navy) 10px 15px, var(--rouge-p) 15px 20px);
     }
     .carte h2 { font-size: 1rem; color: var(--or); margin-bottom: 12px; }
     /* ── Badges "classe du poutorou" ── voir carte-histoire pour le contexte
@@ -736,21 +744,7 @@
 <div id="sidebar-backdrop" onclick="fermerSidebar()"></div>
 
 <nav id="sidebar">
-  <div id="sidebar-logo"><svg class="logo-poutorou" viewBox="0 0 100 96" aria-hidden="true">
-            <path d="M15,30 Q15,8 50,6 Q85,8 85,30 Z" fill="#173a1f"/>
-            <rect x="10" y="26" width="80" height="14" fill="#d9721c"/>
-            <polyline points="10,40 18,26 26,40 34,26 42,40 50,26 58,40 66,26 74,40 82,26 90,40" fill="none" stroke="#f2e9d8" stroke-width="2"/>
-            <rect x="8" y="40" width="84" height="16" fill="#141414"/>
-            <g>
-              <polygon points="18,44 24,48 18,52 12,48" fill="#c0392b"/>
-              <polygon points="38,44 44,48 38,52 32,48" fill="#f2e9d8"/>
-              <polygon points="58,44 64,48 58,52 52,48" fill="#c0392b"/>
-              <polygon points="78,44 84,48 78,52 72,48" fill="#f2e9d8"/>
-            </g>
-            <rect x="6" y="56" width="88" height="14" fill="#1a6b3c"/>
-            <polyline points="6,70 14,56 22,70 30,56 38,70 46,56 54,70 62,56 70,70 78,56 86,70 94,56" fill="none" stroke="#f2e9d8" stroke-width="2"/>
-            <rect x="4" y="70" width="92" height="12" rx="3" fill="#c0447a"/>
-          </svg> Pular IA</div>
+  <div id="sidebar-logo"><img src="poutorou.jpg" alt="Poutorou" class="logo-poutorou"> Pular IA</div>
   <a href="#carte-enregistrer">🎙️ <span>Enregistrer</span></a>
   <a href="#carte-corriger">✏️ <span>Corriger</span></a>
   <a href="#carte-livres">📚 <span>Livres</span></a>
@@ -771,21 +765,7 @@
 <div id="page-content">
 
 <header>
-  <h1><svg class="logo-poutorou" viewBox="0 0 100 96" aria-hidden="true">
-            <path d="M15,30 Q15,8 50,6 Q85,8 85,30 Z" fill="#173a1f"/>
-            <rect x="10" y="26" width="80" height="14" fill="#d9721c"/>
-            <polyline points="10,40 18,26 26,40 34,26 42,40 50,26 58,40 66,26 74,40 82,26 90,40" fill="none" stroke="#f2e9d8" stroke-width="2"/>
-            <rect x="8" y="40" width="84" height="16" fill="#141414"/>
-            <g>
-              <polygon points="18,44 24,48 18,52 12,48" fill="#c0392b"/>
-              <polygon points="38,44 44,48 38,52 32,48" fill="#f2e9d8"/>
-              <polygon points="58,44 64,48 58,52 52,48" fill="#c0392b"/>
-              <polygon points="78,44 84,48 78,52 72,48" fill="#f2e9d8"/>
-            </g>
-            <rect x="6" y="56" width="88" height="14" fill="#1a6b3c"/>
-            <polyline points="6,70 14,56 22,70 30,56 38,70 46,56 54,70 62,56 70,70 78,56 86,70 94,56" fill="none" stroke="#f2e9d8" stroke-width="2"/>
-            <rect x="4" y="70" width="92" height="12" rx="3" fill="#c0447a"/>
-          </svg> Pular fuuta Jaloo IA — Corpus communautaire</h1>
+  <h1><img src="poutorou.jpg" alt="Poutorou" class="logo-poutorou"> Pular fuuta Jaloo IA — Corpus communautaire</h1>
   <p>Aide-nous à construire le premier modèle d'IA pour la langue pular</p>
 </header>
 
