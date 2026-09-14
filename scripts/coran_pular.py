@@ -189,44 +189,93 @@ def rechercher_versets(q: str, n: int = 10, seuil: float = 0.6) -> list[dict]:
     return [v for _, v in resultats[:n]]
 
 
+# Canaux Telegram islamiques indexés dans le RAG par
+# import_telegram_islamique.py (transcriptions d'audios + Q/R communautaires,
+# cf. corpus-pular/processed/telegram/base_connaissance.json) — à distinguer
+# de la traduction quranenc.com : ici, transcription automatique (Whisper)
+# de prêches/réponses d'un prédicateur en particulier, pas une source vérifiée.
+CANAUX_COMMUNAUTAIRES = {
+    "telegram_DDTV226":     "Doudhe Diina TV (Telegram — questions/réponses)",
+    "telegram_laawolsunna": "Laawol Sunna (Telegram — enseignements)",
+}
+
+
+def _rechercher_communaute(question: str, n: int = 4) -> list[dict]:
+    """Extraits pertinents des canaux Telegram islamiques déjà indexés
+    (peut être vide si import_telegram_islamique.py n'a pas encore été lancé,
+    ou si rien n'y a encore été transcrit)."""
+    try:
+        from rag_livres import rechercher as rag_rechercher
+    except Exception:
+        return []
+    resultats = []
+    for livre_id, label in CANAUX_COMMUNAUTAIRES.items():
+        try:
+            for c in rag_rechercher(question, n=n, livre_id=livre_id):
+                resultats.append({"source": label, "texte": c["texte"], "score": c["score"]})
+        except Exception:
+            continue
+    resultats.sort(key=lambda c: -c["score"])
+    return resultats[:n]
+
+
 def repondre_question(question: str, n: int = 6, seuil: float = 0.25) -> dict:
     """
-    Répond à une question libre posée en pular, français ou arabe, en se
-    basant STRICTEMENT sur les versets trouvés par rechercher_versets (seuil
-    abaissé par rapport à la recherche de verset précis, car une question
-    complète partage moins de mots exacts avec le verset qu'une citation).
+    Répond à une question libre posée en pular, français ou arabe, en
+    combinant deux sources :
+      - les versets trouvés par rechercher_versets (traduction/tafsir
+        quranenc.com — source principale et fiable) ;
+      - les extraits pertinents des canaux Telegram islamiques déjà indexés
+        par import_telegram_islamique.py (enseignements/Q&R communautaires en
+        pular — source secondaire, transcription automatique non vérifiée).
 
-    Retourne {"reponse": str|None, "versets": list[dict]}. "reponse" vaut
-    None si aucun verset pertinent n'a été trouvé — dans ce cas Claude n'est
-    pas appelé du tout, pour ne jamais répondre "à l'aveugle" sur un sujet
-    religieux sans verset à l'appui.
+    Retourne {"reponse": str|None, "versets": list[dict], "communaute":
+    list[dict]}. "reponse" vaut None si NI l'un NI l'autre n'a rien trouvé —
+    Claude n'est alors pas appelé du tout, pour ne jamais répondre "à
+    l'aveugle" sur un sujet religieux sans source à l'appui.
     """
     versets = rechercher_versets(question, n=n, seuil=seuil)
-    if not versets:
-        return {"reponse": None, "versets": []}
+    communaute = _rechercher_communaute(question)
+
+    if not versets and not communaute:
+        return {"reponse": None, "versets": [], "communaute": []}
 
     from espace_editorial import anthropic_configure
 
-    contexte = "\n\n".join(
-        f"[Sourate {v['sourate']} ({v['sourate_nom']}), verset {v['verset']}]\n"
-        f"Arabe : {v['arabe']}\n"
-        f"Traduction fulfulde ({TRADUCTION_SOURCE}) : {v['traduction']}\n"
-        f"Tafsir fulfulde ({EXPLICATION_SOURCE}) : {v['explication']}"
-        for v in versets
-    )
+    contexte = ""
+    if versets:
+        contexte += "SOURCE PRINCIPALE — versets du Coran (traduction officielle quranenc.com) :\n\n"
+        contexte += "\n\n".join(
+            f"[Sourate {v['sourate']} ({v['sourate_nom']}), verset {v['verset']}]\n"
+            f"Arabe : {v['arabe']}\n"
+            f"Traduction fulfulde ({TRADUCTION_SOURCE}) : {v['traduction']}\n"
+            f"Tafsir fulfulde ({EXPLICATION_SOURCE}) : {v['explication']}"
+            for v in versets
+        )
+    if communaute:
+        contexte += "\n\nSOURCE SECONDAIRE — enseignements communautaires en pular (transcription "
+        contexte += "automatique d'audios Telegram, à ne citer qu'en complément, jamais à la place d'un verset) :\n\n"
+        contexte += "\n\n".join(f"[{e['source']}]\n{e['texte']}" for e in communaute)
 
     system = (
         "Tu réponds à des questions sur le Coran posées par des membres de la "
         "communauté pular (Foula/Fulfulde), en pular, en français ou en arabe. "
         "Réponds STRICTEMENT dans la même langue que la question. Base-toi "
-        "UNIQUEMENT sur les extraits de Coran fournis (traduction et tafsir "
-        "en fulfulde) — ne cite et n'invente aucun autre verset ni hadith. "
-        "Cite toujours la référence sourate:verset de chaque verset utilisé. "
-        "Si les extraits fournis ne répondent pas clairement à la question, "
-        "dis-le honnêtement plutôt que de forcer une réponse. Pour toute "
-        "question de jurisprudence (fiqh) détaillée ou de cas personnel, "
-        "rappelle qu'il faut consulter un savant (alim) local. Réponse "
-        "concise, 150 mots maximum, ton respectueux."
+        "UNIQUEMENT sur les extraits fournis — ne cite et n'invente aucun "
+        "autre verset ni hadith. Les extraits marqués SOURCE PRINCIPALE sont "
+        "la traduction officielle du Coran : appuie-toi dessus en priorité et "
+        "cite toujours la référence sourate:verset de chaque verset utilisé. "
+        "Les extraits marqués SOURCE SECONDAIRE sont des transcriptions "
+        "automatiques (donc potentiellement imparfaites) de prêches d'un "
+        "prédicateur communautaire en particulier sur Telegram : utilise-les "
+        "seulement pour illustrer ou compléter, jamais comme une vérité "
+        "religieuse générale, et précise qu'il s'agit de l'avis d'un "
+        "enseignant communautaire (pas d'une source officielle) quand tu t'en "
+        "sers. Si les extraits fournis ne répondent pas clairement à la "
+        "question, dis-le honnêtement plutôt que de forcer une réponse. Pour "
+        "toute question de jurisprudence (fiqh) détaillée ou de cas "
+        "personnel, rappelle qu'il faut consulter un savant (alim) local. "
+        "Réponse concise, 150 mots maximum, ton respectueux."
     )
 
     client = anthropic_configure()
@@ -237,11 +286,11 @@ def repondre_question(question: str, n: int = 6, seuil: float = 0.25) -> dict:
         system=system,
         messages=[{
             "role": "user",
-            "content": f"Extraits du Coran (fulfulde) :\n\n{contexte}\n\nQuestion : {question}",
+            "content": f"Extraits (fulfulde) :\n\n{contexte}\n\nQuestion : {question}",
         }],
     )
     reponse = "".join(b.text for b in message.content if b.type == "text")
-    return {"reponse": reponse, "versets": versets}
+    return {"reponse": reponse, "versets": versets, "communaute": communaute}
 
 
 def stats_coran() -> dict:

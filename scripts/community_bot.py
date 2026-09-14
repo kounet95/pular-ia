@@ -279,6 +279,29 @@ async def cmd_aide(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 def _echapper_md(texte: str) -> str:
     return texte.replace("_", "\\_").replace("*", "\\*")
 
+def _formater_reponse_coran(resultat: dict) -> str:
+    """Met en forme la réponse de coran_pular.repondre_question(), en
+    distinguant les versets (source officielle) des extraits communautaires
+    Telegram (transcription automatique, source secondaire) — cf. le
+    system prompt de repondre_question() qui impose déjà cette distinction
+    à Claude, on la reflète aussi dans les sources affichées."""
+    texte = _echapper_md(resultat["reponse"])
+    lignes_sources = []
+    if resultat["versets"]:
+        refs = ", ".join(f"{v['sourate']}:{v['verset']} ({v['sourate_nom']})" for v in resultat["versets"])
+        lignes_sources.append(f"📚 Coran : {refs}")
+    if resultat.get("communaute"):
+        canaux = ", ".join(sorted({e["source"] for e in resultat["communaute"]}))
+        lignes_sources.append(f"🎙️ Enseignements communautaires : {canaux}")
+    sources = "\n".join(lignes_sources)
+    return (
+        f"📖 {texte}\n\n_{sources}_\n\n"
+        "_⚠️ Réponse générée automatiquement — les versets viennent d'une traduction "
+        "officielle, mais les extraits communautaires sont des transcriptions automatiques "
+        "d'un prédicateur en particulier, pas une source officielle. Pour toute question "
+        "de jurisprudence détaillée, consulte un savant (alim)._"
+    )
+
 async def cmd_coran(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     question = " ".join(ctx.args).strip()
     if not question:
@@ -306,19 +329,12 @@ async def cmd_coran(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
     if resultat["reponse"] is None:
         await attente.edit_text(
-            "🤷 Je n'ai trouvé aucun verset en lien direct avec cette question.\n"
+            "🤷 Je n'ai trouvé aucun verset ni enseignement en lien direct avec cette question.\n"
             "Essaie de reformuler, ou donne une référence précise (ex: 2:255)."
         )
         return
 
-    texte = _echapper_md(resultat["reponse"])
-    refs = ", ".join(f"{v['sourate']}:{v['verset']} ({v['sourate_nom']})" for v in resultat["versets"])
-    await attente.edit_text(
-        f"📖 {texte}\n\n_📚 Sources : {refs}_\n\n"
-        "_⚠️ Réponse générée automatiquement à partir de traductions — pour toute "
-        "question de jurisprudence détaillée, consulte un savant (alim)._",
-        parse_mode="Markdown",
-    )
+    await attente.edit_text(_formater_reponse_coran(resultat), parse_mode="Markdown")
 
 # ── Notifications (nouveaux livres, nouveaux éditos) ───────────────────────────
 async def cmd_abonner(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -443,19 +459,12 @@ async def handle_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
         if resultat["reponse"] is None:
             await query.edit_message_text(
-                "🤷 Je n'ai trouvé aucun verset en lien direct avec cette question.\n"
+                "🤷 Je n'ai trouvé aucun verset ni enseignement en lien direct avec cette question.\n"
                 "Essaie de reformuler dans un nouveau vocal, ou tape /coran <question>."
             )
             return
 
-        texte_rep = _echapper_md(resultat["reponse"])
-        refs = ", ".join(f"{v['sourate']}:{v['verset']} ({v['sourate_nom']})" for v in resultat["versets"])
-        await query.edit_message_text(
-            f"📖 {texte_rep}\n\n_📚 Sources : {refs}_\n\n"
-            "_⚠️ Réponse générée automatiquement à partir de traductions — pour toute "
-            "question de jurisprudence détaillée, consulte un savant (alim)._",
-            parse_mode="Markdown",
-        )
+        await query.edit_message_text(_formater_reponse_coran(resultat), parse_mode="Markdown")
 
     elif query.data == "valider":
         enregistrer_contribution(
