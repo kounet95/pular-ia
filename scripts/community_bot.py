@@ -15,6 +15,7 @@ Commandes disponibles:
     /livres — Acheter des livres (numérique ou papier)
     /don    — Faire un don au projet
     /quiz   — Rejoindre un Quiz Live (+ /quiz CODE)
+    /coran  — Poser une question sur le Coran (pular/français/arabe)
     /aide   — Aide complète
 """
 
@@ -33,6 +34,7 @@ import comptes as CP
 import espace_editorial as EE
 import notifications as NOTIF
 import quizlive as QL
+import coran_pular as CN
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application, CommandHandler, MessageHandler,
@@ -82,6 +84,7 @@ for d in [DOSSIER_CONTRIB, DOSSIER_AUDIO]:
 
 # ── Whisper (chargé une seule fois) ──────────────────────────────────────────
 _whisper_model = None
+_prompt_whisper = None
 
 def get_whisper():
     global _whisper_model
@@ -92,13 +95,27 @@ def get_whisper():
         log.info("✅ Whisper prêt")
     return _whisper_model
 
+def get_prompt_whisper() -> str:
+    """
+    Prompt initial enrichi avec le vrai vocabulaire pular (dictionnaire +
+    traductions du Coran, cf. corpus-pular/livres/metadata/*_vocab.json) —
+    réutilise construire_prompt_whisper() de transcription.py au lieu d'une
+    phrase générique fixe, pour que le bot bénéficie du corpus déjà importé.
+    """
+    global _prompt_whisper
+    if _prompt_whisper is None:
+        from transcription import construire_prompt_whisper
+        _prompt_whisper = construire_prompt_whisper()
+        log.info(f"Prompt Whisper enrichi ({len(_prompt_whisper)} caractères)")
+    return _prompt_whisper
+
 def transcrire(audio_path: str) -> str:
     model = get_whisper()
     result = model.transcribe(
         audio_path,
         task="transcribe",
         no_speech_threshold=0.3,
-        initial_prompt="Pular fulfulde fulani langue africaine.",
+        initial_prompt=get_prompt_whisper(),
         logprob_threshold=-1.5,
         condition_on_previous_text=False,
         fp16=False,
@@ -187,6 +204,7 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "📚 /livres — Acheter des livres (numérique ou papier)\n"
         "💛 /don — Faire un don au projet\n"
         "🎮 /quiz CODE — Rejoindre un Quiz Live\n"
+        "📖 /coran — Poser une question sur le Coran (pular/français/arabe)\n"
         "🔔 /abonner — Être averti des nouveaux livres et éditos\n"
         "❓ /aide — Aide complète\n\n"
         "_Baŋ-baŋ! 🙏_",
@@ -242,6 +260,8 @@ async def cmd_aide(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "📚 /livres — voir et acheter les livres (numérique ou papier)\n"
         "💛 /don — faire un don au projet\n"
         "🎮 /quiz CODE — rejoindre un Quiz Live animé sur l'écran de quelqu'un\n"
+        "📖 /coran QUESTION — poser une question sur le Coran (pular/français/arabe), "
+        "ou /coran 2:255 pour un verset précis\n"
         "🔔 /abonner — être averti des nouveaux livres et éditos\n\n"
         "📌 *Conseils pour une bonne qualité:*\n"
         "• Parle clairement, micro proche\n"
@@ -249,6 +269,51 @@ async def cmd_aide(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "• N'importe quel sujet en pular!\n"
         "• Évite les bruits de fond\n\n"
         "_Baŋ-baŋ! 🙏_",
+        parse_mode="Markdown",
+    )
+
+# ── Questions coraniques (pular, français, arabe) ──────────────────────────────
+def _echapper_md(texte: str) -> str:
+    return texte.replace("_", "\\_").replace("*", "\\*")
+
+async def cmd_coran(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    question = " ".join(ctx.args).strip()
+    if not question:
+        await update.message.reply_text(
+            "📖 *Questions coraniques*\n\n"
+            "Pose ta question après la commande, en pular, en français ou en arabe :\n"
+            "/coran Ko Alqur'aana wi'i fii muñal?\n"
+            "/coran Que dit le Coran sur la patience ?\n"
+            "/coran ماذا يقول القرآن عن الصبر؟\n\n"
+            "Tu peux aussi demander un verset précis : /coran 2:255",
+            parse_mode="Markdown",
+        )
+        return
+
+    attente = await update.message.reply_text("🔎 Recherche dans le Coran...")
+    try:
+        resultat = await asyncio.to_thread(CN.repondre_question, question)
+    except RuntimeError as e:
+        await attente.edit_text(f"⚠️ {e}")
+        return
+    except Exception as e:
+        log.error(f"cmd_coran: {e}")
+        await attente.edit_text("❌ Erreur pendant la recherche. Réessaie plus tard.")
+        return
+
+    if resultat["reponse"] is None:
+        await attente.edit_text(
+            "🤷 Je n'ai trouvé aucun verset en lien direct avec cette question.\n"
+            "Essaie de reformuler, ou donne une référence précise (ex: 2:255)."
+        )
+        return
+
+    texte = _echapper_md(resultat["reponse"])
+    refs = ", ".join(f"{v['sourate']}:{v['verset']} ({v['sourate_nom']})" for v in resultat["versets"])
+    await attente.edit_text(
+        f"📖 {texte}\n\n_📚 Sources : {refs}_\n\n"
+        "_⚠️ Réponse générée automatiquement à partir de traductions — pour toute "
+        "question de jurisprudence détaillée, consulte un savant (alim)._",
         parse_mode="Markdown",
     )
 
@@ -1049,6 +1114,7 @@ def main():
     app.add_handler(CommandHandler("livres",     cmd_livres))
     app.add_handler(CommandHandler("don",        cmd_don))
     app.add_handler(CommandHandler("quiz",       cmd_quiz))
+    app.add_handler(CommandHandler("coran",      cmd_coran))
     app.add_handler(CommandHandler("abonner",    cmd_abonner))
     app.add_handler(CommandHandler("desabonner", cmd_desabonner))
     app.add_handler(CommandHandler("aide",       cmd_aide))

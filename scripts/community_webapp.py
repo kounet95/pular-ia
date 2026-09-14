@@ -518,7 +518,7 @@ async def api_a_corriger():
             "fini": True,
             "message": "Toutes les transcriptions ont été corrigées! Baŋ-baŋ 🙏",
             "total": total,
-        })
+        }, headers={"Cache-Control": "no-store"})
     fichier = liste[0]
     with open(fichier, encoding="utf-8") as f:
         data = json.load(f)
@@ -537,7 +537,7 @@ async def api_a_corriger():
         "restant":    restant,
         "total":      total,
         "fait":       total - restant,
-    })
+    }, headers={"Cache-Control": "no-store"})
 
 # ── Soumettre une correction ──────────────────────────────────────────────────
 @app.post("/api/corriger")
@@ -3709,7 +3709,7 @@ def sauver_phrases_custom(phrases: list[dict]):
 
 @app.get("/api/prof/phrases")
 async def api_prof_phrases():
-    return JSONResponse(charger_phrases_custom())
+    return JSONResponse(charger_phrases_custom(), headers={"Cache-Control": "no-store"})
 
 @app.post("/api/prof/phrase")
 async def api_prof_ajouter_phrase(
@@ -3995,7 +3995,7 @@ async def api_suggestions_phrases():
             suggestions.append(json.loads(f.read_text(encoding="utf-8")))
         except Exception:
             pass
-    return JSONResponse(suggestions)
+    return JSONResponse(suggestions, headers={"Cache-Control": "no-store"})
 
 @app.post("/api/prof/appliquer-suggestion-phrase")
 async def api_appliquer_suggestion_phrase(
@@ -4307,7 +4307,7 @@ async def api_prof_corrections(limit: int = 30):
                 })
             except Exception:
                 pass
-    return JSONResponse({"corrections": corrections, "total": len(corrections)})
+    return JSONResponse({"corrections": corrections, "total": len(corrections)}, headers={"Cache-Control": "no-store"})
 
 @app.get("/api/prof/fiabilite")
 async def api_prof_fiabilite():
@@ -4663,7 +4663,10 @@ async def api_prof_contributions(limit: int = 20):
             pass
     contribs.sort(key=lambda x: (x["status"] != "pending", x["date"]))
     total_pending = sum(1 for c in contribs if c["status"] == "pending")
-    return JSONResponse({"contributions": contribs[:limit], "total_pending": total_pending})
+    return JSONResponse(
+        {"contributions": contribs[:limit], "total_pending": total_pending},
+        headers={"Cache-Control": "no-store"},
+    )
 
 @app.post("/api/prof/valider")
 async def api_prof_valider(

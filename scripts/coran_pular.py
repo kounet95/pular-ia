@@ -189,6 +189,61 @@ def rechercher_versets(q: str, n: int = 10, seuil: float = 0.6) -> list[dict]:
     return [v for _, v in resultats[:n]]
 
 
+def repondre_question(question: str, n: int = 6, seuil: float = 0.25) -> dict:
+    """
+    Répond à une question libre posée en pular, français ou arabe, en se
+    basant STRICTEMENT sur les versets trouvés par rechercher_versets (seuil
+    abaissé par rapport à la recherche de verset précis, car une question
+    complète partage moins de mots exacts avec le verset qu'une citation).
+
+    Retourne {"reponse": str|None, "versets": list[dict]}. "reponse" vaut
+    None si aucun verset pertinent n'a été trouvé — dans ce cas Claude n'est
+    pas appelé du tout, pour ne jamais répondre "à l'aveugle" sur un sujet
+    religieux sans verset à l'appui.
+    """
+    versets = rechercher_versets(question, n=n, seuil=seuil)
+    if not versets:
+        return {"reponse": None, "versets": []}
+
+    from espace_editorial import anthropic_configure
+
+    contexte = "\n\n".join(
+        f"[Sourate {v['sourate']} ({v['sourate_nom']}), verset {v['verset']}]\n"
+        f"Arabe : {v['arabe']}\n"
+        f"Traduction fulfulde ({TRADUCTION_SOURCE}) : {v['traduction']}\n"
+        f"Tafsir fulfulde ({EXPLICATION_SOURCE}) : {v['explication']}"
+        for v in versets
+    )
+
+    system = (
+        "Tu réponds à des questions sur le Coran posées par des membres de la "
+        "communauté pular (Foula/Fulfulde), en pular, en français ou en arabe. "
+        "Réponds STRICTEMENT dans la même langue que la question. Base-toi "
+        "UNIQUEMENT sur les extraits de Coran fournis (traduction et tafsir "
+        "en fulfulde) — ne cite et n'invente aucun autre verset ni hadith. "
+        "Cite toujours la référence sourate:verset de chaque verset utilisé. "
+        "Si les extraits fournis ne répondent pas clairement à la question, "
+        "dis-le honnêtement plutôt que de forcer une réponse. Pour toute "
+        "question de jurisprudence (fiqh) détaillée ou de cas personnel, "
+        "rappelle qu'il faut consulter un savant (alim) local. Réponse "
+        "concise, 150 mots maximum, ton respectueux."
+    )
+
+    client = anthropic_configure()
+    message = client.messages.create(
+        model="claude-opus-5",
+        max_tokens=600,
+        output_config={"effort": "medium"},
+        system=system,
+        messages=[{
+            "role": "user",
+            "content": f"Extraits du Coran (fulfulde) :\n\n{contexte}\n\nQuestion : {question}",
+        }],
+    )
+    reponse = "".join(b.text for b in message.content if b.type == "text")
+    return {"reponse": reponse, "versets": versets}
+
+
 def stats_coran() -> dict:
     index_liste, _ = _charger()
     return {
