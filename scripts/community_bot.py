@@ -192,11 +192,11 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         f"Assalaamu alaykum {nom}! 🌙\n\n"
         "*Projet Pular IA* — aide-nous à construire le premier modèle d'intelligence "
         "artificielle pour la langue pular!\n\n"
-        "📢 *Comment contribuer:*\n"
-        "1️⃣ Envoie un message vocal en pular\n"
+        "📢 *Comment ça marche:*\n"
+        "1️⃣ Envoie un message vocal (pular, français ou arabe)\n"
         "2️⃣ Je transcris automatiquement avec l'IA\n"
-        "3️⃣ Tu valides ✅ ou corriges ✏️\n"
-        "4️⃣ Ta contribution enrichit le corpus!\n\n"
+        "3️⃣ Tu choisis : contribution au dataset, ou question sur le Coran\n"
+        "4️⃣ Contribution → tu valides ✅ ou corriges ✏️ · Question → je réponds avec les versets\n\n"
         "📊 /stats — Statistiques communauté\n"
         "🏆 /top — Top contributeurs\n"
         "⚔️ /duel — Défier un ami en duel de vocabulaire\n"
@@ -249,10 +249,13 @@ async def cmd_aide(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "❓ *Aide — Bot Pular IA*\n\n"
         "🎙️ *Envoyer un vocal:*\n"
-        "Appuie sur le micro dans Telegram, parle en pular, relâche.\n\n"
+        "Appuie sur le micro dans Telegram, parle (pular, français ou arabe), relâche.\n"
+        "Je te montre ce que j'ai entendu et te demande ce que tu veux en faire :\n\n"
+        "🎙️ *Contribution au dataset:*\n"
         "✅ *Valider:* La transcription est correcte → ✅ Correct\n"
         "✏️ *Corriger:* Des erreurs → ✏️ Corriger, puis envoie le bon texte\n"
         "❌ *Ignorer:* Ne pas sauvegarder ce vocal\n\n"
+        "📖 *Question sur le Coran:* je réponds directement avec les versets utilisés.\n\n"
         "⚔️ *Défier un ami:*\n"
         "/duel — crée un duel et partage le lien/code\n"
         "/duel CODE — rejoins le duel d'un ami\n"
@@ -380,22 +383,32 @@ async def handle_voice(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "username": user.username or user.first_name,
     }
 
+    # Menu d'intention : la transcription auto sert avant tout à COMPRENDRE ce
+    # que l'utilisateur veut faire de son vocal (contribuer au dataset, ou
+    # poser une question religieuse) — on ne lance le flux "corriger le
+    # dataset" qu'une fois cette intention connue, pas systématiquement.
     clavier = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🎙️ Contribution au dataset", callback_data="intention_contrib")],
+        [InlineKeyboardButton("📖 Question sur le Coran", callback_data="intention_coran")],
+    ])
+
+    # Échapper les underscores dans le texte pour éviter les erreurs de formatage Markdown
+    texte_md = _echapper_md(texte)
+    await attente.edit_text(
+        f"📝 *J'ai entendu :*\n\n{texte_md}\n\n"
+        "Qu'est-ce que tu veux faire avec ce message ?",
+        reply_markup=clavier,
+        parse_mode="Markdown",
+    )
+
+def _clavier_validation() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
         [
             InlineKeyboardButton("✅ Correct", callback_data="valider"),
             InlineKeyboardButton("✏️ Corriger", callback_data="corriger"),
         ],
         [InlineKeyboardButton("❌ Ignorer", callback_data="ignorer")],
     ])
-
-    # Échapper les underscores dans le texte pour éviter les erreurs de formatage Markdown
-    texte_md = texte.replace("_", "\\_").replace("*", "\\*")
-    await attente.edit_text(
-        f"📝 *Transcription automatique:*\n\n{texte_md}\n\n"
-        "Est-ce correct?",
-        reply_markup=clavier,
-        parse_mode="Markdown",
-    )
 
 async def handle_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     query   = update.callback_query
@@ -406,7 +419,45 @@ async def handle_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text("⚠️ Session expirée. Envoie un nouveau vocal.")
         return
 
-    if query.data == "valider":
+    if query.data == "intention_contrib":
+        texte_md = _echapper_md(pending["texte"])
+        await query.edit_message_text(
+            f"📝 *Transcription automatique:*\n\n{texte_md}\n\nEst-ce correct?",
+            reply_markup=_clavier_validation(),
+            parse_mode="Markdown",
+        )
+
+    elif query.data == "intention_coran":
+        question = pending["texte"]
+        ctx.user_data.pop("pending", None)
+        await query.edit_message_text("🔎 Recherche dans le Coran...")
+        try:
+            resultat = await asyncio.to_thread(CN.repondre_question, question)
+        except RuntimeError as e:
+            await query.edit_message_text(f"⚠️ {e}")
+            return
+        except Exception as e:
+            log.error(f"intention_coran: {e}")
+            await query.edit_message_text("❌ Erreur pendant la recherche. Réessaie plus tard.")
+            return
+
+        if resultat["reponse"] is None:
+            await query.edit_message_text(
+                "🤷 Je n'ai trouvé aucun verset en lien direct avec cette question.\n"
+                "Essaie de reformuler dans un nouveau vocal, ou tape /coran <question>."
+            )
+            return
+
+        texte_rep = _echapper_md(resultat["reponse"])
+        refs = ", ".join(f"{v['sourate']}:{v['verset']} ({v['sourate_nom']})" for v in resultat["versets"])
+        await query.edit_message_text(
+            f"📖 {texte_rep}\n\n_📚 Sources : {refs}_\n\n"
+            "_⚠️ Réponse générée automatiquement à partir de traductions — pour toute "
+            "question de jurisprudence détaillée, consulte un savant (alim)._",
+            parse_mode="Markdown",
+        )
+
+    elif query.data == "valider":
         enregistrer_contribution(
             pending["user_id"], pending["username"],
             pending["texte"], pending["audio_path"], valide=True,
