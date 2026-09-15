@@ -35,10 +35,17 @@ RUN pip install --no-cache-dir --timeout 300 \
 
 # ── 4. ChromaDB + embeddings (lourd, isolé) ───────────────────────────────────
 # onnxruntime requis par chromadb SentenceTransformerEmbeddingFunction
+# scipy/scikit-learn épinglés explicitement (sentence-transformers ne fixe pas
+# leur version) : sans ça, pip installe la dernière version dispo au moment du
+# build, dont les wheels sont compilées pour numpy 2.x — incompatible avec le
+# numpy==1.26.4 forcé à l'étape 7 (ImportError "numpy._core.multiarray failed
+# to import" constaté en prod, cause perdue à déboguer sans cet épinglage).
 RUN pip install --no-cache-dir --timeout 300 \
     chromadb==0.4.24 \
     sentence-transformers==2.7.0 \
-    onnxruntime==1.17.3
+    onnxruntime==1.17.3 \
+    scipy==1.13.1 \
+    scikit-learn==1.5.0
 
 # ── 5. Espace Éditorial — Stripe / Claude / DALL·E ────────────────────────────
 RUN pip install --no-cache-dir --timeout 300 \
