@@ -44,6 +44,7 @@ from datetime import datetime
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+Path("logs").mkdir(exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -146,7 +147,6 @@ def main():
                          help="Avec --inclure-texte : nb de mots minimum pour indexer un message texte (défaut: 40)")
     args = parser.parse_args()
 
-    Path("logs").mkdir(exist_ok=True)
     importer(args.canaux, args.inclure_texte, args.min_mots)
     log.info("✅ Indexation terminée. Relance ce script après chaque nouveau lot de transcriptions.")
 
