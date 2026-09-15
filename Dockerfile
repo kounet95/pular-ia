@@ -16,8 +16,14 @@ RUN pip install --no-cache-dir --timeout 300 \
 # ── 2. Whisper (dépend de torch) ─────────────────────────────────────────────
 # setuptools<76 requis : v76+ a supprimé pkg_resources dont dépend openai-whisper
 RUN pip install --no-cache-dir "setuptools<76"
+# numpy/numba épinglés ICI aussi : openai-whisper ne fixe pas leur version, donc
+# sans ça pip installe la dernière dispo au moment du build (numba 0.67 + numpy
+# 2.4.6 constatés en prod) — cassé pour numba (nécessite numpy<2.1) et cause,
+# via layer caching, la même corruption qu'on corrige "après coup" à l'étape 7.
 RUN pip install --no-cache-dir --timeout 300 --no-build-isolation \
-    openai-whisper==20231117
+    openai-whisper==20231117 \
+    numpy==1.26.4 \
+    numba==0.59.1
 
 # ── 3. Web + RAG ──────────────────────────────────────────────────────────────
 RUN pip install --no-cache-dir --timeout 300 \
