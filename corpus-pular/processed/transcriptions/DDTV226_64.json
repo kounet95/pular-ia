@@ -1,0 +1,33 @@
+{
+  "fichier": "corpus-pular\\processed\\telegram\\audio\\DDTV226_64.mp3",
+  "nom": "DDTV226_64.mp3",
+  "texte": "haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii h iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, i",
+  "texte_brut": "haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii h iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, i",
+  "nb_mots_corriges": 0,
+  "langue_detect": "sw",
+  "segments": [
+    {
+      "debut": 60.0,
+      "fin": 90.0,
+      "texte": "haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii haldugol ijumnanii h",
+      "confiance": -0.1936,
+      "sans_voix": true
+    },
+    {
+      "debut": 90.0,
+      "fin": 120.0,
+      "texte": "iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, iwi, i",
+      "confiance": -0.1425,
+      "sans_voix": true
+    }
+  ],
+  "meta": {
+    "modele": "tiny",
+    "duree_traitement_s": 24.26,
+    "taille_fichier_oct": 1114126,
+    "date": "2026-09-17T13:38:22.281476",
+    "nb_segments": 2,
+    "nb_tokens": 120
+  },
+  "statut": "ok"
+}

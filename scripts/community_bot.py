@@ -15,6 +15,7 @@ Commandes disponibles:
     /livres — Acheter des livres (numérique ou papier)
     /don    — Faire un don au projet
     /quiz   — Rejoindre un Quiz Live (+ /quiz CODE)
+    /question — Poser une question en pular ou en français (texte ou vocal)
     /aide   — Aide complète
 """
 
@@ -33,6 +34,7 @@ import comptes as CP
 import espace_editorial as EE
 import notifications as NOTIF
 import quizlive as QL
+import qa_pular as QA
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application, CommandHandler, MessageHandler,
@@ -242,7 +244,8 @@ async def cmd_aide(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "📚 /livres — voir et acheter les livres (numérique ou papier)\n"
         "💛 /don — faire un don au projet\n"
         "🎮 /quiz CODE — rejoindre un Quiz Live animé sur l'écran de quelqu'un\n"
-        "🔔 /abonner — être averti des nouveaux livres et éditos\n\n"
+        "🔔 /abonner — être averti des nouveaux livres et éditos\n"
+        "💬 /question — poser une question en pular/français (texte ou vocal)\n\n"
         "📌 *Conseils pour une bonne qualité:*\n"
         "• Parle clairement, micro proche\n"
         "• Messages de 5 à 60 secondes idéaux\n"
@@ -251,6 +254,75 @@ async def cmd_aide(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "_Baŋ-baŋ! 🙏_",
         parse_mode="Markdown",
     )
+
+# ── Question / Réponse (pular ou français, texte ou vocal) ─────────────────────
+async def cmd_question(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    ctx.user_data["mode_question"] = True
+    await update.message.reply_text(
+        "💬 *Pose ta question* — en pular ou en français, par texte ou par vocal.\n\n"
+        "Je réponds en m'appuyant sur le dictionnaire, le Coran en pular et les livres "
+        "du corpus.",
+        parse_mode="Markdown",
+    )
+
+async def cmd_coran(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Recherche simultanément dans le Coran et les transcriptions Telegram."""
+    question = " ".join(ctx.args).strip()
+    if not question:
+        await update.message.reply_text("Usage : /coran ta question ou une référence comme 2:255")
+        return
+
+    try:
+        from coran_pular import rechercher_versets, rechercher_transcriptions
+        versets = await asyncio.to_thread(rechercher_versets, question, 3)
+        audios = await asyncio.to_thread(rechercher_transcriptions, question, 3)
+    except Exception as e:
+        log.error(f"Erreur recherche /coran: {e}")
+        await update.message.reply_text("❌ Recherche indisponible pour le moment.")
+        return
+
+    lignes = []
+    for verset in versets:
+        lignes.append(
+            f"📖 Sourate {verset['sourate']}:{verset['verset']}\n"
+            f"{verset.get('traduction', '')}\n"
+            f"{verset.get('explication', '')[:500]}"
+        )
+    for audio in audios:
+        lignes.append(
+            f"🎙️ Audio Telegram ({audio.get('nom', 'transcription')})\n"
+            f"{audio.get('texte', '')[:900]}"
+        )
+
+    if not lignes:
+        await update.message.reply_text(
+            "🤷 Je n'ai trouvé aucun verset ni extrait audio transcrit en lien direct avec cette question."
+        )
+        return
+    await update.message.reply_text("\n\n".join(lignes)[:4000])
+
+async def _qa_repondre(update: Update, ctx: ContextTypes.DEFAULT_TYPE, question: str):
+    """Génère la réponse texte (Claude + RAG) puis tente d'envoyer aussi un
+    vocal (TTS OmniVoice, via l'API du webapp dans le même conteneur —
+    voir WEBAPP_LOCAL_URL). Le vocal est un plus, pas bloquant en cas d'échec."""
+    attente = await update.message.reply_text("💭 Réflexion...")
+    try:
+        resultat = await asyncio.to_thread(QA.repondre_question, question)
+        reponse = resultat["reponse"]
+    except Exception as e:
+        log.error(f"Erreur Q&A: {e}")
+        await attente.edit_text(f"❌ {e}")
+        return
+
+    await attente.edit_text(reponse[:4000])
+
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            r = await client.get(f"{WEBAPP_LOCAL_URL}/api/tts", params={"texte": reponse[:800], "langue": "fub"})
+            if r.status_code == 200 and r.content:
+                await update.message.reply_voice(voice=r.content)
+    except Exception as e:
+        log.warning(f"Vocal TTS indisponible pour la réponse Q&A: {e}")
 
 # ── Notifications (nouveaux livres, nouveaux éditos) ───────────────────────────
 async def cmd_abonner(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -280,6 +352,22 @@ async def handle_voice(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     msg  = update.message
     user = update.effective_user
     voice = msg.voice or msg.audio
+
+    if ctx.user_data.pop("mode_question", None):
+        fichier_q  = await ctx.bot.get_file(voice.file_id)
+        audio_q    = DOSSIER_AUDIO / f"q_{user.id}_{voice.file_id}.ogg"
+        await fichier_q.download_to_drive(str(audio_q))
+        try:
+            question = await asyncio.to_thread(transcrire, str(audio_q))
+        except Exception as e:
+            log.error(f"Erreur Whisper (question vocale): {e}")
+            await msg.reply_text("❌ Erreur lors de la transcription de ta question. Réessaie!")
+            return
+        if not question:
+            await msg.reply_text("⚠️ Aucune parole détectée — réessaie ta question.")
+            return
+        await _qa_repondre(update, ctx, question)
+        return
 
     attente = await msg.reply_text("🎙️ Reçu! Transcription en cours...")
 
@@ -366,6 +454,10 @@ async def handle_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text("❌ Ignoré. Envoie un autre vocal!")
 
 async def handle_text(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    if ctx.user_data.pop("mode_question", None):
+        await _qa_repondre(update, ctx, update.message.text.strip())
+        return
+
     if not ctx.user_data.get("en_correction"):
         return
     pending = ctx.user_data.get("pending")
@@ -1052,6 +1144,8 @@ def main():
     app.add_handler(CommandHandler("abonner",    cmd_abonner))
     app.add_handler(CommandHandler("desabonner", cmd_desabonner))
     app.add_handler(CommandHandler("aide",       cmd_aide))
+    app.add_handler(CommandHandler("question",   cmd_question))
+    app.add_handler(CommandHandler("coran",      cmd_coran))
     app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, handle_voice))
     # Les handlers à motif précis doivent être enregistrés avant le handler
     # générique ci-dessous, sinon celui-ci intercepterait tout.

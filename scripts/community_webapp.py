@@ -759,10 +759,36 @@ async def api_rag_stats():
     return JSONResponse(await asyncio.to_thread(stats_rag))
 
 # ══════════════════════════════════════════════════════════════════════════════
+# QUESTION / RÉPONSE — assistant ancré sur le corpus (dictionnaire, Coran, livres)
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.post("/api/question")
+async def api_question(question: str = Form(...)):
+    """
+    Répond à une question en pular ou en français en s'appuyant sur le
+    corpus (dictionnaire, Coran en pular, livres indexés) — texte seulement.
+    Pour une réponse vocale, le front appelle ensuite /api/tts avec le texte
+    retourné ici (même pipeline TTS que le reste du site, pas dupliqué).
+    """
+    from qa_pular import repondre_question
+    if not question.strip():
+        raise HTTPException(400, "Question vide.")
+    try:
+        resultat = await asyncio.to_thread(repondre_question, question)
+        return JSONResponse({"ok": True, **resultat})
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except RuntimeError as e:
+        raise HTTPException(503, str(e))
+    except Exception as e:
+        log.error(f"Erreur assistant Q&A: {e}")
+        raise HTTPException(500, "Erreur lors de la génération de la réponse.")
+
+# ══════════════════════════════════════════════════════════════════════════════
 # CORAN EN PULAR — recherche de versets (traduction + explication)
 # ══════════════════════════════════════════════════════════════════════════════
 
-from coran_pular import rechercher_versets as coran_rechercher, stats_coran
+from coran_pular import rechercher_versets as coran_rechercher, rechercher_transcriptions as audio_rechercher, stats_coran
 
 @app.get("/api/coran/rechercher")
 async def api_coran_rechercher(q: str, n: int = 10):
@@ -773,8 +799,17 @@ async def api_coran_rechercher(q: str, n: int = 10):
     """
     if not q or not q.strip():
         raise HTTPException(400, "Requête vide.")
-    resultats = await asyncio.to_thread(coran_rechercher, q, n)
-    return JSONResponse({"ok": True, "query": q, "resultats": resultats})
+    versets, audios = await asyncio.gather(
+        asyncio.to_thread(coran_rechercher, q, n),
+        asyncio.to_thread(audio_rechercher, q, n),
+    )
+    return JSONResponse({
+        "ok": True,
+        "query": q,
+        "versets": versets,
+        "audios": audios,
+        "resultats": versets + audios,
+    })
 
 @app.get("/api/coran/verset/{sourate}/{verset}")
 async def api_coran_verset(sourate: int, verset: int):

@@ -750,6 +750,7 @@
   <a href="#carte-livres">📚 <span>Livres</span></a>
   <a href="#carte-histoire">🏛️ <span>Histoire</span></a>
   <a href="#carte-coran">🕌 <span>Coran</span></a>
+  <a href="#carte-question">💬 <span>Question</span></a>
   <a href="#carte-compte">👤 <span>Mon compte</span></a>
   <a href="#carte-editorial">📰 <span>Éditorial</span></a>
   <a href="/editos">✍️ <span>Éditos</span></a>
@@ -1245,6 +1246,30 @@
       ">🔍</button>
     </div>
     <div id="coran-resultats" style="margin-top:12px;"></div>
+  </div>
+
+  <!-- ══ QUESTION / RÉPONSE ══ -->
+  <div class="carte" id="carte-question" style="border-color:#2b254088;">
+    <h2>💬 Pose une question <span class="badge-classe" style="background:#2d8659;">🎓 Gando</span></h2>
+    <p style="font-size:.68rem;color:var(--gris);margin-top:-8px;margin-bottom:10px;">Assistant appuyé sur le dictionnaire, le Coran en pular et les livres du corpus — pas une réponse générique.</p>
+    <p style="font-size:.82rem;color:var(--gris);margin-bottom:14px;">
+      Écris ou dis ta question en pular ou en français — la réponse peut aussi s'écouter.
+    </p>
+    <textarea id="qa-question" rows="3" placeholder="Ex: Ko honɗum firi 'munyal'? / Que veut dire ce verset ?" style="
+      width:100%;background:#0d1f15;border:1px solid var(--or);border-radius:8px;
+      color:var(--texte);padding:10px;font-size:.9rem;resize:vertical;outline:none;
+    "></textarea>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button onclick="qaPoserTexte()" id="qa-btn-demander" style="
+        flex:2;padding:11px;border-radius:8px;border:none;
+        background:var(--vert);color:white;font-weight:700;cursor:pointer;font-size:.9rem;
+      ">💬 Demander</button>
+      <button onclick="qaToggleVocal()" id="qa-btn-micro" style="
+        flex:1;padding:11px;border-radius:8px;border:1px solid var(--or);
+        background:transparent;color:var(--or);cursor:pointer;font-size:1rem;
+      ">🎙️</button>
+    </div>
+    <div id="qa-reponse" style="margin-top:12px;"></div>
   </div>
 
   <!-- ══ ESPACE ÉDITORIAL ══ -->
@@ -3567,17 +3592,112 @@ async function coranRechercher() {
       div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;">Aucun résultat — essaie un autre mot, ou une référence comme 2:255.</div>';
       return;
     }
-    div.innerHTML = d.resultats.map(v => `
+    const versets = (d.versets || []).map(v => `
       <div class="rag-result">
         <div class="rag-meta" style="margin-bottom:6px;">📖 Sourate ${v.sourate}${v.sourate_nom ? ' — ' + v.sourate_nom : ''}, verset ${v.verset}</div>
         ${v.arabe ? `<div dir="rtl" style="font-size:1.05rem;line-height:1.9;margin-bottom:8px;color:var(--texte);">${v.arabe}</div>` : ''}
         ${v.traduction ? `<div style="margin-bottom:8px;"><strong style="color:var(--or);font-size:.75rem;">Traduction — ${v.traduction_source || 'Rowwad'} :</strong><br>${v.traduction}</div>` : ''}
         ${v.explication ? `<div><strong style="color:#2AABEE;font-size:.75rem;">Explication — ${v.explication_source || 'Tafsir Al-Mukhtasar'} :</strong><br>${v.explication}</div>` : ''}
-      </div>`).join('');
+      </div>`);
+    const audios = (d.audios || []).map(a => `
+      <div class="rag-result">
+        <div class="rag-meta" style="margin-bottom:6px;">🎙️ Extrait audio Telegram · ${a.canal ? '@' + a.canal : a.nom || 'transcription'}</div>
+        <div>${a.texte}</div>
+        <div class="rag-meta">Langue détectée : ${a.langue || '?'}${a.debut != null ? ` · ${a.debut}s - ${a.fin}s` : ''} · Pertinence : ${(a.score * 100).toFixed(0)}%</div>
+      </div>`);
+    div.innerHTML = [...versets, ...audios].join('');
   } catch(e) {
     div.innerHTML = `<div style="color:var(--rouge);font-size:.85rem;">❌ ${e.message}</div>`;
   }
 }
+
+// ── Question / Réponse ───────────────────────────────────────────────────────
+let qaMediaRecorder, qaChunks = [], qaRecording = false;
+
+async function qaToggleVocal() {
+  const btn = document.getElementById('qa-btn-micro');
+  if (!qaRecording) {
+    if (!navigator.mediaDevices) { toast('❌ Micro non supporté', true); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      qaMediaRecorder = new MediaRecorder(stream);
+      qaChunks = [];
+      qaMediaRecorder.ondataavailable = e => qaChunks.push(e.data);
+      qaMediaRecorder.start();
+      qaRecording = true;
+      btn.textContent = '⏹️';
+    } catch(e) { toast('❌ Accès micro refusé', true); }
+    return;
+  }
+
+  qaRecording = false;
+  btn.textContent = '🎙️';
+  btn.disabled = true;
+  qaMediaRecorder.stop();
+  qaMediaRecorder.stream.getTracks().forEach(t => t.stop());
+  await new Promise(r => qaMediaRecorder.onstop = r);
+  btn.disabled = false;
+
+  const blob = new Blob(qaChunks, { type: 'audio/webm' });
+  const fd = new FormData();
+  fd.append('audio', blob, 'question.webm');
+  const div = document.getElementById('qa-reponse');
+  div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;">🎙️ Transcription...</div>';
+  try {
+    const r = await fetch(`${API}/api/transcrire`, { method: 'POST', body: fd, headers: H });
+    const d = await r.json();
+    if (!d.ok || !d.text) throw new Error(d.detail || d.warning || 'Aucun texte détecté');
+    document.getElementById('qa-question').value = d.text;
+    await qaPoserTexte();
+  } catch(e) {
+    div.innerHTML = `<div style="color:var(--rouge);font-size:.85rem;">❌ ${e.message}</div>`;
+  }
+}
+window.qaToggleVocal = qaToggleVocal;
+
+async function qaPoserTexte() {
+  const question = document.getElementById('qa-question').value.trim();
+  if (!question) { toast('❌ Écris ou dis ta question', true); return; }
+  const div = document.getElementById('qa-reponse');
+  div.innerHTML = '<div style="color:var(--gris);font-size:.85rem;">💭 Réflexion...</div>';
+  try {
+    const fd = new FormData();
+    fd.append('question', question);
+    const r = await fetch(`${API}/api/question`, { method: 'POST', body: fd, headers: H });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.detail || 'Erreur serveur');
+    div.innerHTML = `
+      <div class="rag-result">
+        <div style="font-size:.92rem;line-height:1.5;margin-bottom:8px;">${d.reponse}</div>
+        <button onclick="qaEcouter(this)" data-texte="${encodeURIComponent(d.reponse)}" style="
+          padding:7px 14px;border-radius:8px;border:1px solid var(--or);
+          background:transparent;color:var(--or);cursor:pointer;font-size:.8rem;
+        ">🔊 Écouter</button>
+      </div>`;
+  } catch(e) {
+    div.innerHTML = `<div style="color:var(--rouge);font-size:.85rem;">❌ ${e.message}</div>`;
+  }
+}
+window.qaPoserTexte = qaPoserTexte;
+
+async function qaEcouter(btn) {
+  const texte = decodeURIComponent(btn.dataset.texte);
+  const original = btn.textContent;
+  btn.textContent = '⏳...';
+  btn.disabled = true;
+  try {
+    const r = await fetch(`${API}/api/tts?texte=${encodeURIComponent(texte)}&langue=fub`, { headers: H });
+    if (!r.ok) throw new Error('Voix indisponible pour le moment');
+    const blob = await r.blob();
+    new Audio(URL.createObjectURL(blob)).play();
+  } catch(e) {
+    toast('❌ ' + e.message, true);
+  } finally {
+    btn.textContent = original;
+    btn.disabled = false;
+  }
+}
+window.qaEcouter = qaEcouter;
 
 async function famAjouter() {
   const nom = document.getElementById('fam-nom').value.trim();

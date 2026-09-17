@@ -268,8 +268,10 @@ def transcrire_messages(messages: list[dict], model_name: str) -> list[dict]:
     # dupliquer la logique et de perturber le logging (transcription.py appelle
     # aussi logging.basicConfig() au chargement).
     from transcription import construire_prompt_whisper
+    from correction_vocabulaire import charger_vocabulaire, corriger_transcription
     prompt = construire_prompt_whisper()
     log.info(f"Prompt Whisper ({len(prompt)} car.) : {prompt[:120]}...")
+    vocab = charger_vocabulaire()
 
     for i, entree in enumerate(tqdm(a_transcrire, desc="Transcription"), 1):
         try:
@@ -287,8 +289,11 @@ def transcrire_messages(messages: list[dict], model_name: str) -> list[dict]:
                 condition_on_previous_text=False,
                 initial_prompt=prompt,
             )
-            texte_transcrit = result["text"].strip()
-            entree["transcription"] = texte_transcrit
+            texte_brut = result["text"].strip()
+            texte_transcrit, nb_corriges = corriger_transcription(texte_brut, vocab)
+            entree["transcription"]      = texte_transcrit
+            entree["transcription_brute"] = texte_brut
+            entree["nb_mots_corriges"]   = nb_corriges
             entree["langue_detect"] = result.get("language", "?")
 
             # Mettre à jour le hash et domaine avec la transcription

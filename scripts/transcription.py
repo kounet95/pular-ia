@@ -154,10 +154,20 @@ def transcrire_fichier(chemin: Path, model_name: str, prompt: str = PROMPT_WHISP
         duree = time.time() - debut
         taille = chemin.stat().st_size
 
+        # Correction post-transcription par dictionnaire : le prompt biaisé
+        # aide Whisper pendant le décodage mais ne corrige rien après coup —
+        # chaque mot inconnu du vocabulaire pular est recollé au mot connu le
+        # plus proche s'il lui ressemble suffisamment.
+        from correction_vocabulaire import corriger_transcription
+        texte_brut = result["text"].strip()
+        texte_corrige, nb_mots_corriges = corriger_transcription(texte_brut)
+
         sortie = {
-            "fichier":       str(chemin),
-            "nom":           chemin.name,
-            "texte":         result["text"].strip(),
+            "fichier":          str(chemin),
+            "nom":              chemin.name,
+            "texte":            texte_corrige,
+            "texte_brut":       texte_brut,
+            "nb_mots_corriges": nb_mots_corriges,
             "langue_detect": result.get("language", "inconnu"),
             "segments":      [
                 {
