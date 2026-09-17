@@ -16,8 +16,14 @@ RUN pip install --no-cache-dir --timeout 300 \
 # ── 2. Whisper (dépend de torch) ─────────────────────────────────────────────
 # setuptools<76 requis : v76+ a supprimé pkg_resources dont dépend openai-whisper
 RUN pip install --no-cache-dir "setuptools<76"
+# numpy/numba épinglés ICI aussi : openai-whisper ne fixe pas leur version, donc
+# sans ça pip installe la dernière dispo au moment du build (numba 0.67 + numpy
+# 2.4.6 constatés en prod) — cassé pour numba (nécessite numpy<2.1) et cause,
+# via layer caching, la même corruption qu'on corrige "après coup" à l'étape 7.
 RUN pip install --no-cache-dir --timeout 300 --no-build-isolation \
-    openai-whisper==20231117
+    openai-whisper==20231117 \
+    numpy==1.26.4 \
+    numba==0.59.1
 
 # ── 3. Web + RAG ──────────────────────────────────────────────────────────────
 RUN pip install --no-cache-dir --timeout 300 \
@@ -35,10 +41,17 @@ RUN pip install --no-cache-dir --timeout 300 \
 
 # ── 4. ChromaDB + embeddings (lourd, isolé) ───────────────────────────────────
 # onnxruntime requis par chromadb SentenceTransformerEmbeddingFunction
+# scipy/scikit-learn épinglés explicitement (sentence-transformers ne fixe pas
+# leur version) : sans ça, pip installe la dernière version dispo au moment du
+# build, dont les wheels sont compilées pour numpy 2.x — incompatible avec le
+# numpy==1.26.4 forcé à l'étape 7 (ImportError "numpy._core.multiarray failed
+# to import" constaté en prod, cause perdue à déboguer sans cet épinglage).
 RUN pip install --no-cache-dir --timeout 300 \
     chromadb==0.4.24 \
     sentence-transformers==2.7.0 \
-    onnxruntime==1.17.3
+    onnxruntime==1.17.3 \
+    scipy==1.13.1 \
+    scikit-learn==1.5.0
 
 # ── 5. Espace Éditorial — Stripe / Claude / DALL·E ────────────────────────────
 RUN pip install --no-cache-dir --timeout 300 \

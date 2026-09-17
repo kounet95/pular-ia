@@ -1,0 +1,6 @@
+# Les scripts shell doivent garder des fins de ligne LF même sur un checkout
+# Windows (core.autocrlf=true les convertit sinon en CRLF) — un shebang
+# "#!/bin/sh\r" est invalide sous Linux et casse l'exécution dans le
+# conteneur ("No such file or directory"), notamment lors d'un déploiement
+# via `railway up` qui envoie directement les fichiers du disque.
+*.sh text eol=lf

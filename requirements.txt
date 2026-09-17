@@ -35,7 +35,11 @@ telethon>=1.34.0           # API Telegram officielle
 python-dotenv>=1.0.0       # chargement du fichier .env
 
 # ── TTS Pular (production bot) ─────────────────────────────────
-scipy>=1.11.0              # génération audio WAV
+# Borné <1.14 : scipy plus récent tire des wheels compilées pour numpy 2.x,
+# incompatibles avec numpy==1.26.4 (requis par numba/openai-whisper, cf.
+# Dockerfile) — cause d'un ImportError "numpy._core.multiarray failed to
+# import" déjà rencontré en prod.
+scipy>=1.11.0,<1.14
 
 # ── Import dataset HuggingFace Fula-pular (audio pular Fouta Djallon) ────────
 datasets>=2.14.0

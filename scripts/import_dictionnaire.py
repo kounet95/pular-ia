@@ -18,6 +18,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from scripts import rag_livres
 
+Path("logs").mkdir(exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -57,8 +58,6 @@ def entree_vers_texte(entree: dict) -> str:
 
 
 def main():
-    Path("logs").mkdir(exist_ok=True)
-
     if not FICHIER_WORDLIST.exists():
         log.error(f"Fichier introuvable : {FICHIER_WORDLIST}")
         return

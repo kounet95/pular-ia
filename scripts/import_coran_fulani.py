@@ -37,6 +37,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+Path("logs").mkdir(exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -179,8 +180,6 @@ def main():
     parser.add_argument("--sans-rag", action="store_true",
                          help="Télécharger + fusionner seulement, sans indexation RAG/ChromaDB")
     args = parser.parse_args()
-
-    Path("logs").mkdir(exist_ok=True)
 
     cibles = {args.seulement: TRADUCTIONS[args.seulement]} if args.seulement else TRADUCTIONS
     for cle, meta in cibles.items():
